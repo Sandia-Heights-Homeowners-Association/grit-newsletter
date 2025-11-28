@@ -9,6 +9,7 @@ import { APP_NAME, APP_SUBTITLE, getNextPublicationInfo } from '@/lib/constants'
 export default function Home() {
   const [stats, setStats] = useState<Record<string, number>>({});
   const [completion, setCompletion] = useState(0);
+  const [contributors, setContributors] = useState<string[]>([]);
   const { month, deadline } = getNextPublicationInfo();
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function Home() {
       .then(data => {
         setStats(data.stats || {});
         setCompletion(data.completion || 0);
+        setContributors(data.contributors || []);
       })
       .catch(err => console.error('Failed to load stats:', err));
   }, []);
@@ -28,19 +30,19 @@ export default function Home() {
         <div className="mb-12 text-center">
           {/* Logo Placeholder */}
           <div className="mb-6 flex justify-center">
-            <div className="relative h-32 w-32 rounded-full bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
+            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
                 {/* Replace this div with your logo image */}
                 <div className="text-4xl font-bold text-orange-700">
-                  GRIT
+                  THE GRIT LOGO
                 </div>
                 {/* Uncomment when you have your logo:
                 <Image 
                   src="/logo.png" 
                   alt="The GRIT Logo" 
-                  width={120} 
-                  height={120}
-                  className="rounded-full"
+                  width={300} 
+                  height={100}
+                  className="object-contain"
                 />
                 */}
               </div>
@@ -54,22 +56,6 @@ export default function Home() {
           </p>
           <p className="mt-2 text-base italic text-orange-700">
             Serving our community since 1979
-          </p>
-        </div>
-
-        {/* Newsletter Progress */}
-        <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
-          <h2 className="mb-4 text-2xl font-bold text-orange-900">
-            {month} Newsletter Progress
-          </h2>
-          <div className="mb-2 h-8 w-full overflow-hidden rounded-full bg-orange-100 shadow-inner">
-            <div
-              className="h-full bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 transition-all duration-500 shadow-lg"
-              style={{ width: `${completion}%` }}
-            />
-          </div>
-          <p className="text-center text-lg font-semibold text-orange-800">
-            {completion}% Complete
           </p>
         </div>
 
@@ -183,6 +169,41 @@ export default function Home() {
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Newsletter Progress */}
+        <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+          <h2 className="mb-4 text-2xl font-bold text-orange-900">
+            {month} Newsletter Progress
+          </h2>
+          <div className="mb-2 h-8 w-full overflow-hidden rounded-full bg-orange-100 shadow-inner">
+            <div
+              className="h-full bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 transition-all duration-500 shadow-lg"
+              style={{ width: `${completion}%` }}
+            />
+          </div>
+          <p className="text-center text-lg font-semibold text-orange-800">
+            {completion}% Complete
+          </p>
+
+          {/* Contributors List */}
+          {contributors.length > 0 && (
+            <div className="mt-6 border-t-2 border-orange-200 pt-6">
+              <h3 className="mb-3 text-lg font-semibold text-orange-900">
+                Contributors This Month
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {contributors.map((name, idx) => (
+                  <span 
+                    key={idx}
+                    className="rounded-full bg-gradient-to-r from-orange-100 to-amber-100 px-3 py-1 text-sm font-medium text-orange-900 border border-orange-300"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation to protected pages - Moved to Bottom */}

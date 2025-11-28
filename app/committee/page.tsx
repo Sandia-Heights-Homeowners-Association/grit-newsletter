@@ -10,7 +10,7 @@ export default function CommitteePage() {
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [category, setCategory] = useState(COMMITTEE_CATEGORIES[0]);
+  const [category, setCategory] = useState<typeof COMMITTEE_CATEGORIES[number]>(COMMITTEE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -56,17 +56,28 @@ export default function CommitteePage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
         <main className="mx-auto max-w-md px-4 py-20">
+          {/* Logo Header */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
+                <div className="text-3xl font-bold text-orange-700">
+                  THE GRIT LOGO
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <Link 
             href="/"
-            className="mb-6 inline-block text-purple-600 hover:text-purple-800"
+            className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
           >
             ← Back to Dashboard
           </Link>
 
-          <div className="rounded-lg bg-white p-8 shadow-lg">
-            <h1 className="mb-6 text-3xl font-bold text-gray-800">
+          <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+            <h1 className="mb-6 text-3xl font-bold text-orange-900">
               Committee Content Submission
             </h1>
             <p className="mb-6 text-gray-600">
@@ -75,7 +86,7 @@ export default function CommitteePage() {
 
             <form onSubmit={handleAuth}>
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-gray-700">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Password
                 </label>
                 <input
@@ -83,7 +94,7 @@ export default function CommitteePage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="Enter password"
                 />
               </div>
@@ -96,7 +107,7 @@ export default function CommitteePage() {
 
               <button
                 type="submit"
-                className="w-full rounded-lg bg-purple-600 py-3 font-semibold text-white transition hover:bg-purple-700"
+                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
               >
                 Access
               </button>
@@ -108,17 +119,28 @@ export default function CommitteePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
+        {/* Logo Header */}
+        <div className="mb-8 flex justify-center">
+          <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+            <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
+              <div className="text-3xl font-bold text-orange-700">
+                THE GRIT LOGO
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <Link 
           href="/"
-          className="mb-6 inline-block text-purple-600 hover:text-purple-800"
+          className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
         >
           ← Back to Dashboard
         </Link>
 
-        <div className="rounded-lg bg-white p-8 shadow-lg">
-          <h1 className="mb-6 text-3xl font-bold text-gray-800">
+        <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+          <h1 className="mb-6 text-3xl font-bold text-orange-900">
             Committee Content Submission
           </h1>
 
@@ -130,13 +152,13 @@ export default function CommitteePage() {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              <label className="mb-2 block font-semibold text-gray-700">
+              <label className="mb-2 block font-semibold text-orange-900">
                 Committee *
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as typeof COMMITTEE_CATEGORIES[number])}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
               >
                 {COMMITTEE_CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -145,7 +167,7 @@ export default function CommitteePage() {
             </div>
 
             <div className="mb-6">
-              <label className="mb-2 block font-semibold text-gray-700">
+              <label className="mb-2 block font-semibold text-orange-900">
                 Committee Report *
               </label>
               <textarea
@@ -153,7 +175,7 @@ export default function CommitteePage() {
                 onChange={(e) => setContent(e.target.value)}
                 required
                 rows={15}
-                className="w-full rounded-lg border border-gray-300 p-3 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                 placeholder="Enter your committee report here..."
               />
             </div>
@@ -167,7 +189,7 @@ export default function CommitteePage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-lg bg-purple-600 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:bg-gray-400"
+              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400"
             >
               {submitting ? 'Submitting...' : 'Submit'}
             </button>

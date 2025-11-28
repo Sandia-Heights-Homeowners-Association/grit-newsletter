@@ -74,7 +74,8 @@ function generateId(): string {
 // Add a new submission
 export function addSubmission(
   category: SubmissionCategory,
-  content: string
+  content: string,
+  publishedName?: string
 ): Submission {
   const submission: Submission = {
     id: generateId(),
@@ -83,6 +84,7 @@ export function addSubmission(
     submittedAt: new Date(),
     disposition: 'published',
     month: getCurrentMonthKey(),
+    publishedName,
   };
   
   submissions.push(submission);
@@ -231,4 +233,15 @@ export function getAllSubmissions(): Submission[] {
 
 export function getAllSectionProgress(): Map<string, SectionProgress[]> {
   return sectionProgress;
+}
+
+// Get list of contributor names for current month
+export function getContributorNames(month: string): string[] {
+  const contributors = submissions
+    .filter(s => s.month === month && s.publishedName && s.disposition === 'published')
+    .map(s => s.publishedName!)
+    .filter((name, index, self) => self.indexOf(name) === index) // unique names
+    .sort();
+  
+  return contributors;
 }

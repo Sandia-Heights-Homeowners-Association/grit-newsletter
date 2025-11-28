@@ -48,6 +48,7 @@ export interface Submission {
   submittedAt: Date;
   disposition: DispositionStatus;
   month: string; // Format: YYYY-MM
+  publishedName?: string; // Name as it should appear in contributor list
 }
 
 export interface SectionProgress {

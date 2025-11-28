@@ -15,6 +15,7 @@ export default function EditorPage() {
   const [backlog, setBacklog] = useState<Submission[]>([]);
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showJsonViewer, setShowJsonViewer] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,26 +214,37 @@ export default function EditorPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
         <main className="mx-auto max-w-md px-4 py-20">
+          {/* Logo Header */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
+                <div className="text-3xl font-bold text-orange-700">
+                  THE GRIT LOGO
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <Link 
             href="/"
-            className="mb-6 inline-block text-red-600 hover:text-red-800"
+            className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
           >
             ← Back to Dashboard
           </Link>
 
-          <div className="rounded-lg bg-white p-8 shadow-lg">
-            <h1 className="mb-6 text-3xl font-bold text-gray-800">
+          <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+            <h1 className="mb-6 text-3xl font-bold text-orange-900">
               Editor Dashboard
             </h1>
-            <p className="mb-6 text-gray-600">
+            <p className="mb-6 text-gray-800">
               This page is for editors only. Please enter the editor password to continue.
             </p>
 
             <form onSubmit={handleAuth}>
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-gray-700">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Password
                 </label>
                 <input
@@ -240,7 +252,7 @@ export default function EditorPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-red-500 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="Enter editor password"
                 />
               </div>
@@ -253,7 +265,7 @@ export default function EditorPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-lg bg-red-600 py-3 font-semibold text-white transition hover:bg-red-700"
+                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
               >
                 Access Editor Dashboard
               </button>
@@ -265,33 +277,51 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-7xl px-4 py-12">
+        {/* Logo Header */}
+        <div className="mb-8 flex justify-center">
+          <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+            <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
+              <div className="text-3xl font-bold text-orange-700">
+                THE GRIT LOGO
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div className="mb-6 flex items-center justify-between">
           <Link 
             href="/"
-            className="text-red-600 hover:text-red-800"
+            className="font-semibold text-orange-700 hover:text-orange-900"
           >
             ← Back to Dashboard
           </Link>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowJsonViewer(!showJsonViewer)}
+              className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
+              title="View raw JSON data"
+            >
+              {showJsonViewer ? 'Hide JSON' : 'View JSON'}
+            </button>
+            <button
               onClick={createBackup}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-700 hover:to-cyan-700"
               title="Create a timestamped backup of all data"
             >
               Create Backup
             </button>
             <button
               onClick={exportAllData}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700"
+              className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700"
               title="Download all data as JSON"
             >
               Export All Data
             </button>
             <button
               onClick={exportNewsletter}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+              className="rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-green-700 hover:to-emerald-700"
               title="Export completed newsletter as text file"
             >
               Export Newsletter
@@ -299,9 +329,30 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <h1 className="mb-8 text-4xl font-bold text-gray-800">
+        <h1 className="mb-8 text-4xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
+
+        {/* JSON Viewer */}
+        {showJsonViewer && (
+          <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+            <h2 className="mb-4 text-2xl font-bold text-orange-900">JSON Data Viewer</h2>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <h3 className="mb-2 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
+                <pre className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 text-xs border border-gray-300">
+                  {JSON.stringify(submissions, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <h3 className="mb-2 text-lg font-semibold text-red-800">Section Progress ({progress.length})</h3>
+                <pre className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 text-xs border border-gray-300">
+                  {JSON.stringify(progress, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Sections List */}

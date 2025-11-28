@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCategoryStats, getNewsletterCompletion } from '@/lib/store';
+import { getCategoryStats, getNewsletterCompletion, getContributorNames } from '@/lib/store';
 import { getCurrentMonthKey } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
@@ -7,10 +7,12 @@ export async function GET(request: NextRequest) {
     const month = getCurrentMonthKey();
     const stats = getCategoryStats(month);
     const completion = getNewsletterCompletion(month);
+    const contributors = getContributorNames(month);
 
     return NextResponse.json({ 
       stats,
       completion,
+      contributors,
       month
     });
   } catch (error) {

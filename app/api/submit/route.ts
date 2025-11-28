@@ -5,7 +5,7 @@ import type { SubmissionCategory } from '@/lib/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { category, content } = body;
+    const { category, content, publishedName } = body;
 
     if (!category || !content) {
       return NextResponse.json(
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const submission = addSubmission(category as SubmissionCategory, content);
+    const submission = addSubmission(category as SubmissionCategory, content, publishedName);
     
     return NextResponse.json({ 
       success: true, 

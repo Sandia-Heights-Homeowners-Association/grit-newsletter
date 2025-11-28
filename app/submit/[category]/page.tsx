@@ -10,8 +10,9 @@ export default function SubmitPage() {
   const category = decodeURIComponent(params.category as string);
   
   const [content, setContent] = useState('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [publishedName, setPublishedName] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [location, setLocation] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -22,19 +23,20 @@ export default function SubmitPage() {
     setError('');
 
     try {
-      const fullContent = `Submitted by: ${name} (${email})\n\n${content}`;
+      const fullContent = `Published Name: ${publishedName}\nFull Name: ${fullName}\nLocation: ${location}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, content: fullContent }),
+        body: JSON.stringify({ category, content: fullContent, publishedName }),
       });
 
       if (response.ok) {
         setSuccess(true);
         setContent('');
-        setName('');
-        setEmail('');
+        setPublishedName('');
+        setFullName('');
+        setLocation('');
         setTimeout(() => router.push('/'), 3000);
       } else {
         setError('Failed to submit. Please try again.');
@@ -78,29 +80,43 @@ export default function SubmitPage() {
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Your Name *
+                  Your Name (as you would like it published) *
                 </label>
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={publishedName}
+                  onChange={(e) => setPublishedName(e.target.value)}
                   required
                   className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-                  placeholder="Enter your name"
+                  placeholder="How you want your name to appear in the newsletter"
                 />
               </div>
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Your Email *
+                  Your Full Name *
                 </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-                  placeholder="your.email@example.com"
+                  placeholder="Your complete name for our records"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900">
+                  Your Street, Cross Streets, or Unit Number *
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  placeholder="e.g., 'Tramway near Copper' or 'Unit 123'"
                 />
               </div>
 

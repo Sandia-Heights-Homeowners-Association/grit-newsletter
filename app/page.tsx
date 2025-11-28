@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import { APP_NAME, APP_SUBTITLE, getNextPublicationInfo } from '@/lib/constants';
 
@@ -21,149 +22,66 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-6xl px-4 py-12">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="mb-2 text-5xl font-bold text-blue-900">{APP_NAME}</h1>
-          <p className="text-xl text-blue-700">{APP_SUBTITLE}</p>
-          <p className="mt-4 text-lg text-gray-600">
+          {/* Logo Placeholder */}
+          <div className="mb-6 flex justify-center">
+            <div className="relative h-32 w-32 rounded-full bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
+                {/* Replace this div with your logo image */}
+                <div className="text-4xl font-bold text-orange-700">
+                  GRIT
+                </div>
+                {/* Uncomment when you have your logo:
+                <Image 
+                  src="/logo.png" 
+                  alt="The GRIT Logo" 
+                  width={120} 
+                  height={120}
+                  className="rounded-full"
+                />
+                */}
+              </div>
+            </div>
+          </div>
+          
+          <h1 className="mb-3 text-6xl font-bold text-orange-900">{APP_NAME}</h1>
+          <p className="mb-2 text-2xl font-medium text-red-800">{APP_SUBTITLE}</p>
+          <p className="text-lg font-medium text-orange-800">
             Sandia Heights Homeowners Association Newsletter
+          </p>
+          <p className="mt-2 text-base italic text-orange-700">
+            Serving our community since 1979
           </p>
         </div>
 
-        {/* Navigation to protected pages */}
-        <div className="mb-8 flex justify-center gap-4">
-          <Link 
-            href="/routine"
-            className="rounded-lg bg-green-600 px-6 py-2 text-white transition hover:bg-green-700"
-          >
-            Routine Content
-          </Link>
-          <Link 
-            href="/committee"
-            className="rounded-lg bg-purple-600 px-6 py-2 text-white transition hover:bg-purple-700"
-          >
-            Committee Content
-          </Link>
-          <Link 
-            href="/editor"
-            className="rounded-lg bg-red-600 px-6 py-2 text-white transition hover:bg-red-700"
-          >
-            Editor Dashboard
-          </Link>
-        </div>
-
         {/* Newsletter Progress */}
-        <div className="mb-12 rounded-lg bg-white p-8 shadow-lg">
-          <h2 className="mb-4 text-2xl font-bold text-gray-800">
+        <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+          <h2 className="mb-4 text-2xl font-bold text-orange-900">
             {month} Newsletter Progress
           </h2>
-          <div className="mb-2 h-8 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="mb-2 h-8 w-full overflow-hidden rounded-full bg-orange-100 shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 transition-all duration-500 shadow-lg"
               style={{ width: `${completion}%` }}
             />
           </div>
-          <p className="text-center text-lg font-semibold text-gray-700">
+          <p className="text-center text-lg font-semibold text-orange-800">
             {completion}% Complete
           </p>
         </div>
 
-        {/* Submission Categories */}
-        <div className="mb-12">
-          <h2 className="mb-6 text-3xl font-bold text-gray-800">
-            Submit Your Content
-          </h2>
-          
-          {/* Community Contributions */}
-          <div className="mb-8">
-            <h3 className="mb-4 text-xl font-semibold text-blue-800">
-              Community Contributions
-            </h3>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {COMMUNITY_CATEGORIES.map(category => (
-                <Link
-                  key={category}
-                  href={`/submit/${encodeURIComponent(category)}`}
-                  className="rounded-lg bg-blue-600 p-4 text-center text-white transition hover:bg-blue-700"
-                >
-                  <div className="font-semibold">{category}</div>
-                  <div className="mt-1 text-sm opacity-90">
-                    {stats[category] || 0} submissions
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Submission Stats Summary */}
-        <div className="mb-12 rounded-lg bg-white p-8 shadow-lg">
-          <h2 className="mb-6 text-2xl font-bold text-gray-800">
-            Submission Summary
-          </h2>
-          
-          <div className="grid gap-6 md:grid-cols-3">
-            <div>
-              <h3 className="mb-3 font-semibold text-blue-800">
-                Community Contributions
-              </h3>
-              <ul className="space-y-2 text-sm">
-                {COMMUNITY_CATEGORIES.map(cat => (
-                  <li key={cat} className="flex justify-between">
-                    <span>{cat}:</span>
-                    <span className="font-semibold">{stats[cat] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="mb-3 font-semibold text-green-800">
-                Routine Content
-              </h3>
-              <ul className="space-y-2 text-sm">
-                {ROUTINE_CATEGORIES.map(cat => (
-                  <li key={cat} className="flex justify-between">
-                    <span>{cat}:</span>
-                    <span className="font-semibold">{stats[cat] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="mb-3 font-semibold text-purple-800">
-                Committee Content
-              </h3>
-              <ul className="space-y-2 text-sm">
-                {COMMITTEE_CATEGORIES.slice(0, 5).map(cat => (
-                  <li key={cat} className="flex justify-between text-xs">
-                    <span>{cat}:</span>
-                    <span className="font-semibold">{stats[cat] || 0}</span>
-                  </li>
-                ))}
-                {COMMITTEE_CATEGORIES.slice(5).map(cat => (
-                  <li key={cat} className="flex justify-between text-xs">
-                    <span>{cat}:</span>
-                    <span className="font-semibold">{stats[cat] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Submission Guidelines */}
-        <div className="rounded-lg bg-amber-50 p-8 shadow-lg">
-          <h2 className="mb-4 text-2xl font-bold text-amber-900">
+        {/* Submission Guidelines - Moved Up */}
+        <div className="mb-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 p-8 shadow-xl border-2 border-orange-300">
+          <h2 className="mb-4 text-2xl font-bold text-orange-900">
             Submission Guidelines
           </h2>
-          <div className="space-y-3 text-gray-700">
+          <div className="space-y-3 text-gray-900">
             <p>
-              <strong>Deadline:</strong> All content for the {month} issue must be 
-              submitted by <strong className="text-amber-900">{deadline}</strong>.
+              <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
+              submitted by <strong className="text-red-700">{deadline}</strong>.
             </p>
             <p>
               By submitting content to The GRIT, you grant the Sandia Heights 
@@ -180,6 +98,121 @@ export default function Home() {
               community. Include your name and contact information with all submissions.
             </p>
           </div>
+        </div>
+
+        {/* Submission Categories */}
+        <div className="mb-12">
+          <h2 className="mb-6 text-3xl font-bold text-orange-900">
+            Submit Your Content
+          </h2>
+          
+          {/* Community Contributions */}
+          <div className="mb-8">
+            <h3 className="mb-4 text-xl font-semibold text-red-800">
+              Community Contributions
+            </h3>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {COMMUNITY_CATEGORIES.map(category => (
+                <Link
+                  key={category}
+                  href={`/submit/${encodeURIComponent(category)}`}
+                  className="rounded-lg bg-gradient-to-br from-orange-600 to-red-600 p-4 text-center text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  <div className="font-semibold">{category}</div>
+                  <div className="mt-1 text-sm opacity-90">
+                    {stats[category] || 0} submissions
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Submission Stats Summary */}
+        <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+          <h2 className="mb-6 text-2xl font-bold text-orange-900">
+            Submission Summary
+          </h2>
+          
+          <div className="grid gap-6 md:grid-cols-3">
+            <div>
+              <h3 className="mb-3 font-semibold text-orange-800 text-lg border-b-2 border-orange-300 pb-2">
+                Community Contributions
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {COMMUNITY_CATEGORIES.map(cat => (
+                  <li key={cat} className="flex justify-between text-gray-800">
+                    <span>{cat}:</span>
+                    <span className="font-semibold text-orange-700">{stats[cat] || 0}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-3 font-semibold text-red-800 text-lg border-b-2 border-red-300 pb-2">
+                Routine Content
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {ROUTINE_CATEGORIES.map(cat => (
+                  <li key={cat} className="flex justify-between text-gray-800">
+                    <span>{cat}:</span>
+                    <span className="font-semibold text-red-700">{stats[cat] || 0}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-3 font-semibold text-amber-800 text-lg border-b-2 border-amber-300 pb-2">
+                Committee Content
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {COMMITTEE_CATEGORIES.slice(0, 5).map(cat => (
+                  <li key={cat} className="flex justify-between text-xs text-gray-800">
+                    <span className="truncate pr-2">{cat}:</span>
+                    <span className="font-semibold text-amber-700 whitespace-nowrap">{stats[cat] || 0}</span>
+                  </li>
+                ))}
+                {COMMITTEE_CATEGORIES.slice(5).map(cat => (
+                  <li key={cat} className="flex justify-between text-xs text-gray-800">
+                    <span className="truncate pr-2">{cat}:</span>
+                    <span className="font-semibold text-amber-700 whitespace-nowrap">{stats[cat] || 0}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation to protected pages - Moved to Bottom */}
+        <div className="rounded-xl bg-gradient-to-br from-orange-900 to-red-900 p-8 shadow-xl">
+          <h2 className="mb-4 text-2xl font-bold text-amber-100 text-center">
+            Staff & Committee Access
+          </h2>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link 
+              href="/routine"
+              className="rounded-lg bg-amber-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-700 hover:shadow-xl"
+            >
+              Routine Content
+            </Link>
+            <Link 
+              href="/committee"
+              className="rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-700 hover:shadow-xl"
+            >
+              Committee Content
+            </Link>
+            <Link 
+              href="/editor"
+              className="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-red-700 hover:shadow-xl"
+            >
+              Editor Dashboard
+            </Link>
+          </div>
+          <p className="mt-4 text-center text-sm text-amber-200">
+            Password required • For authorized users only
+          </p>
         </div>
       </main>
     </div>

@@ -47,37 +47,37 @@ export default function SubmitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
         <Link 
           href="/"
-          className="mb-6 inline-block text-blue-600 hover:text-blue-800"
+          className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
         >
           ← Back to Dashboard
         </Link>
 
-        <div className="rounded-lg bg-white p-8 shadow-lg">
-          <h1 className="mb-6 text-3xl font-bold text-gray-800">
+        <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
+          <h1 className="mb-6 text-3xl font-bold text-orange-900">
             Submit: {category}
           </h1>
 
           {success ? (
-            <div className="rounded-lg bg-green-50 p-6 text-center">
+            <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 p-6 text-center border-2 border-green-300">
               <div className="mb-4 text-6xl">✓</div>
-              <h2 className="mb-2 text-2xl font-bold text-green-800">
+              <h2 className="mb-2 text-2xl font-bold text-green-900">
                 Submission Successful!
               </h2>
-              <p className="text-green-700">
+              <p className="text-gray-900">
                 Thank you for your contribution to The GRIT.
               </p>
-              <p className="mt-2 text-sm text-green-600">
+              <p className="mt-2 text-sm text-gray-700">
                 Redirecting to dashboard...
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-gray-700">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Your Name *
                 </label>
                 <input
@@ -85,13 +85,13 @@ export default function SubmitPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="Enter your name"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-gray-700">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Your Email *
                 </label>
                 <input
@@ -99,13 +99,13 @@ export default function SubmitPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="your.email@example.com"
                 />
               </div>
 
               <div className="mb-6">
-                <label className="mb-2 block font-semibold text-gray-700">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Your Submission *
                 </label>
                 <textarea
@@ -113,13 +113,13 @@ export default function SubmitPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={10}
-                  className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="Enter your content here..."
                 />
               </div>
 
               {error && (
-                <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700">
+                <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-900 border-2 border-red-300">
                   {error}
                 </div>
               )}
@@ -127,7 +127,7 @@ export default function SubmitPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
+                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400"
               >
                 {submitting ? 'Submitting...' : 'Submit'}
               </button>

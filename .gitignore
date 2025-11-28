@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# data storage
+/data/*.json
+
+# backups (optional - remove this line if you want to commit backups)
+/data/backups/

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { EDITOR_PASSWORD } from '@/lib/constants';
 import type { Submission, SectionProgress, SubmissionCategory } from '@/lib/types';
 
@@ -283,9 +284,13 @@ export default function EditorPage() {
         <div className="mb-8 flex justify-center">
           <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
             <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-              <div className="text-3xl font-bold text-orange-700">
-                THE GRIT LOGO
-              </div>
+              <Image 
+                src="/logo.png" 
+                alt="The GRIT Logo" 
+                width={400} 
+                height={100}
+                className="object-contain"
+              />
             </div>
           </div>
         </div>

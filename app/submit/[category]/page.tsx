@@ -13,6 +13,7 @@ export default function SubmitPage() {
   const [publishedName, setPublishedName] = useState('');
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +24,7 @@ export default function SubmitPage() {
     setError('');
 
     try {
-      const fullContent = `Published Name: ${publishedName}\nFull Name: ${fullName}\nLocation: ${location}\n\n${content}`;
+      const fullContent = `Published Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -37,6 +38,7 @@ export default function SubmitPage() {
         setPublishedName('');
         setFullName('');
         setLocation('');
+        setEmail('');
         setTimeout(() => router.push('/'), 3000);
       } else {
         setError('Failed to submit. Please try again.');
@@ -59,9 +61,16 @@ export default function SubmitPage() {
         </Link>
 
         <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
-          <h1 className="mb-6 text-3xl font-bold text-orange-900">
+          <h1 className="mb-4 text-3xl font-bold text-orange-900">
             Submit: {category}
           </h1>
+          
+          <div className="mb-6 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 p-4 border-2 border-orange-200">
+            <p className="text-gray-900 font-medium">
+              Share your stories, announcements, and contributions with the Sandia Heights community. 
+              Your submission will be reviewed by our editors and may be included in the next issue of The GRIT.
+            </p>
+          </div>
 
           {success ? (
             <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 p-6 text-center border-2 border-green-300">
@@ -118,6 +127,21 @@ export default function SubmitPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                   placeholder="e.g., 'Tramway near Copper' or 'Unit 123'"
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900">
+                  Your Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  placeholder="your.email@example.com"
+                />
+                <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
               </div>
 
               <div className="mb-6">

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ROUTINE_CATEGORIES } from '@/lib/types';
 import { ROUTINE_PASSWORD } from '@/lib/constants';
 
@@ -13,6 +14,7 @@ export default function RoutinePage() {
   const [category, setCategory] = useState<typeof ROUTINE_CATEGORIES[number]>(ROUTINE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +35,7 @@ export default function RoutinePage() {
     setError('');
 
     try {
-      const fullContent = `Author: ${authorName}\n\n${content}`;
+      const fullContent = `Author: ${authorName}\nEmail: ${email}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -45,6 +47,7 @@ export default function RoutinePage() {
         setSuccess(true);
         setContent('');
         setAuthorName('');
+        setEmail('');
         setTimeout(() => {
           setSuccess(false);
         }, 3000);
@@ -129,9 +132,13 @@ export default function RoutinePage() {
         <div className="mb-8 flex justify-center">
           <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
             <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-              <div className="text-3xl font-bold text-orange-700">
-                THE GRIT LOGO
-              </div>
+              <Image 
+                src="/logo.png" 
+                alt="The GRIT Logo" 
+                width={400} 
+                height={100}
+                className="object-contain"
+              />
             </div>
           </div>
         </div>
@@ -144,12 +151,19 @@ export default function RoutinePage() {
         </Link>
 
         <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
-          <h1 className="mb-6 text-3xl font-bold text-orange-900">
+          <h1 className="mb-4 text-3xl font-bold text-orange-900">
             Routine Content Submission
           </h1>
+          
+          <div className="mb-6 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 p-4 border-2 border-orange-200">
+            <p className="text-gray-900 font-medium">
+              This form is for routine newsletter content such as President's Message, committee reports, 
+              ACC Activity Logs, Security Reports, and other regular newsletter sections.
+            </p>
+          </div>
 
           {success && (
-            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700">
+            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
               Submission successful!
             </div>
           )}
@@ -167,6 +181,21 @@ export default function RoutinePage() {
                 className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                 placeholder="Your name"
               />
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block font-semibold text-orange-900">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                placeholder="your.email@example.com"
+              />
+              <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
             </div>
 
             <div className="mb-6">
@@ -196,7 +225,7 @@ export default function RoutinePage() {
                 className="w-full rounded-lg border-2 border-orange-200 p-3 font-mono text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
                 placeholder="Enter your content here. For CSV data, paste directly from Excel..."
               />
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-800">
                 {category === 'ACC Activity Log' || category === 'Security Report' 
                   ? 'You can copy and paste directly from Excel'
                   : category === 'CSC Table' 

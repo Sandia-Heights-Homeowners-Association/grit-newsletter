@@ -28,23 +28,17 @@ export default function Home() {
       <main className="mx-auto max-w-6xl px-4 py-12">
         {/* Header */}
         <div className="mb-12 text-center">
-          {/* Logo Placeholder */}
+          {/* Logo */}
           <div className="mb-6 flex justify-center">
             <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
               <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-                {/* Replace this div with your logo image */}
-                <div className="text-4xl font-bold text-orange-700">
-                  THE GRIT LOGO
-                </div>
-                {/* Uncomment when you have your logo:
                 <Image 
                   src="/logo.png" 
                   alt="The GRIT Logo" 
-                  width={300} 
+                  width={400} 
                   height={100}
                   className="object-contain"
                 />
-                */}
               </div>
             </div>
           </div>

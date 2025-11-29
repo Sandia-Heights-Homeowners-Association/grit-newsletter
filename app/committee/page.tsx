@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { COMMITTEE_CATEGORIES } from '@/lib/types';
 import { COMMITTEE_PASSWORD } from '@/lib/constants';
 
@@ -12,6 +13,7 @@ export default function CommitteePage() {
   const [password, setPassword] = useState('');
   const [category, setCategory] = useState<typeof COMMITTEE_CATEGORIES[number]>(COMMITTEE_CATEGORIES[0]);
   const [content, setContent] = useState('');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -35,12 +37,13 @@ export default function CommitteePage() {
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, content }),
+        body: JSON.stringify({ category, content: `Email: ${email}\n\n${content}` }),
       });
 
       if (response.ok) {
         setSuccess(true);
         setContent('');
+        setEmail('');
         setTimeout(() => {
           setSuccess(false);
         }, 3000);
@@ -62,9 +65,13 @@ export default function CommitteePage() {
           <div className="mb-8 flex justify-center">
             <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
               <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-                <div className="text-3xl font-bold text-orange-700">
-                  THE GRIT LOGO
-                </div>
+                <Image 
+                  src="/logo.png" 
+                  alt="The GRIT Logo" 
+                  width={400} 
+                  height={100}
+                  className="object-contain"
+                />
               </div>
             </div>
           </div>
@@ -125,9 +132,13 @@ export default function CommitteePage() {
         <div className="mb-8 flex justify-center">
           <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
             <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-              <div className="text-3xl font-bold text-orange-700">
-                THE GRIT LOGO
-              </div>
+              <Image 
+                src="/logo.png" 
+                alt="The GRIT Logo" 
+                width={400} 
+                height={100}
+                className="object-contain"
+              />
             </div>
           </div>
         </div>
@@ -140,12 +151,19 @@ export default function CommitteePage() {
         </Link>
 
         <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
-          <h1 className="mb-6 text-3xl font-bold text-orange-900">
+          <h1 className="mb-4 text-3xl font-bold text-orange-900">
             Committee Content Submission
           </h1>
+          
+          <div className="mb-6 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 p-4 border-2 border-orange-200">
+            <p className="text-gray-900 font-medium">
+              Submit your committee's monthly report for inclusion in The GRIT. Committee reports 
+              provide our community with updates on ongoing projects, decisions, and initiatives.
+            </p>
+          </div>
 
           {success && (
-            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700">
+            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
               Submission successful!
             </div>
           )}
@@ -164,6 +182,21 @@ export default function CommitteePage() {
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block font-semibold text-orange-900">
+                Contact Email *
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                placeholder="committee.contact@example.com"
+              />
+              <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
             </div>
 
             <div className="mb-6">

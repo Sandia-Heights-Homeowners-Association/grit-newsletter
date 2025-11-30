@@ -101,7 +101,7 @@ export default function CommitteePage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Enter password"
                 />
               </div>
@@ -193,7 +193,7 @@ export default function CommitteePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                 placeholder="committee.contact@example.com"
               />
               <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
@@ -208,7 +208,7 @@ export default function CommitteePage() {
                 onChange={(e) => setContent(e.target.value)}
                 required
                 rows={15}
-                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                 placeholder="Enter your committee report here..."
               />
             </div>

@@ -253,7 +253,7 @@ export default function EditorPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Enter editor password"
                 />
               </div>
@@ -499,8 +499,8 @@ export default function EditorPage() {
                   <textarea
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
-                    rows={15}
-                    className="w-full rounded-lg border border-gray-300 p-3 font-mono text-sm focus:border-red-500 focus:outline-none"
+                    rows={20}
+                    className="w-full rounded-lg border border-gray-300 p-4 font-mono text-sm text-amber-700 focus:border-blue-500 focus:outline-none placeholder:text-amber-600"
                     placeholder="Published submissions will be concatenated here. You can edit the combined text directly."
                   />
                 </div>

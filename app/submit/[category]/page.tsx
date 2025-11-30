@@ -96,7 +96,7 @@ export default function SubmitPage() {
                   value={publishedName}
                   onChange={(e) => setPublishedName(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="How you want your name to appear in the newsletter"
                 />
               </div>
@@ -110,7 +110,7 @@ export default function SubmitPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Your complete name for our records"
                 />
               </div>
@@ -124,7 +124,7 @@ export default function SubmitPage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="e.g., 'Tramway near Copper' or 'Unit 123'"
                 />
               </div>
@@ -138,7 +138,7 @@ export default function SubmitPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="your.email@example.com"
                 />
                 <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
@@ -153,7 +153,7 @@ export default function SubmitPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={10}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Enter your content here..."
                 />
               </div>

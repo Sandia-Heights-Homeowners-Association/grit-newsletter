@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EDITOR_PASSWORD } from '@/lib/constants';
+import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SectionProgress, SubmissionCategory } from '@/lib/types';
 
 export default function EditorPage() {
@@ -18,6 +19,50 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(false);
   const [showJsonViewer, setShowJsonViewer] = useState(false);
   const [currentMonth, setCurrentMonth] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Community Submissions']));
+
+  const toggleGroup = (groupName: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupName)) {
+      newExpanded.delete(groupName);
+    } else {
+      newExpanded.add(groupName);
+    }
+    setExpandedGroups(newExpanded);
+  };
+
+  const generateFullNewsletterPreview = (): string => {
+    const sections: string[] = [];
+    
+    // Group categories by type
+    const categoryGroups = [
+      { title: 'COMMUNITY SUBMISSIONS', categories: COMMUNITY_CATEGORIES },
+      { title: 'ROUTINE CONTENT', categories: ROUTINE_CATEGORIES },
+      { title: 'COMMITTEE REPORTS', categories: COMMITTEE_CATEGORIES },
+    ];
+
+    categoryGroups.forEach(group => {
+      group.categories.forEach(category => {
+        const section = progress.find(p => p.category === category);
+        const categorySubs = submissions.filter(s => s.category === category && s.disposition === 'published');
+        
+        if (categorySubs.length > 0 || section?.editedContent) {
+          sections.push(`\n${'='.repeat(60)}\n${category.toUpperCase()}\n${'='.repeat(60)}\n`);
+          
+          if (section?.editedContent) {
+            sections.push(section.editedContent);
+          } else {
+            const content = categorySubs.map(s => s.content).join('\n\n---\n\n');
+            sections.push(content);
+          }
+        }
+      });
+    });
+
+    return sections.length > 0 
+      ? sections.join('\n\n') 
+      : 'No published content yet. Submissions will appear here once marked as published.';
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -425,39 +470,174 @@ export default function EditorPage() {
               {loading ? (
                 <p className="text-gray-800">Loading...</p>
               ) : (
-                <div className="space-y-2">
-                  {progress.map((section) => {
-                    const categorySubmissions = submissions.filter(
-                      s => s.category === section.category
-                    );
-                    const publishedCount = categorySubmissions.filter(
-                      s => s.disposition === 'published'
-                    ).length;
+                <div className="space-y-3">
+                  {/* Community Submissions */}
+                  <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleGroup('Community Submissions')}
+                      className="w-full bg-gradient-to-r from-red-50 to-orange-50 hover:from-red-100 hover:to-orange-100 p-3 text-left transition flex items-center justify-between"
+                    >
+                      <div className="flex-1">
+                        <span className="font-bold text-orange-900">Community Submissions</span>
+                        <div className="text-xs text-gray-700 mt-1">
+                          {submissions.filter(s => COMMUNITY_CATEGORIES.includes(s.category as any)).length} total
+                        </div>
+                      </div>
+                      <span className="text-orange-700 text-xl ml-2">
+                        {expandedGroups.has('Community Submissions') ? '▼' : '▶'}
+                      </span>
+                    </button>
+                    {expandedGroups.has('Community Submissions') && (
+                      <div className="bg-white p-2 space-y-1">
+                        {progress
+                          .filter(section => COMMUNITY_CATEGORIES.includes(section.category as any))
+                          .map((section) => {
+                            const categorySubmissions = submissions.filter(
+                              s => s.category === section.category
+                            );
+                            const publishedCount = categorySubmissions.filter(
+                              s => s.disposition === 'published'
+                            ).length;
 
-                    return (
-                      <button
-                        key={section.category}
-                        onClick={() => loadCategoryContent(section.category)}
-                        className={`w-full rounded-lg p-3 text-left transition ${
-                          selectedCategory === section.category
-                            ? 'bg-orange-100 border-2 border-orange-500'
-                            : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sm text-orange-900">
-                            {section.category}
-                          </span>
-                          {section.isComplete && (
-                            <span className="text-green-600 text-xl">✓</span>
-                          )}
+                            return (
+                              <button
+                                key={section.category}
+                                onClick={() => loadCategoryContent(section.category)}
+                                className={`w-full rounded-lg p-2 text-left transition ${
+                                  selectedCategory === section.category
+                                    ? 'bg-orange-100 border-2 border-orange-500'
+                                    : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-sm text-orange-900">
+                                    {section.category}
+                                  </span>
+                                  {section.isComplete && (
+                                    <span className="text-green-600 text-lg">✓</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-800 mt-1">
+                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Routine Content */}
+                  <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleGroup('Routine Content')}
+                      className="w-full bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 p-3 text-left transition flex items-center justify-between"
+                    >
+                      <div className="flex-1">
+                        <span className="font-bold text-orange-900">Routine Content</span>
+                        <div className="text-xs text-gray-700 mt-1">
+                          {submissions.filter(s => ROUTINE_CATEGORIES.includes(s.category as any)).length} total
                         </div>
-                        <div className="text-xs text-gray-800 mt-1">
-                          {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                      </div>
+                      <span className="text-orange-700 text-xl ml-2">
+                        {expandedGroups.has('Routine Content') ? '▼' : '▶'}
+                      </span>
+                    </button>
+                    {expandedGroups.has('Routine Content') && (
+                      <div className="bg-white p-2 space-y-1">
+                        {progress
+                          .filter(section => ROUTINE_CATEGORIES.includes(section.category as any))
+                          .map((section) => {
+                            const categorySubmissions = submissions.filter(
+                              s => s.category === section.category
+                            );
+                            const publishedCount = categorySubmissions.filter(
+                              s => s.disposition === 'published'
+                            ).length;
+
+                            return (
+                              <button
+                                key={section.category}
+                                onClick={() => loadCategoryContent(section.category)}
+                                className={`w-full rounded-lg p-2 text-left transition ${
+                                  selectedCategory === section.category
+                                    ? 'bg-orange-100 border-2 border-orange-500'
+                                    : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-sm text-orange-900">
+                                    {section.category}
+                                  </span>
+                                  {section.isComplete && (
+                                    <span className="text-green-600 text-lg">✓</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-800 mt-1">
+                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Committee Content */}
+                  <div className="border-2 border-orange-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleGroup('Committee Content')}
+                      className="w-full bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 p-3 text-left transition flex items-center justify-between"
+                    >
+                      <div className="flex-1">
+                        <span className="font-bold text-orange-900">Committee Content</span>
+                        <div className="text-xs text-gray-700 mt-1">
+                          {submissions.filter(s => COMMITTEE_CATEGORIES.includes(s.category as any)).length} total
                         </div>
-                      </button>
-                    );
-                  })}
+                      </div>
+                      <span className="text-orange-700 text-xl ml-2">
+                        {expandedGroups.has('Committee Content') ? '▼' : '▶'}
+                      </span>
+                    </button>
+                    {expandedGroups.has('Committee Content') && (
+                      <div className="bg-white p-2 space-y-1">
+                        {progress
+                          .filter(section => COMMITTEE_CATEGORIES.includes(section.category as any))
+                          .map((section) => {
+                            const categorySubmissions = submissions.filter(
+                              s => s.category === section.category
+                            );
+                            const publishedCount = categorySubmissions.filter(
+                              s => s.disposition === 'published'
+                            ).length;
+
+                            return (
+                              <button
+                                key={section.category}
+                                onClick={() => loadCategoryContent(section.category)}
+                                className={`w-full rounded-lg p-2 text-left transition ${
+                                  selectedCategory === section.category
+                                    ? 'bg-orange-100 border-2 border-orange-500'
+                                    : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-sm text-orange-900">
+                                    {section.category}
+                                  </span>
+                                  {section.isComplete && (
+                                    <span className="text-green-600 text-lg">✓</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-800 mt-1">
+                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -577,10 +757,18 @@ export default function EditorPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex h-96 items-center justify-center rounded-xl bg-amber-50 shadow-xl border-2 border-orange-200">
-                <p className="text-gray-800 font-medium">
-                  Select a section from the list to begin editing
+              <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+                <h2 className="mb-4 text-2xl font-bold text-orange-900">
+                  Full Newsletter Preview
+                </h2>
+                <p className="mb-4 text-gray-700">
+                  This is a read-only preview of all published content. To edit individual sections, select a category from the left sidebar.
                 </p>
+                <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
+                    {generateFullNewsletterPreview()}
+                  </pre>
+                </div>
               </div>
             )}
           </div>

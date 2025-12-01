@@ -6,7 +6,8 @@ import {
   updateSubmissionDisposition,
   updateSectionProgress,
   exportNewsletterText,
-  getSubmissionsByCategory
+  getSubmissionsByCategory,
+  reloadData
 } from '@/lib/store';
 import { getCurrentMonthKey, EDITOR_PASSWORD } from '@/lib/constants';
 import type { SubmissionCategory, DispositionStatus } from '@/lib/types';
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Reload data from disk to ensure fresh data
+    reloadData();
+    
     const month = getCurrentMonthKey();
     const submissions = getSubmissionsByMonth(month);
     const progress = getSectionProgress(month);

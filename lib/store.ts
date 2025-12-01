@@ -66,6 +66,12 @@ function saveSectionProgress(progress: Map<string, SectionProgress[]>): void {
 let submissions: Submission[] = loadSubmissions();
 let sectionProgress: Map<string, SectionProgress[]> = loadSectionProgress();
 
+// Reload data from disk (useful for refreshing in-memory cache)
+export function reloadData(): void {
+  submissions = loadSubmissions();
+  sectionProgress = loadSectionProgress();
+}
+
 // Generate unique ID
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

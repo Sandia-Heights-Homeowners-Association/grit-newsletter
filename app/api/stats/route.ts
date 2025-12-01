@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCategoryStats, getNewsletterCompletion, getContributorNames } from '@/lib/store';
-import { getCurrentMonthKey } from '@/lib/constants';
+import { getCurrentMonthKey, getPreviousMonthKey } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
-    const month = getCurrentMonthKey();
-    const stats = getCategoryStats(month);
-    const completion = getNewsletterCompletion(month);
-    const contributors = getContributorNames(month);
+    const currentMonth = getCurrentMonthKey();
+    const previousMonth = getPreviousMonthKey();
+    
+    const currentStats = getCategoryStats(currentMonth);
+    const currentCompletion = getNewsletterCompletion(currentMonth);
+    const currentContributors = getContributorNames(currentMonth);
+    
+    const previousStats = getCategoryStats(previousMonth);
+    const previousContributors = getContributorNames(previousMonth);
 
     return NextResponse.json({ 
-      stats,
-      completion,
-      contributors,
-      month
+      currentStats,
+      currentCompletion,
+      currentContributors,
+      currentMonth,
+      previousStats,
+      previousContributors,
+      previousMonth
     });
   } catch (error) {
     console.error('Stats error:', error);

@@ -255,26 +255,26 @@ export default function Home() {
         </div>
 
         {/* Navigation to protected pages */}
-        <div className="rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 p-8 shadow-xl">
+        <div className="rounded-xl bg-gradient-to-br from-amber-900 to-red-900 p-8 shadow-xl">
           <h2 className="mb-4 text-2xl font-bold text-amber-100 text-center">
             Editor Access
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link 
               href="/editor"
-              className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-700 hover:shadow-xl"
+              className="rounded-lg bg-orange-800 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-900 hover:shadow-xl"
             >
               Editor Dashboard
             </Link>
             <Link 
               href="/routine"
-              className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-700 hover:shadow-xl"
+              className="rounded-lg bg-orange-800 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-900 hover:shadow-xl"
             >
               Routine Content
             </Link>
             <Link 
               href="/committee"
-              className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-700 hover:shadow-xl"
+              className="rounded-lg bg-orange-800 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-900 hover:shadow-xl"
             >
               Committee Content
             </Link>

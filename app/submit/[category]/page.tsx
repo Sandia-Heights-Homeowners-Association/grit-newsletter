@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -18,6 +18,43 @@ export default function SubmitPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  const createConfetti = () => {
+    const colors = ['#f97316', '#ea580c', '#dc2626', '#fb923c', '#fdba74'];
+    const confettiCount = 100;
+    
+    for (let i = 0; i < confettiCount; i++) {
+      const confetti = document.createElement('div');
+      confetti.style.position = 'fixed';
+      confetti.style.width = '10px';
+      confetti.style.height = '10px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.top = '-10px';
+      confetti.style.opacity = '1';
+      confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confetti.style.zIndex = '9999';
+      confetti.style.pointerEvents = 'none';
+      
+      document.body.appendChild(confetti);
+      
+      const fall = confetti.animate([
+        { 
+          transform: `translate(${(Math.random() - 0.5) * 200}px, 0) rotate(${Math.random() * 360}deg)`,
+          opacity: 1
+        },
+        { 
+          transform: `translate(${(Math.random() - 0.5) * 400}px, ${window.innerHeight + 10}px) rotate(${Math.random() * 720}deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: 2000 + Math.random() * 1000,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      });
+      
+      fall.onfinish = () => confetti.remove();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -34,12 +71,12 @@ export default function SubmitPage() {
 
       if (response.ok) {
         setSuccess(true);
+        createConfetti();
         setContent('');
         setPublishedName('');
         setFullName('');
         setLocation('');
         setEmail('');
-        setTimeout(() => router.push('/'), 3000);
       } else {
         setError('Failed to submit. Please try again.');
       }
@@ -52,17 +89,17 @@ export default function SubmitPage() {
 
   const getCategoryDescription = (category: string): string => {
     const descriptions: Record<string, string> = {
-      'Classifieds': 'Looking to buy, sell, trade, or offer services? Post your classified ad here. Include details like pricing, contact preferences, and any relevant specifics. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Lost & Found': 'Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'On My Mind': 'Share your thoughts, observations, or opinions about our community, local issues, or neighborhood life. Keep it respectful and constructive. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Response to Prior Content': 'Respond to articles, letters, or content from previous GRIT issues. Please reference the specific article or month you\'re responding to. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Local Event Announcement': 'Promote upcoming neighborhood events, gatherings, or community activities. Include date, time, location, and how to RSVP or get more information. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Kids\' Corner': 'Submit jokes, drawings, stories, poems, or other creative work from young residents. Parents: please submit on behalf of your child and include their age if you\'d like. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'DIY & Crafts': 'Share your favorite recipes, craft projects, gardening tips, or DIY home improvement advice. Include step-by-step instructions if applicable. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Neighbor Appreciation': 'Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
-      'Nature & Wildlife': 'Share wildlife sightings, nature photography, unusual plants, or environmental observations from around Sandia Heights. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Classifieds': 'Looking to buy, sell, trade, or offer services? Post your classified ad here. Include details like pricing, contact preferences, and any relevant specifics. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Lost & Found': 'Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'On My Mind': 'Share your thoughts, observations, or opinions about our community, local issues, or neighborhood life. Keep it respectful and constructive. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Response to Prior Content': 'Respond to articles, letters, or content from previous GRIT issues. Please reference the specific article or month you\'re responding to. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Local Event Announcement': 'Promote upcoming neighborhood events, gatherings, or community activities. Include date, time, location, and how to RSVP or get more information. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Kids\' Corner': 'Submit jokes, drawings, stories, poems, or other creative work from young residents. Parents: please submit on behalf of your child and include their age if you\'d like. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'DIY & Crafts': 'Share your favorite recipes, craft projects, gardening tips, or DIY home improvement advice. Include step-by-step instructions if applicable. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Neighbor Appreciation': 'Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
+      'Nature & Wildlife': 'Share wildlife sightings, nature photography, unusual plants, or environmental observations from around Sandia Heights. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.',
     };
-    return descriptions[category] || 'Share your contribution with the Sandia Heights community. You will not receive an email confirmation, but the editor will reach out if clarification is needed.';
+    return descriptions[category] || 'Share your contribution with the Sandia Heights community. You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submisison.';
   };
 
   return (
@@ -95,7 +132,13 @@ export default function SubmitPage() {
               <p className="text-gray-900">
                 Thank you for your contribution to The GRIT.
               </p>
-              <p className="mt-2 text-sm text-gray-700">
+              <button
+                onClick={createConfetti}
+                className="mt-4 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
+              >
+                🎉 More Confetti!
+              </button>
+              <p className="mt-4 text-sm text-gray-700">
                 Redirecting to dashboard...
               </p>
             </div>

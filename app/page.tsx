@@ -78,19 +78,70 @@ export default function Home() {
             <h3 className="mb-4 text-xl font-semibold text-red-800">
               Choose a Category
             </h3>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {COMMUNITY_CATEGORIES.map(category => (
-                <Link
-                  key={category}
-                  href={`/submit/${encodeURIComponent(category)}`}
-                  className="rounded-lg bg-gradient-to-br from-green-600 to-green-700 p-4 text-center text-white shadow-lg transition hover:from-green-700 hover:to-green-800 hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <div className="font-semibold">{category}</div>
-                  <div className="mt-1 text-sm opacity-90">
-                    {stats[category] || 0} submissions
-                  </div>
-                </Link>
-              ))}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Link
+                href="/submit/Classifieds"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Classifieds</div>
+                <div className="mt-1 text-sm text-gray-700">Buy, sell, trade, or offer help.</div>
+              </Link>
+              <Link
+                href="/submit/Lost & Found"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Lost & Found</div>
+                <div className="mt-1 text-sm text-gray-700">Report lost items or found property.</div>
+              </Link>
+              <Link
+                href="/submit/On My Mind"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">On My Mind</div>
+                <div className="mt-1 text-sm text-gray-700">Share thoughts, ideas, or opinions.</div>
+              </Link>
+              <Link
+                href="/submit/Response to Prior Content"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Response to Prior Content</div>
+                <div className="mt-1 text-sm text-gray-700">React to articles from past issues.</div>
+              </Link>
+              <Link
+                href="/submit/Local Event Announcement"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Local Event Announcement</div>
+                <div className="mt-1 text-sm text-gray-700">Promote neighborhood events and meetups.</div>
+              </Link>
+              <Link
+                href="/submit/Kids' Corner"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Kids' Corner</div>
+                <div className="mt-1 text-sm text-gray-700">Jokes, art, stories, or kid creations.</div>
+              </Link>
+              <Link
+                href="/submit/DIY & Crafts"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">DIY & Crafts</div>
+                <div className="mt-1 text-sm text-gray-700">Simple projects, recipes, or creative tips.</div>
+              </Link>
+              <Link
+                href="/submit/Neighbor Appreciation"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Neighbor Appreciation</div>
+                <div className="mt-1 text-sm text-gray-700">Thank, celebrate, or recognize a neighbor.</div>
+              </Link>
+              <Link
+                href="/submit/Nature & Wildlife"
+                className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
+              >
+                <div className="font-semibold text-red-800">Nature & Wildlife</div>
+                <div className="mt-1 text-sm text-gray-700">Animals, scenery, unusual sightings.</div>
+              </Link>
             </div>
           </div>
         </div>
@@ -185,24 +236,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* Navigation to protected pages - Moved to Bottom */}
+        {/* Navigation to protected pages */}
         <div className="rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 p-8 shadow-xl">
           <h2 className="mb-4 text-2xl font-bold text-amber-100 text-center">
-            Staff & Committee Access
+            Editor Access
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link 
-              href="/routine"
-              className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700 hover:shadow-xl"
-            >
-              Routine Content
-            </Link>
-            <Link 
-              href="/committee"
-              className="rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-green-800 hover:shadow-xl"
-            >
-              Committee Content
-            </Link>
             <Link 
               href="/editor"
               className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-700 hover:shadow-xl"

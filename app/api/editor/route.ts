@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
     const submissions = getSubmissionsByMonth(month);
     const progress = getSectionProgress(month);
 
+    console.log('Editor GET:', { month, submissions: submissions.length, progress: progress.length });
+
     return NextResponse.json({ 
       submissions,
       progress,

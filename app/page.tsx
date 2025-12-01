@@ -30,45 +30,38 @@ export default function Home() {
         <div className="mb-12 text-center">
           {/* Logo */}
           <div className="mb-6 flex justify-center">
-            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-                <Image 
-                  src="/logo.png" 
-                  alt="The GRIT Logo" 
-                  width={400} 
-                  height={100}
-                  className="object-contain"
-                />
-              </div>
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="The GRIT Logo" 
+              width={480} 
+              height={120}
+              className="object-contain"
+            />
           </div>
           
-          <h1 className="mb-3 text-6xl font-bold text-orange-900">{APP_NAME}</h1>
-          <p className="mb-2 text-2xl font-medium text-red-800">{APP_SUBTITLE}</p>
+          <p className="mb-2 text-2xl font-medium text-red-800">{APP_NAME}: {APP_SUBTITLE}</p>
           <p className="text-lg font-medium text-orange-800">
             Sandia Heights Homeowners Association Newsletter
           </p>
           <p className="mt-2 text-base italic text-orange-700">
-            Serving our community since 1979
+            Serving our community since the 1970s
           </p>
         </div>
 
-        {/* Submission Guidelines - Moved Up */}
+        {/* Submission Guidelines */}
         <div className="mb-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 p-8 shadow-xl border-2 border-orange-300">
           <h2 className="mb-4 text-2xl font-bold text-orange-900">
-            Submission Guidelines
+            Submit content for the SHHA GRIT Newsletter!
           </h2>
           <div className="space-y-3 text-gray-900">
             <p>
-              <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
+              <strong className="text-orange-900">The deadline is the 10th of the month:</strong> All content for the {month} issue must be 
               submitted by <strong className="text-red-700">{deadline}</strong>.
             </p>
             <p>
               By submitting content to The GRIT, you grant the Sandia Heights 
               Homeowners Association the right to publish, edit, and distribute 
               your submission in the newsletter and related communications.
-            </p>
-            <p>
               All submissions are subject to editorial review and may be edited 
               for length, clarity, and appropriateness. The editors reserve the 
               right to decline any submission.
@@ -96,7 +89,7 @@ export default function Home() {
                 <Link
                   key={category}
                   href={`/submit/${encodeURIComponent(category)}`}
-                  className="rounded-lg bg-gradient-to-br from-orange-600 to-red-600 p-4 text-center text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl transform hover:-translate-y-1"
+                  className="rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 p-4 text-center text-white shadow-lg transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl transform hover:-translate-y-1"
                 >
                   <div className="font-semibold">{category}</div>
                   <div className="mt-1 text-sm opacity-90">

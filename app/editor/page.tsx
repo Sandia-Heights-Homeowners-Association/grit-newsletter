@@ -17,6 +17,7 @@ export default function EditorPage() {
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showJsonViewer, setShowJsonViewer] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState('');
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +43,14 @@ export default function EditorPage() {
         const data = await response.json();
         setSubmissions(data.submissions || []);
         setProgress(data.progress || []);
+        setCurrentMonth(data.month || '');
+        console.log('Editor data loaded:', { 
+          submissions: data.submissions?.length || 0, 
+          progress: data.progress?.length || 0,
+          month: data.month 
+        });
+      } else {
+        console.error('Failed to load editor data:', response.status, response.statusText);
       }
     } catch (err) {
       console.error('Failed to load editor data:', err);
@@ -282,17 +291,13 @@ export default function EditorPage() {
       <main className="mx-auto max-w-7xl px-4 py-12">
         {/* Logo Header */}
         <div className="mb-8 flex justify-center">
-          <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-            <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-              <Image 
-                src="/logo.png" 
-                alt="The GRIT Logo" 
-                width={400} 
-                height={100}
-                className="object-contain"
-              />
-            </div>
-          </div>
+          <Image 
+            src="/logo.png" 
+            alt="The GRIT Logo" 
+            width={480} 
+            height={120}
+            className="object-contain"
+          />
         </div>
         
         <div className="mb-6 flex items-center justify-between">
@@ -308,7 +313,7 @@ export default function EditorPage() {
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
             >
-              {showJsonViewer ? 'Hide JSON' : 'View JSON'}
+              {showJsonViewer ? 'Hide Data' : 'View Data'}
             </button>
             <button
               onClick={createBackup}
@@ -337,23 +342,73 @@ export default function EditorPage() {
         <h1 className="mb-8 text-4xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
+        
+        {currentMonth && (
+          <div className="mb-6 rounded-lg bg-amber-100 border-2 border-orange-300 p-4">
+            <p className="text-gray-900">
+              <span className="font-semibold">Editing month:</span> {currentMonth} | 
+              <span className="font-semibold ml-4">Submissions:</span> {submissions.length} | 
+              <span className="font-semibold ml-4">Sections:</span> {progress.length}
+            </p>
+          </div>
+        )}
 
-        {/* JSON Viewer */}
+        {/* Data Viewer */}
         {showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-            <h2 className="mb-4 text-2xl font-bold text-orange-900">JSON Data Viewer</h2>
+            <h2 className="mb-4 text-2xl font-bold text-orange-900">Data Viewer</h2>
             <div className="grid gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
-                <pre className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 text-xs border border-gray-300">
-                  {JSON.stringify(submissions, null, 2)}
-                </pre>
+                <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
+                <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-3">
+                  {submissions.length === 0 ? (
+                    <p className="text-gray-800">No submissions yet</p>
+                  ) : (
+                    submissions.map((sub) => (
+                      <div key={sub.id} className="rounded-lg bg-white p-3 border border-orange-200">
+                        <div className="mb-2">
+                          <span className="font-semibold text-orange-900">{sub.category}</span>
+                          <span className={`ml-2 inline-block rounded px-2 py-1 text-xs font-semibold ${
+                            sub.disposition === 'published' ? 'bg-green-100 text-green-800' :
+                            sub.disposition === 'backlogged' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>{sub.disposition}</span>
+                        </div>
+                        <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
+                        <div className="mt-2 text-xs text-gray-600">
+                          ID: {sub.id} | {new Date(sub.submittedAt).toLocaleDateString()}
+                          {sub.publishedName && ` | By: ${sub.publishedName}`}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-red-800">Section Progress ({progress.length})</h3>
-                <pre className="max-h-96 overflow-auto rounded-lg bg-gray-50 p-4 text-xs border border-gray-300">
-                  {JSON.stringify(progress, null, 2)}
-                </pre>
+                <h3 className="mb-3 text-lg font-semibold text-red-800">Section Progress ({progress.length})</h3>
+                <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-2">
+                  {progress.length === 0 ? (
+                    <p className="text-gray-800">No sections initialized</p>
+                  ) : (
+                    progress.map((section) => (
+                      <div key={section.category} className="rounded-lg bg-white p-3 border border-orange-200">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-orange-900">{section.category}</span>
+                          {section.isComplete ? (
+                            <span className="text-green-600 text-xl">✓</span>
+                          ) : (
+                            <span className="text-gray-400 text-xl">○</span>
+                          )}
+                        </div>
+                        {section.editedContent && (
+                          <div className="mt-2 text-xs text-gray-600">
+                            Has edited content ({section.editedContent.length} chars)
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -362,13 +417,13 @@ export default function EditorPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Sections List */}
           <div className="lg:col-span-1">
-            <div className="rounded-lg bg-white p-6 shadow-lg">
-              <h2 className="mb-4 text-2xl font-bold text-gray-800">
+            <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+              <h2 className="mb-4 text-2xl font-bold text-orange-900">
                 Sections
               </h2>
               
               {loading ? (
-                <p className="text-gray-500">Loading...</p>
+                <p className="text-gray-800">Loading...</p>
               ) : (
                 <div className="space-y-2">
                   {progress.map((section) => {
@@ -385,19 +440,19 @@ export default function EditorPage() {
                         onClick={() => loadCategoryContent(section.category)}
                         className={`w-full rounded-lg p-3 text-left transition ${
                           selectedCategory === section.category
-                            ? 'bg-red-100 border-2 border-red-500'
-                            : 'bg-gray-50 hover:bg-gray-100'
+                            ? 'bg-orange-100 border-2 border-orange-500'
+                            : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sm">
+                          <span className="font-semibold text-sm text-orange-900">
                             {section.category}
                           </span>
                           {section.isComplete && (
                             <span className="text-green-600 text-xl">✓</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-gray-800 mt-1">
                           {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
                         </div>
                       </button>
@@ -411,14 +466,14 @@ export default function EditorPage() {
           {/* Content Editor */}
           <div className="lg:col-span-2">
             {selectedCategory ? (
-              <div className="rounded-lg bg-white p-6 shadow-lg">
-                <h2 className="mb-4 text-2xl font-bold text-gray-800">
+              <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+                <h2 className="mb-4 text-2xl font-bold text-orange-900">
                   {selectedCategory}
                 </h2>
 
                 {/* Individual Submissions */}
                 <div className="mb-6">
-                  <h3 className="mb-3 font-semibold text-gray-700">
+                  <h3 className="mb-3 font-semibold text-red-800">
                     Individual Submissions
                   </h3>
                   <div className="max-h-60 space-y-2 overflow-y-auto">
@@ -427,9 +482,9 @@ export default function EditorPage() {
                       .map(sub => (
                         <div
                           key={sub.id}
-                          className="rounded border border-gray-200 bg-gray-50 p-3"
+                          className="rounded border-2 border-orange-200 bg-amber-50 p-3"
                         >
-                          <div className="mb-2 text-sm text-gray-700 line-clamp-2">
+                          <div className="mb-2 text-sm text-gray-800 line-clamp-2">
                             {sub.content}
                           </div>
                           <div className="flex gap-2">
@@ -438,7 +493,7 @@ export default function EditorPage() {
                               className={`rounded px-3 py-1 text-xs font-semibold ${
                                 sub.disposition === 'published'
                                   ? 'bg-green-600 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-green-100'
+                                  : 'bg-orange-100 text-orange-800 hover:bg-green-100 border border-orange-300'
                               }`}
                             >
                               Published
@@ -448,7 +503,7 @@ export default function EditorPage() {
                               className={`rounded px-3 py-1 text-xs font-semibold ${
                                 sub.disposition === 'backlogged'
                                   ? 'bg-yellow-600 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-yellow-100'
+                                  : 'bg-orange-100 text-orange-800 hover:bg-yellow-100 border border-orange-300'
                               }`}
                             >
                               Backlog
@@ -457,8 +512,8 @@ export default function EditorPage() {
                               onClick={() => updateDisposition(sub.id, 'archived')}
                               className={`rounded px-3 py-1 text-xs font-semibold ${
                                 sub.disposition === 'archived'
-                                  ? 'bg-gray-600 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-orange-100 text-orange-800 hover:bg-red-100 border border-orange-300'
                               }`}
                             >
                               Archive
@@ -472,8 +527,8 @@ export default function EditorPage() {
                 {/* Backlog */}
                 {backlog.length > 0 && (
                   <div className="mb-6">
-                    <details className="rounded border border-gray-300 p-3">
-                      <summary className="cursor-pointer font-semibold text-gray-700">
+                    <details className="rounded border-2 border-orange-200 bg-amber-50 p-3">
+                      <summary className="cursor-pointer font-semibold text-orange-900">
                         Backlog from Previous Months ({backlog.length})
                       </summary>
                       <div className="mt-3 space-y-2">
@@ -493,7 +548,7 @@ export default function EditorPage() {
 
                 {/* Concatenated Editor */}
                 <div className="mb-6">
-                  <h3 className="mb-3 font-semibold text-gray-700">
+                  <h3 className="mb-3 font-semibold text-red-800">
                     Edit Combined Section
                   </h3>
                   <textarea
@@ -522,8 +577,8 @@ export default function EditorPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex h-96 items-center justify-center rounded-lg bg-white shadow-lg">
-                <p className="text-gray-500">
+              <div className="flex h-96 items-center justify-center rounded-xl bg-amber-50 shadow-xl border-2 border-orange-200">
+                <p className="text-gray-800 font-medium">
                   Select a section from the list to begin editing
                 </p>
               </div>

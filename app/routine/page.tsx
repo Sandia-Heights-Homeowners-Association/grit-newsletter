@@ -130,17 +130,13 @@ export default function RoutinePage() {
       <main className="mx-auto max-w-3xl px-4 py-12">
         {/* Logo Header */}
         <div className="mb-8 flex justify-center">
-          <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-            <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-              <Image 
-                src="/logo.png" 
-                alt="The GRIT Logo" 
-                width={400} 
-                height={100}
-                className="object-contain"
-              />
-            </div>
-          </div>
+          <Image 
+            src="/logo.png" 
+            alt="The GRIT Logo" 
+            width={480} 
+            height={120}
+            className="object-contain"
+          />
         </div>
         
         <Link 
@@ -205,7 +201,7 @@ export default function RoutinePage() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as typeof ROUTINE_CATEGORIES[number])}
-                className="w-full rounded-lg border-2 border-orange-200 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
               >
                 {ROUTINE_CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>

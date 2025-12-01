@@ -86,10 +86,6 @@ export default function Home() {
                 and we want to hear from you. Share your stories, announcements, photos, ideas, and more.
               </p>
               <p>
-                Whether you've spotted interesting wildlife, have a recipe to share, want to announce an event, 
-                or simply have something on your mind about our community—we'd love to include it in the newsletter.
-              </p>
-              <p>
                 <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
                 submitted by <strong className="text-red-700">{deadline}</strong>. Click any category below to submit your contribution.
               </p>

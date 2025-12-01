@@ -50,6 +50,21 @@ export default function SubmitPage() {
     }
   };
 
+  const getCategoryDescription = (category: string): string => {
+    const descriptions: Record<string, string> = {
+      'Classifieds': 'Looking to buy, sell, trade, or offer services? Post your classified ad here. Include details like pricing, contact preferences, and any relevant specifics. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Lost & Found': 'Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'On My Mind': 'Share your thoughts, observations, or opinions about our community, local issues, or neighborhood life. Keep it respectful and constructive. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Response to Prior Content': 'Respond to articles, letters, or content from previous GRIT issues. Please reference the specific article or month you\'re responding to. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Local Event Announcement': 'Promote upcoming neighborhood events, gatherings, or community activities. Include date, time, location, and how to RSVP or get more information. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Kids\' Corner': 'Submit jokes, drawings, stories, poems, or other creative work from young residents. Parents: please submit on behalf of your child and include their age if you\'d like. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'DIY & Crafts': 'Share your favorite recipes, craft projects, gardening tips, or DIY home improvement advice. Include step-by-step instructions if applicable. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Neighbor Appreciation': 'Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+      'Nature & Wildlife': 'Share wildlife sightings, nature photography, unusual plants, or environmental observations from around Sandia Heights. You will not receive an email confirmation, but the editor will reach out if clarification is needed.',
+    };
+    return descriptions[category] || 'Share your contribution with the Sandia Heights community. You will not receive an email confirmation, but the editor will reach out if clarification is needed.';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
@@ -65,10 +80,9 @@ export default function SubmitPage() {
             Submit: {category}
           </h1>
           
-          <div className="mb-6 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 p-4 border-2 border-orange-200">
-            <p className="text-gray-900 font-medium">
-              Share your stories, announcements, and contributions with the Sandia Heights community. 
-              Your submission will be reviewed by our editors and may be included in the next issue of The GRIT.
+          <div className="mb-6">
+            <p className="text-gray-800 leading-relaxed">
+              {getCategoryDescription(category)}
             </p>
           </div>
 
@@ -103,7 +117,7 @@ export default function SubmitPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Your Full Name *
+                  Your Full Name (will not be published) *
                 </label>
                 <input
                   type="text"
@@ -117,7 +131,7 @@ export default function SubmitPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Your Street, Cross Streets, or Unit Number *
+                  Your Street, Cross Streets, or Unit Number (will not be published) *
                 </label>
                 <input
                   type="text"
@@ -131,7 +145,7 @@ export default function SubmitPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Your Email Address *
+                  Your Email Address (will not be published) *
                 </label>
                 <input
                   type="email"
@@ -141,7 +155,6 @@ export default function SubmitPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="your.email@example.com"
                 />
-                <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
               </div>
 
               <div className="mb-6">

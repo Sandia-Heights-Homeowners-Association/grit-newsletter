@@ -138,9 +138,12 @@ export default function SubmitPage() {
               >
                 🎉 More Confetti!
               </button>
-              <p className="mt-4 text-sm text-gray-700">
-                Redirecting to dashboard...
-              </p>
+              <Link 
+                href="/"
+                className="mt-4 block text-orange-700 hover:text-orange-900 font-medium"
+              >
+                ← Back to Dashboard
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>

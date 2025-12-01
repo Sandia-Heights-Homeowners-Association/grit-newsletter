@@ -48,48 +48,42 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Submission Guidelines */}
-        <div className="mb-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 p-8 shadow-xl border-2 border-orange-300">
-          <h2 className="mb-4 text-2xl font-bold text-orange-900">
-            Submit content for the SHHA GRIT Newsletter!
-          </h2>
-          <div className="space-y-3 text-gray-900">
-            <p>
-              <strong className="text-orange-900">The deadline is the 10th of the month:</strong> All content for the {month} issue must be 
-              submitted by <strong className="text-red-700">{deadline}</strong>.
-            </p>
-            <p>
-              By submitting content to The GRIT, you grant the Sandia Heights 
-              Homeowners Association the right to publish, edit, and distribute 
-              your submission in the newsletter and related communications.
-              All submissions are subject to editorial review and may be edited 
-              for length, clarity, and appropriateness. The editors reserve the 
-              right to decline any submission.
-            </p>
-            <p>
-              Please keep submissions concise and relevant to the Sandia Heights 
-              community. Include your name and contact information with all submissions.
-            </p>
-          </div>
-        </div>
-
-        {/* Submission Categories */}
+        {/* Call to Action - Community Contributions */}
         <div className="mb-12">
-          <h2 className="mb-6 text-3xl font-bold text-orange-900">
-            Submit Your Content
-          </h2>
+          <div className="mb-8">
+            <h2 className="mb-4 text-3xl font-bold text-orange-900">
+              Now Collecting Contributions for the {month} Issue
+            </h2>
+            <div className="space-y-4 text-gray-900">
+              <p className="text-lg">
+                <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
+                and we want to hear from you. Share your stories, announcements, photos, ideas, and more.
+              </p>
+              <p>
+                Whether you've spotted interesting wildlife, have a recipe to share, want to announce an event, 
+                or simply have something on your mind about our community—we'd love to include it in the newsletter.
+              </p>
+              <p>
+                <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
+                submitted by <strong className="text-red-700">{deadline}</strong>. Click any category below to submit your contribution.
+              </p>
+              <p className="text-sm">
+                By submitting, you agree to our <a href="#terms" className="text-green-700 hover:text-green-800 underline font-medium">submission terms</a>.
+              </p>
+            </div>
+          </div>
           
           {/* Community Contributions */}
-          <div className="mb-8">
+          <div>
             <h3 className="mb-4 text-xl font-semibold text-red-800">
-              Community Contributions
+              Choose a Category
             </h3>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {COMMUNITY_CATEGORIES.map(category => (
                 <Link
                   key={category}
                   href={`/submit/${encodeURIComponent(category)}`}
-                  className="rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 p-4 text-center text-white shadow-lg transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl transform hover:-translate-y-1"
+                  className="rounded-lg bg-gradient-to-br from-green-600 to-green-700 p-4 text-center text-white shadow-lg transition hover:from-green-700 hover:to-green-800 hover:shadow-xl transform hover:-translate-y-1"
                 >
                   <div className="font-semibold">{category}</div>
                   <div className="mt-1 text-sm opacity-90">
@@ -100,8 +94,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Submission Stats Summary */}
         <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
           <h2 className="mb-6 text-2xl font-bold text-orange-900">
             Submission Summary
@@ -194,26 +186,26 @@ export default function Home() {
         </div>
 
         {/* Navigation to protected pages - Moved to Bottom */}
-        <div className="rounded-xl bg-gradient-to-br from-orange-900 to-red-900 p-8 shadow-xl">
+        <div className="rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 p-8 shadow-xl">
           <h2 className="mb-4 text-2xl font-bold text-amber-100 text-center">
             Staff & Committee Access
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link 
               href="/routine"
-              className="rounded-lg bg-amber-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-700 hover:shadow-xl"
+              className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700 hover:shadow-xl"
             >
               Routine Content
             </Link>
             <Link 
               href="/committee"
-              className="rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-700 hover:shadow-xl"
+              className="rounded-lg bg-green-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-green-800 hover:shadow-xl"
             >
               Committee Content
             </Link>
             <Link 
               href="/editor"
-              className="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-red-700 hover:shadow-xl"
+              className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-700 hover:shadow-xl"
             >
               Editor Dashboard
             </Link>
@@ -221,6 +213,25 @@ export default function Home() {
           <p className="mt-4 text-center text-sm text-amber-200">
             Password required • For authorized users only
           </p>
+        </div>
+
+        {/* Submission Terms - Plain text at bottom */}
+        <div id="terms" className="mt-12 rounded-lg bg-gray-50 p-6 border border-gray-300">
+          <h3 className="mb-3 text-lg font-semibold text-gray-900">Submission Terms & Conditions</h3>
+          <div className="space-y-2 text-sm text-gray-800">
+            <p>
+              By submitting content to The GRIT, you grant the Sandia Heights Homeowners Association 
+              the right to publish, edit, and distribute your submission in the newsletter and related communications.
+            </p>
+            <p>
+              All submissions are subject to editorial review and may be edited for length, clarity, and appropriateness. 
+              The editors reserve the right to decline any submission.
+            </p>
+            <p>
+              Please keep submissions concise and relevant to the Sandia Heights community. 
+              Include your name and contact information with all submissions.
+            </p>
+          </div>
         </div>
       </main>
     </div>

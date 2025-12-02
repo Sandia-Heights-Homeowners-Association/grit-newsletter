@@ -66,16 +66,19 @@ export default function CommitteePage() {
         body: JSON.stringify({ category, content: fullContent, publishedName: authorName }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setSuccess(true);
         setContent('');
         setAuthorName('');
         setEmail('');
         createConfetti();
       } else {
-        setError('Failed to submit. Please try again.');
+        setError(data.details || data.error || 'Failed to submit. Please try again.');
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Submit error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setSubmitting(false);
@@ -241,14 +244,14 @@ export default function CommitteePage() {
             </div>
 
             {success && (
-              <div className="mb-6 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 p-8 text-center shadow-2xl border-4 border-green-600">
-                <div className="text-5xl mb-4">🎉</div>
-                <h2 className="text-3xl font-bold text-white mb-2">Success!</h2>
-                <p className="text-xl text-white font-semibold">Your committee report has been submitted!</p>
+              <div className="mb-4 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 p-6 text-center shadow-xl border-2 border-green-600">
+                <div className="text-3xl mb-2">🎉</div>
+                <h3 className="text-xl font-bold text-white mb-1">Success!</h3>
+                <p className="text-sm text-white font-semibold mb-3">Your committee report has been submitted!</p>
                 <button
                   type="button"
                   onClick={createConfetti}
-                  className="mt-4 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50 hover:shadow-xl"
+                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
                 >
                   🎉 More Confetti
                 </button>

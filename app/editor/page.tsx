@@ -55,12 +55,11 @@ export default function EditorPage() {
     const emptySections: string[] = [];
     
     // Helper to add section content
-    const addSection = (category: SubmissionCategory, isH2: boolean = false) => {
+    const addSection = (category: SubmissionCategory, heading: string) => {
       const section = progress.find(p => p.category === category);
       const categorySubs = submissions.filter(s => s.category === category && s.disposition === 'published');
       
       if (categorySubs.length > 0 || section?.editedContent) {
-        const heading = isH2 ? `#### ${category}` : `## ${category}`;
         sections.push(`\n${heading}\n`);
         
         if (section?.editedContent) {
@@ -74,20 +73,37 @@ export default function EditorPage() {
       }
     };
 
-    // Order: President, Board, Office, Community (all H2), ACC, CSC, Security, Committee (all H2)
-    addSection('President\'s Note');
-    addSection('Board Notes');
-    addSection('Office Notes');
+    // Message from the President
+    addSection('President\'s Note', '## Message from the President');
     
-    // Community Contributions as H2
-    COMMUNITY_CATEGORIES.forEach(cat => addSection(cat, true));
+    // Board Notes
+    addSection('Board Notes', '## Board Notes');
     
-    addSection('ACC Activity Log');
-    addSection('CSC Table');
-    addSection('Security Report');
+    // Office Notes
+    addSection('Office Notes', '## Office Notes');
     
-    // Committee Contributions as H2
-    COMMITTEE_CATEGORIES.forEach(cat => addSection(cat, true));
+    // Community Contributions header
+    const communityHasContent = COMMUNITY_CATEGORIES.some(cat => {
+      const section = progress.find(p => p.category === cat);
+      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === 'published');
+      return categorySubs.length > 0 || section?.editedContent;
+    });
+    
+    if (communityHasContent) {
+      sections.push('\n## Community Contributions\n');
+    }
+    
+    // Community categories as H4
+    COMMUNITY_CATEGORIES.forEach(cat => addSection(cat, `#### ${cat}`));
+    
+    // ACC Logs
+    addSection('ACC Activity Log', '## ACC Logs');
+    
+    // CSC Logs
+    addSection('CSC Table', '## CSC Logs');
+    
+    // Security Logs
+    addSection('Security Report', '## Security Logs');
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 
@@ -95,7 +111,7 @@ export default function EditorPage() {
 
     // Add empty sections notice at the end
     if (emptySections.length > 0) {
-      result += `\n\n${'='.repeat(60)}\nEMPTY SECTIONS\n${'='.repeat(60)}\n\n`;
+      result += `\n\n## List of Empty Sections\n\n`;
       result += `The following sections had no submissions this month:\n\n`;
       result += emptySections.map(s => `  • ${s}`).join('\n');
       result += `\n\nWe welcome your contributions! Please visit sandiahomeowners.org to submit content for next month's issue.`;

@@ -35,7 +35,7 @@ export default function RoutinePage() {
     setError('');
 
     try {
-      const fullContent = `Author: ${authorName}\nEmail: ${email}\n\n${content}`;
+      const fullContent = `Author: ${authorName}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -47,7 +47,6 @@ export default function RoutinePage() {
         setSuccess(true);
         setContent('');
         setAuthorName('');
-        setEmail('');
         setTimeout(() => {
           setSuccess(false);
         }, 3000);
@@ -67,13 +66,13 @@ export default function RoutinePage() {
         <main className="mx-auto max-w-md px-4 py-20">
           {/* Logo Header */}
           <div className="mb-8 flex justify-center">
-            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-                <div className="text-3xl font-bold text-orange-700">
-                  THE GRIT LOGO
-                </div>
-              </div>
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="The GRIT Logo" 
+              width={480} 
+              height={120}
+              className="object-contain"
+            />
           </div>
           
           <Link 
@@ -167,7 +166,7 @@ export default function RoutinePage() {
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label className="mb-2 block font-semibold text-orange-900">
-                Author Name *
+                Submitter Name (will not be published) *
               </label>
               <input
                 type="text"
@@ -177,21 +176,6 @@ export default function RoutinePage() {
                 className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                 placeholder="Your name"
               />
-            </div>
-
-            <div className="mb-6">
-              <label className="mb-2 block font-semibold text-orange-900">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
-                placeholder="your.email@example.com"
-              />
-              <p className="mt-1 text-sm text-gray-800">For follow-up questions only. Will not be published.</p>
             </div>
 
             <div className="mb-6">

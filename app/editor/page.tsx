@@ -311,13 +311,13 @@ export default function EditorPage() {
         <main className="mx-auto max-w-md px-4 py-20">
           {/* Logo Header */}
           <div className="mb-8 flex justify-center">
-            <div className="relative rounded-lg bg-gradient-to-br from-orange-200 to-red-300 p-1 shadow-lg">
-              <div className="flex items-center justify-center rounded-lg bg-white px-8 py-4">
-                <div className="text-3xl font-bold text-orange-700">
-                  THE GRIT LOGO
-                </div>
-              </div>
-            </div>
+            <Image 
+              src="/logo.png" 
+              alt="The GRIT Logo" 
+              width={480} 
+              height={120}
+              className="object-contain"
+            />
           </div>
           
           <Link 

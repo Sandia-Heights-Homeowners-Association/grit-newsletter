@@ -61,14 +61,25 @@ async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
 async function saveSubmissions(submissions: Submission[]): Promise<void> {
   try {
     console.log('Saving submissions to blob. Count:', submissions.length);
+    
+    // Check if blob token is available
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('BLOB_READ_WRITE_TOKEN is not set!');
+      throw new Error('Blob storage not configured');
+    }
+    
     const jsonData = JSON.stringify(submissions, null, 2);
-    await put(SUBMISSIONS_BLOB, jsonData, {
+    console.log('JSON data size:', jsonData.length, 'bytes');
+    
+    const result = await put(SUBMISSIONS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
     });
-    console.log('Successfully saved submissions to blob');
-  } catch (error) {
+    
+    console.log('Successfully saved submissions to blob:', result.url);
+  } catch (error: any) {
     console.error('Error saving submissions to blob:', error);
+    console.error('Error message:', error.message);
     throw error; // Re-throw to alert calling code
   }
 }
@@ -123,6 +134,8 @@ export async function addSubmission(
 ): Promise<Submission> {
   await ensureInitialized();
   
+  console.log('Adding submission:', { category, contentLength: content.length, publishedName });
+  
   const submission: Submission = {
     id: generateId(),
     category,
@@ -134,7 +147,18 @@ export async function addSubmission(
   };
   
   submissions.push(submission);
-  await saveSubmissions(submissions);
+  console.log('Submission added to array. Total submissions:', submissions.length);
+  
+  try {
+    await saveSubmissions(submissions);
+    console.log('Submission saved successfully');
+  } catch (error) {
+    // Remove the submission if save failed
+    submissions.pop();
+    console.error('Failed to save submission, rolled back');
+    throw error;
+  }
+  
   return submission;
 }
 

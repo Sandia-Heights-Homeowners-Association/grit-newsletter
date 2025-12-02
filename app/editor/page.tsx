@@ -31,8 +31,32 @@ export default function EditorPage() {
     setExpandedGroups(newExpanded);
   };
 
+  // Helper function to extract just the content and published name
+  const extractContent = (rawContent: string, publishedName?: string): string => {
+    // Find the actual content after the metadata lines
+    const lines = rawContent.split('\n');
+    let contentStart = 0;
+    
+    // Skip metadata lines (Published Name, Full Name, Email, Location, Author)
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim() === '' && i > 0) {
+        contentStart = i + 1;
+        break;
+      }
+    }
+    
+    const actualContent = lines.slice(contentStart).join('\n').trim();
+    
+    // Return content with published name if available
+    if (publishedName) {
+      return `${actualContent}\n—${publishedName}`;
+    }
+    return actualContent;
+  };
+
   const generateFullNewsletterPreview = (): string => {
     const sections: string[] = [];
+    const emptySections: string[] = [];
     
     // Group categories by type
     const categoryGroups = [
@@ -52,16 +76,28 @@ export default function EditorPage() {
           if (section?.editedContent) {
             sections.push(section.editedContent);
           } else {
-            const content = categorySubs.map(s => s.content).join('\n\n---\n\n');
-            sections.push(content);
+            const formattedSubs = categorySubs.map(s => extractContent(s.content, s.publishedName));
+            sections.push(formattedSubs.join('\n\n---\n\n'));
           }
+        } else {
+          emptySections.push(category);
         }
       });
     });
 
-    return sections.length > 0 
+    let result = sections.length > 0 
       ? sections.join('\n\n') 
-      : 'No published content yet. Submissions will appear here once marked as published.';
+      : '';
+
+    // Add empty sections notice at the end
+    if (emptySections.length > 0) {
+      result += `\n\n${'='.repeat(60)}\nEMPTY SECTIONS\n${'='.repeat(60)}\n\n`;
+      result += `The following sections had no submissions this month:\n\n`;
+      result += emptySections.map(s => `  • ${s}`).join('\n');
+      result += `\n\nWe welcome your contributions! Please visit sandiahomeowners.org to submit content for next month's issue.`;
+    }
+
+    return result || 'No published content yet. Submissions will appear here once marked as published.';
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -130,8 +166,10 @@ export default function EditorPage() {
     const categorySubs = submissions.filter(s => s.category === category);
     const published = categorySubs.filter(s => s.disposition === 'published');
     
-    // Concatenate published submissions
-    const concatenated = published.map(s => s.content).join('\n\n---\n\n');
+    // Concatenate published submissions using clean formatting
+    const concatenated = published
+      .map(s => extractContent(s.content))
+      .join('\n\n---\n\n');
     
     // Check if there's already edited content
     const section = progress.find(p => p.category === category);

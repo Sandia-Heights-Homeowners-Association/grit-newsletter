@@ -1,85 +1,57 @@
-import fs from 'fs';
-import path from 'path';
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const BACKUP_DIR = path.join(DATA_DIR, 'backups');
-const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
-const PROGRESS_FILE = path.join(DATA_DIR, 'section-progress.json');
-
-// Ensure backup directory exists
-if (!fs.existsSync(BACKUP_DIR)) {
-  fs.mkdirSync(BACKUP_DIR, { recursive: true });
-}
+import { put, list } from '@vercel/blob';
+import { getAllSubmissions, getAllSectionProgress } from './store';
 
 /**
- * Create a timestamped backup of all data files
+ * Create a timestamped backup in Vercel Blob
  */
-export function createBackup(): string {
+export async function createBackup(): Promise<string> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupSubDir = path.join(BACKUP_DIR, timestamp);
+  const backupPrefix = `backups/${timestamp}/`;
   
-  fs.mkdirSync(backupSubDir, { recursive: true });
-  
-  // Copy submissions
-  if (fs.existsSync(SUBMISSIONS_FILE)) {
-    fs.copyFileSync(
-      SUBMISSIONS_FILE,
-      path.join(backupSubDir, 'submissions.json')
-    );
+  try {
+    const submissions = getAllSubmissions();
+    const sectionProgress = getAllSectionProgress();
+    
+    // Save submissions backup
+    await put(`${backupPrefix}submissions.json`, JSON.stringify(submissions, null, 2), {
+      access: 'public',
+      contentType: 'application/json',
+    });
+    
+    // Save progress backup
+    const progressObj = Object.fromEntries(sectionProgress);
+    await put(`${backupPrefix}section-progress.json`, JSON.stringify(progressObj, null, 2), {
+      access: 'public',
+      contentType: 'application/json',
+    });
+    
+    return backupPrefix;
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    throw error;
   }
-  
-  // Copy progress
-  if (fs.existsSync(PROGRESS_FILE)) {
-    fs.copyFileSync(
-      PROGRESS_FILE,
-      path.join(backupSubDir, 'section-progress.json')
-    );
-  }
-  
-  return backupSubDir;
 }
 
 /**
  * List all available backups
  */
-export function listBackups(): string[] {
-  if (!fs.existsSync(BACKUP_DIR)) {
-    return [];
-  }
-  
-  return fs.readdirSync(BACKUP_DIR)
-    .filter(name => fs.statSync(path.join(BACKUP_DIR, name)).isDirectory())
-    .sort()
-    .reverse();
-}
-
-/**
- * Restore from a specific backup
- */
-export function restoreBackup(backupName: string): boolean {
-  const backupPath = path.join(BACKUP_DIR, backupName);
-  
-  if (!fs.existsSync(backupPath)) {
-    return false;
-  }
-  
+export async function listBackups(): Promise<string[]> {
   try {
-    // Restore submissions
-    const backupSubmissions = path.join(backupPath, 'submissions.json');
-    if (fs.existsSync(backupSubmissions)) {
-      fs.copyFileSync(backupSubmissions, SUBMISSIONS_FILE);
-    }
+    const { blobs } = await list({ prefix: 'backups/' });
     
-    // Restore progress
-    const backupProgress = path.join(backupPath, 'section-progress.json');
-    if (fs.existsSync(backupProgress)) {
-      fs.copyFileSync(backupProgress, PROGRESS_FILE);
-    }
+    // Extract unique backup timestamps
+    const backupDirs = new Set<string>();
+    blobs.forEach(blob => {
+      const match = blob.pathname.match(/^backups\/([^/]+)\//);
+      if (match) {
+        backupDirs.add(match[1]);
+      }
+    });
     
-    return true;
+    return Array.from(backupDirs).sort().reverse();
   } catch (error) {
-    console.error('Error restoring backup:', error);
-    return false;
+    console.error('Error listing backups:', error);
+    return [];
   }
 }
 
@@ -87,39 +59,27 @@ export function restoreBackup(backupName: string): boolean {
  * Export all data as a single downloadable JSON file
  */
 export function exportAllData(): any {
-  const data: any = {
+  const submissions = getAllSubmissions();
+  const sectionProgress = getAllSectionProgress();
+  
+  return {
     exportedAt: new Date().toISOString(),
-    submissions: [],
-    sectionProgress: {},
+    submissions,
+    sectionProgress: Object.fromEntries(sectionProgress),
   };
-  
-  if (fs.existsSync(SUBMISSIONS_FILE)) {
-    data.submissions = JSON.parse(fs.readFileSync(SUBMISSIONS_FILE, 'utf-8'));
-  }
-  
-  if (fs.existsSync(PROGRESS_FILE)) {
-    data.sectionProgress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
-  }
-  
-  return data;
 }
 
 /**
- * Import data from a previously exported file
+ * Note: Restore and import functions would require updating the main blob files
+ * For simplicity, these are not implemented in the blob version
+ * You can manually re-upload data via the Vercel dashboard if needed
  */
+export function restoreBackup(backupName: string): boolean {
+  console.warn('Restore functionality not implemented for Vercel Blob storage');
+  return false;
+}
+
 export function importAllData(data: any): boolean {
-  try {
-    if (data.submissions) {
-      fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(data.submissions, null, 2), 'utf-8');
-    }
-    
-    if (data.sectionProgress) {
-      fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data.sectionProgress, null, 2), 'utf-8');
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error importing data:', error);
-    return false;
-  }
+  console.warn('Import functionality not implemented for Vercel Blob storage');
+  return false;
 }

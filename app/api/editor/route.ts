@@ -31,12 +31,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Reload data from disk to ensure fresh data
-    reloadData();
+    // Reload data from blob to ensure fresh data
+    await reloadData();
     
     const month = getCurrentMonthKey();
     const submissions = getSubmissionsByMonth(month);
-    const progress = getSectionProgress(month);
+    const progress = await getSectionProgress(month);
 
     console.log('Editor GET:', { month, submissions: submissions.length, progress: progress.length });
 
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'updateDisposition':
         const { submissionId, disposition } = data;
-        const updated = updateSubmissionDisposition(submissionId, disposition as DispositionStatus);
+        const updated = await updateSubmissionDisposition(submissionId, disposition as DispositionStatus);
         return NextResponse.json({ success: true, submission: updated });
 
       case 'updateSection':
         const { category, isComplete, editedContent } = data;
         const month = getCurrentMonthKey();
-        updateSectionProgress(month, category as SubmissionCategory, isComplete, editedContent);
+        await updateSectionProgress(month, category as SubmissionCategory, isComplete, editedContent);
         return NextResponse.json({ success: true });
 
       case 'getBacklog':
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
       case 'export':
         const exportMonth = getCurrentMonthKey();
-        const text = exportNewsletterText(exportMonth);
+        const text = await exportNewsletterText(exportMonth);
         return NextResponse.json({ text });
 
       default:

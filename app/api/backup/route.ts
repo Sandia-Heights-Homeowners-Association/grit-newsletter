@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get('action');
 
     if (action === 'list') {
-      const backups = listBackups();
+      const backups = await listBackups();
       return NextResponse.json({ backups });
     } else if (action === 'export') {
       const data = exportAllData();
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'create':
-        const backupPath = createBackup();
+        const backupPath = await createBackup();
         return NextResponse.json({ 
           success: true, 
           backupPath,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
           });
         } else {
           return NextResponse.json(
-            { error: 'Failed to restore backup' },
+            { error: 'Failed to restore backup (not implemented for Vercel Blob)' },
             { status: 400 }
           );
         }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           });
         } else {
           return NextResponse.json(
-            { error: 'Failed to import data' },
+            { error: 'Failed to import data (not implemented for Vercel Blob)' },
             { status: 400 }
           );
         }

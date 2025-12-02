@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const submission = addSubmission(category as SubmissionCategory, content, publishedName);
+    const submission = await addSubmission(category as SubmissionCategory, content, publishedName);
     
     return NextResponse.json({ 
       success: true, 

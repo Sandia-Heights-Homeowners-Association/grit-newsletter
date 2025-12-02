@@ -1,75 +1,84 @@
 import { Submission, SectionProgress, SubmissionCategory, DispositionStatus } from './types';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from './types';
 import { getCurrentMonthKey } from './constants';
-import fs from 'fs';
-import path from 'path';
+import { put, list, del } from '@vercel/blob';
 
-// Data directory for file storage
-const DATA_DIR = path.join(process.cwd(), 'data');
-const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
-const PROGRESS_FILE = path.join(DATA_DIR, 'section-progress.json');
+// Blob storage keys
+const SUBMISSIONS_BLOB = 'submissions.json';
+const PROGRESS_BLOB = 'section-progress.json';
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+// In-memory cache
+let submissions: Submission[] = [];
+let sectionProgress: Map<string, SectionProgress[]> = new Map();
 
-// Load data from files
-function loadSubmissions(): Submission[] {
+// Load data from Vercel Blob
+async function loadSubmissions(): Promise<Submission[]> {
   try {
-    if (fs.existsSync(SUBMISSIONS_FILE)) {
-      const data = fs.readFileSync(SUBMISSIONS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
+    const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
+    if (blobs.length > 0) {
+      const response = await fetch(blobs[0].url);
+      const data = await response.json();
       // Convert date strings back to Date objects
-      return parsed.map((s: any) => ({
+      return data.map((s: any) => ({
         ...s,
         submittedAt: new Date(s.submittedAt),
       }));
     }
   } catch (error) {
-    console.error('Error loading submissions:', error);
+    console.error('Error loading submissions from blob:', error);
   }
   return [];
 }
 
-function loadSectionProgress(): Map<string, SectionProgress[]> {
+async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
   try {
-    if (fs.existsSync(PROGRESS_FILE)) {
-      const data = fs.readFileSync(PROGRESS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      return new Map(Object.entries(parsed));
+    const { blobs } = await list({ prefix: PROGRESS_BLOB });
+    if (blobs.length > 0) {
+      const response = await fetch(blobs[0].url);
+      const data = await response.json();
+      return new Map(Object.entries(data));
     }
   } catch (error) {
-    console.error('Error loading section progress:', error);
+    console.error('Error loading section progress from blob:', error);
   }
   return new Map();
 }
 
-function saveSubmissions(submissions: Submission[]): void {
+async function saveSubmissions(submissions: Submission[]): Promise<void> {
   try {
-    fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2), 'utf-8');
+    const jsonData = JSON.stringify(submissions, null, 2);
+    await put(SUBMISSIONS_BLOB, jsonData, {
+      access: 'public',
+      contentType: 'application/json',
+    });
   } catch (error) {
-    console.error('Error saving submissions:', error);
+    console.error('Error saving submissions to blob:', error);
   }
 }
 
-function saveSectionProgress(progress: Map<string, SectionProgress[]>): void {
+async function saveSectionProgress(progress: Map<string, SectionProgress[]>): Promise<void> {
   try {
     const obj = Object.fromEntries(progress);
-    fs.writeFileSync(PROGRESS_FILE, JSON.stringify(obj, null, 2), 'utf-8');
+    const jsonData = JSON.stringify(obj, null, 2);
+    await put(PROGRESS_BLOB, jsonData, {
+      access: 'public',
+      contentType: 'application/json',
+    });
   } catch (error) {
-    console.error('Error saving section progress:', error);
+    console.error('Error saving section progress to blob:', error);
   }
 }
 
-// File-based data store
-let submissions: Submission[] = loadSubmissions();
-let sectionProgress: Map<string, SectionProgress[]> = loadSectionProgress();
+// Initialize data on module load
+(async () => {
+  submissions = await loadSubmissions();
+  sectionProgress = await loadSectionProgress();
+})();
 
-// Reload data from disk (useful for refreshing in-memory cache)
-export function reloadData(): void {
-  submissions = loadSubmissions();
-  sectionProgress = loadSectionProgress();
+// Reload data from blob (useful for refreshing in-memory cache)
+export async function reloadData(): Promise<void> {
+  submissions = await loadSubmissions();
+  sectionProgress = await loadSectionProgress();
 }
 
 // Generate unique ID
@@ -78,11 +87,11 @@ function generateId(): string {
 }
 
 // Add a new submission
-export function addSubmission(
+export async function addSubmission(
   category: SubmissionCategory,
   content: string,
   publishedName?: string
-): Submission {
+): Promise<Submission> {
   const submission: Submission = {
     id: generateId(),
     category,
@@ -94,7 +103,7 @@ export function addSubmission(
   };
   
   submissions.push(submission);
-  saveSubmissions(submissions);
+  await saveSubmissions(submissions);
   return submission;
 }
 
@@ -112,14 +121,14 @@ export function getSubmissionsByCategory(
 }
 
 // Update submission disposition
-export function updateSubmissionDisposition(
+export async function updateSubmissionDisposition(
   id: string,
   disposition: DispositionStatus
-): Submission | null {
+): Promise<Submission | null> {
   const submission = submissions.find(s => s.id === id);
   if (submission) {
     submission.disposition = disposition;
-    saveSubmissions(submissions);
+    await saveSubmissions(submissions);
     return submission;
   }
   return null;
@@ -159,34 +168,34 @@ function initializeSectionProgress(month: string): SectionProgress[] {
 }
 
 // Get section progress for a month
-export function getSectionProgress(month: string): SectionProgress[] {
+export async function getSectionProgress(month: string): Promise<SectionProgress[]> {
   if (!sectionProgress.has(month)) {
     sectionProgress.set(month, initializeSectionProgress(month));
-    saveSectionProgress(sectionProgress);
+    await saveSectionProgress(sectionProgress);
   }
   return sectionProgress.get(month)!;
 }
 
 // Update section progress
-export function updateSectionProgress(
+export async function updateSectionProgress(
   month: string,
   category: SubmissionCategory,
   isComplete: boolean,
   editedContent?: string
-): void {
-  const progress = getSectionProgress(month);
+): Promise<void> {
+  const progress = await getSectionProgress(month);
   const section = progress.find(s => s.category === category);
   
   if (section) {
     section.isComplete = isComplete;
     section.editedContent = editedContent;
-    saveSectionProgress(sectionProgress);
+    await saveSectionProgress(sectionProgress);
   }
 }
 
 // Calculate overall newsletter completion percentage
-export function getNewsletterCompletion(month: string): number {
-  const progress = getSectionProgress(month);
+export async function getNewsletterCompletion(month: string): Promise<number> {
+  const progress = await getSectionProgress(month);
   const completed = progress.filter(s => s.isComplete).length;
   return Math.round((completed / progress.length) * 100);
 }
@@ -204,8 +213,8 @@ export function getBackloggedSubmissions(
 }
 
 // Export all submissions for a month as text
-export function exportNewsletterText(month: string): string {
-  const progress = getSectionProgress(month);
+export async function exportNewsletterText(month: string): Promise<string> {
+  const progress = await getSectionProgress(month);
   let output = '';
   
   progress.forEach(section => {

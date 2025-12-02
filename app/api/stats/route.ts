@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const previousMonth = getPreviousMonthKey();
     
     const currentStats = getCategoryStats(currentMonth);
-    const currentCompletion = getNewsletterCompletion(currentMonth);
+    const currentCompletion = await getNewsletterCompletion(currentMonth);
     const currentContributors = getContributorNames(currentMonth);
     
     const previousStats = getCategoryStats(previousMonth);

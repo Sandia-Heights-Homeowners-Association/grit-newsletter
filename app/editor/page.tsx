@@ -182,13 +182,21 @@ export default function EditorPage() {
       });
 
       if (response.ok) {
-        loadEditorData();
-        if (selectedCategory) {
-          loadCategoryContent(selectedCategory);
+        const result = await response.json();
+        if (result.success) {
+          await loadEditorData();
+          if (selectedCategory) {
+            await loadCategoryContent(selectedCategory);
+          }
+        } else {
+          alert('Failed to delete submission. It may not exist.');
         }
+      } else {
+        alert('Failed to delete submission. Please try again.');
       }
     } catch (err) {
       console.error('Failed to delete submission:', err);
+      alert('An error occurred while deleting. Please try again.');
     }
   };
 

@@ -15,10 +15,14 @@ let isInitialized = false;
 // Load data from Vercel Blob
 async function loadSubmissions(): Promise<Submission[]> {
   try {
+    // Use list to find the exact blob
     const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
-    console.log('Loading submissions, found blobs:', blobs.length);
-    if (blobs.length > 0) {
-      const response = await fetch(blobs[0].url);
+    console.log('Loading submissions, found blobs:', blobs.length, blobs.map(b => b.pathname));
+    
+    // Find the exact match (not just prefix match)
+    const exactBlob = blobs.find(b => b.pathname === SUBMISSIONS_BLOB);
+    if (exactBlob) {
+      const response = await fetch(exactBlob.url);
       const data = await response.json();
       console.log('Loaded submissions:', data.length);
       // Convert date strings back to Date objects
@@ -27,7 +31,7 @@ async function loadSubmissions(): Promise<Submission[]> {
         submittedAt: new Date(s.submittedAt),
       }));
     }
-    console.log('No submission blobs found');
+    console.log('No submission blob found with exact name:', SUBMISSIONS_BLOB);
   } catch (error) {
     console.error('Error loading submissions from blob:', error);
   }
@@ -37,14 +41,17 @@ async function loadSubmissions(): Promise<Submission[]> {
 async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
   try {
     const { blobs } = await list({ prefix: PROGRESS_BLOB });
-    console.log('Loading section progress, found blobs:', blobs.length);
-    if (blobs.length > 0) {
-      const response = await fetch(blobs[0].url);
+    console.log('Loading section progress, found blobs:', blobs.length, blobs.map(b => b.pathname));
+    
+    // Find the exact match (not just prefix match)
+    const exactBlob = blobs.find(b => b.pathname === PROGRESS_BLOB);
+    if (exactBlob) {
+      const response = await fetch(exactBlob.url);
       const data = await response.json();
       console.log('Loaded section progress entries:', Object.keys(data).length);
       return new Map(Object.entries(data));
     }
-    console.log('No progress blobs found');
+    console.log('No progress blob found with exact name:', PROGRESS_BLOB);
   } catch (error) {
     console.error('Error loading section progress from blob:', error);
   }
@@ -53,13 +60,16 @@ async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
 
 async function saveSubmissions(submissions: Submission[]): Promise<void> {
   try {
+    console.log('Saving submissions to blob. Count:', submissions.length);
     const jsonData = JSON.stringify(submissions, null, 2);
     await put(SUBMISSIONS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
     });
+    console.log('Successfully saved submissions to blob');
   } catch (error) {
     console.error('Error saving submissions to blob:', error);
+    throw error; // Re-throw to alert calling code
   }
 }
 
@@ -270,12 +280,18 @@ export async function getArchivedSubmissions(
 export async function deleteSubmission(id: string): Promise<boolean> {
   await ensureInitialized();
   
+  console.log('Attempting to delete submission:', id);
+  console.log('Current submissions count:', submissions.length);
+  
   const index = submissions.findIndex(s => s.id === id);
   if (index !== -1) {
+    console.log('Found submission at index:', index);
     submissions.splice(index, 1);
     await saveSubmissions(submissions);
+    console.log('Deleted submission. New count:', submissions.length);
     return true;
   }
+  console.log('Submission not found with id:', id);
   return false;
 }
 

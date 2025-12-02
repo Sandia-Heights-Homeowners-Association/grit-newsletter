@@ -83,7 +83,9 @@ export default function Home() {
             <div className="space-y-4 text-gray-900">
               <p className="text-lg">
                 <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
-                and we want to hear from you. Share your stories, announcements, photos, ideas, and more.
+                and we want to hear from you. Share your stories, announcements, photos, ideas, and more. We welcome any contributions,
+                from short thoughts to full-length articles. Simple text format without photos is preferred for ease of publication, but 
+                if you have photos you may email them to shhagrit@gmail.com
               </p>
               <p>
                 <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 

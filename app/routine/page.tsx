@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,6 +17,17 @@ export default function RoutinePage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Load confetti script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const createConfetti = () => {
     const count = 200;
@@ -148,9 +159,7 @@ export default function RoutinePage() {
   }
 
   return (
-    <>
-      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
         {/* Logo Header */}
         <div className="mb-8 flex justify-center">
@@ -234,16 +243,15 @@ export default function RoutinePage() {
             </div>
 
             {success && (
-              <div className="mb-4 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 p-6 text-center shadow-xl border-2 border-green-600">
-                <div className="text-3xl mb-2">🎉</div>
-                <h3 className="text-xl font-bold text-white mb-1">Success!</h3>
-                <p className="text-sm text-white font-semibold mb-3">Your routine content has been submitted!</p>
+              <div className="mb-4 rounded-lg bg-green-100 p-4 text-center border-2 border-green-600">
+                <div className="text-2xl mb-1">🎉</div>
+                <p className="text-base font-bold text-green-800 mb-2">Submitted successfully!</p>
                 <button
                   type="button"
                   onClick={createConfetti}
-                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
+                  className="rounded bg-green-600 px-3 py-1 text-sm font-semibold text-white hover:bg-green-700"
                 >
-                  🎉 More Confetti
+                  🎉 Confetti
                 </button>
               </div>
             )}
@@ -265,6 +273,5 @@ export default function RoutinePage() {
         </div>
       </main>
     </div>
-    </>
   );
 }

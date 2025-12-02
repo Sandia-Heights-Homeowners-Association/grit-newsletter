@@ -42,6 +42,10 @@ export async function GET(request: NextRequest) {
     const progress = await getSectionProgress(month);
 
     console.log('Editor GET:', { month, submissions: submissions.length, progress: progress.length });
+    console.log('Submissions by category:', submissions.reduce((acc, s) => {
+      acc[s.category] = (acc[s.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>));
 
     return NextResponse.json({ 
       submissions,

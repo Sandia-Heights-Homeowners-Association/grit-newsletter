@@ -253,15 +253,15 @@ export default function CommitteePage() {
             </div>
 
             {success && (
-              <div className="mb-4 rounded-lg bg-green-100 p-4 text-center border-2 border-green-600">
-                <div className="text-2xl mb-1">🎉</div>
-                <p className="text-base font-bold text-green-800 mb-2">Submitted successfully!</p>
+              <div className="mb-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 p-6 text-center border-2 border-green-300">
+                <div className="text-2xl mb-1">✓</div>
+                <p className="text-base font-bold text-green-900 mb-2">Submitted successfully!</p>
                 <button
                   type="button"
                   onClick={createConfetti}
-                  className="rounded bg-green-600 px-3 py-1 text-sm font-semibold text-white hover:bg-green-700"
+                  className="rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
                 >
-                  🎉 Confetti
+                  🎉 More Confetti
                 </button>
               </div>
             )}

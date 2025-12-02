@@ -236,6 +236,7 @@ export default function RoutinePage() {
                 <h2 className="text-3xl font-bold text-white mb-2">Success!</h2>
                 <p className="text-xl text-white font-semibold">Your routine content has been submitted!</p>
                 <button
+                  type="button"
                   onClick={createConfetti}
                   className="mt-4 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50 hover:shadow-xl"
                 >

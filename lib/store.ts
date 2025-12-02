@@ -74,6 +74,7 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
     const result = await put(SUBMISSIONS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
     });
     
     console.log('Successfully saved submissions to blob:', result.url);
@@ -91,6 +92,7 @@ async function saveSectionProgress(progress: Map<string, SectionProgress[]>): Pr
     await put(PROGRESS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
     });
   } catch (error) {
     console.error('Error saving section progress to blob:', error);

@@ -16,6 +16,7 @@ export async function createBackup(): Promise<string> {
     await put(`${backupPrefix}submissions.json`, JSON.stringify(submissions, null, 2), {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
     });
     
     // Save progress backup
@@ -23,6 +24,7 @@ export async function createBackup(): Promise<string> {
     await put(`${backupPrefix}section-progress.json`, JSON.stringify(progressObj, null, 2), {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
     });
     
     return backupPrefix;

@@ -16,15 +16,18 @@ let isInitialized = false;
 async function loadSubmissions(): Promise<Submission[]> {
   try {
     const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
+    console.log('Loading submissions, found blobs:', blobs.length);
     if (blobs.length > 0) {
       const response = await fetch(blobs[0].url);
       const data = await response.json();
+      console.log('Loaded submissions:', data.length);
       // Convert date strings back to Date objects
       return data.map((s: any) => ({
         ...s,
         submittedAt: new Date(s.submittedAt),
       }));
     }
+    console.log('No submission blobs found');
   } catch (error) {
     console.error('Error loading submissions from blob:', error);
   }
@@ -34,11 +37,14 @@ async function loadSubmissions(): Promise<Submission[]> {
 async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
   try {
     const { blobs } = await list({ prefix: PROGRESS_BLOB });
+    console.log('Loading section progress, found blobs:', blobs.length);
     if (blobs.length > 0) {
       const response = await fetch(blobs[0].url);
       const data = await response.json();
+      console.log('Loaded section progress entries:', Object.keys(data).length);
       return new Map(Object.entries(data));
     }
+    console.log('No progress blobs found');
   } catch (error) {
     console.error('Error loading section progress from blob:', error);
   }

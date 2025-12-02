@@ -7,10 +7,8 @@ export const COMMUNITY_CATEGORIES = [
   'Local Event Announcement',
   'Kids\' Corner',
   'DIY & Crafts',
-  'Rants & Raves',
   'Neighbor Appreciation',
-  'Wildlife',
-  'Photos',
+  'Nature & Wildlife',
 ] as const;
 
 export const ROUTINE_CATEGORIES = [

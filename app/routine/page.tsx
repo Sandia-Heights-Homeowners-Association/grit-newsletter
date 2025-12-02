@@ -18,6 +18,29 @@ export default function RoutinePage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  const createConfetti = () => {
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999,
+    };
+
+    function fire(particleRatio: number, opts: any) {
+      const confetti = (window as any).confetti;
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    }
+
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1, { spread: 120, startVelocity: 45 });
+  };
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ROUTINE_PASSWORD) {
@@ -46,9 +69,7 @@ export default function RoutinePage() {
         setSuccess(true);
         setContent('');
         setAuthorName('');
-        setTimeout(() => {
-          setSuccess(false);
-        }, 3000);
+        createConfetti();
       } else {
         setError('Failed to submit. Please try again.');
       }
@@ -124,7 +145,9 @@ export default function RoutinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+    <>
+      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
         {/* Logo Header */}
         <div className="mb-8 flex justify-center">
@@ -208,8 +231,16 @@ export default function RoutinePage() {
             </div>
 
             {success && (
-              <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
-                Submission successful!
+              <div className="mb-6 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 p-8 text-center shadow-2xl border-4 border-green-600">
+                <div className="text-5xl mb-4">🎉</div>
+                <h2 className="text-3xl font-bold text-white mb-2">Success!</h2>
+                <p className="text-xl text-white font-semibold">Your routine content has been submitted!</p>
+                <button
+                  onClick={createConfetti}
+                  className="mt-4 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50 hover:shadow-xl"
+                >
+                  🎉 More Confetti
+                </button>
               </div>
             )}
 
@@ -230,5 +261,6 @@ export default function RoutinePage() {
         </div>
       </main>
     </div>
+    </>
   );
 }

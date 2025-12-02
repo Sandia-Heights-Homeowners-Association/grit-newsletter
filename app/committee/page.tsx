@@ -13,6 +13,7 @@ export default function CommitteePage() {
   const [password, setPassword] = useState('');
   const [category, setCategory] = useState<typeof COMMITTEE_CATEGORIES[number]>(COMMITTEE_CATEGORIES[0]);
   const [content, setContent] = useState('');
+  const [authorName, setAuthorName] = useState('');
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -34,15 +35,18 @@ export default function CommitteePage() {
     setError('');
 
     try {
+      const fullContent = `Author: ${authorName}\nEmail: ${email}\n\n${content}`;
+      
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, content: `Email: ${email}\n\n${content}` }),
+        body: JSON.stringify({ category, content: fullContent, publishedName: authorName }),
       });
 
       if (response.ok) {
         setSuccess(true);
         setContent('');
+        setAuthorName('');
         setEmail('');
         setTimeout(() => {
           setSuccess(false);
@@ -154,12 +158,6 @@ export default function CommitteePage() {
             </p>
           </div>
 
-          {success && (
-            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
-              Submission successful!
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label className="mb-2 block font-semibold text-orange-900">
@@ -174,6 +172,20 @@ export default function CommitteePage() {
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block font-semibold text-orange-900">
+                Author Name as You Want it to Appear *
+              </label>
+              <input
+                type="text"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                required
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                placeholder="Your name"
+              />
             </div>
 
             <div className="mb-6">
@@ -204,6 +216,12 @@ export default function CommitteePage() {
                 placeholder="Enter your committee report here..."
               />
             </div>
+
+            {success && (
+              <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
+                Submission successful!
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700">

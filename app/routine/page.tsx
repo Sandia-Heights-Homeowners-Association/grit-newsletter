@@ -14,7 +14,6 @@ export default function RoutinePage() {
   const [category, setCategory] = useState<typeof ROUTINE_CATEGORIES[number]>(ROUTINE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
-  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -157,12 +156,6 @@ export default function RoutinePage() {
             </p>
           </div>
 
-          {success && (
-            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
-              Submission successful!
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label className="mb-2 block font-semibold text-orange-900">
@@ -213,6 +206,12 @@ export default function RoutinePage() {
                   : 'Enter your content as plain text'}
               </p>
             </div>
+
+            {success && (
+              <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-700 border-2 border-green-300">
+                Submission successful!
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700">

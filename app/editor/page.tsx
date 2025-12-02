@@ -436,6 +436,29 @@ export default function EditorPage() {
           </div>
         )}
 
+        {/* Newsletter Progress */}
+        {progress.length > 0 && (
+          <div className="mb-6 rounded-lg bg-white border-2 border-orange-200 p-6 shadow-lg">
+            <h3 className="mb-4 text-lg font-semibold text-orange-900">Newsletter Completion Progress</h3>
+            <div className="mb-2 flex items-center justify-between text-sm text-gray-800">
+              <span>
+                {progress.filter(s => s.isComplete).length} of {progress.length} sections complete
+              </span>
+              <span className="font-semibold text-orange-900">
+                {Math.round((progress.filter(s => s.isComplete).length / progress.length) * 100)}%
+              </span>
+            </div>
+            <div className="h-4 w-full rounded-full bg-orange-100 border-2 border-orange-300 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500"
+                style={{ 
+                  width: `${Math.round((progress.filter(s => s.isComplete).length / progress.length) * 100)}%` 
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Data Viewer */}
         {showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">

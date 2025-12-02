@@ -174,6 +174,20 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
   return stats;
 }
 
+// Get total count of routine and committee submissions
+export async function getRoutineAndCommitteeCount(month: string): Promise<number> {
+  await ensureInitialized();
+  
+  const routineAndCommitteeCategories: SubmissionCategory[] = [
+    ...ROUTINE_CATEGORIES,
+    ...COMMITTEE_CATEGORIES,
+  ];
+  
+  return submissions.filter(
+    s => routineAndCommitteeCategories.includes(s.category) && s.month === month
+  ).length;
+}
+
 // Initialize section progress for a month
 function initializeSectionProgress(month: string): SectionProgress[] {
   const allCategories: SubmissionCategory[] = [

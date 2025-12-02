@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCategoryStats, getNewsletterCompletion, getContributorNames } from '@/lib/store';
+import { getCategoryStats, getNewsletterCompletion, getContributorNames, getRoutineAndCommitteeCount } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
@@ -10,18 +10,22 @@ export async function GET(request: NextRequest) {
     const currentStats = await getCategoryStats(currentMonth);
     const currentCompletion = await getNewsletterCompletion(currentMonth);
     const currentContributors = await getContributorNames(currentMonth);
+    const currentRoutineCommitteeCount = await getRoutineAndCommitteeCount(currentMonth);
     
     const previousStats = await getCategoryStats(previousMonth);
     const previousContributors = await getContributorNames(previousMonth);
+    const previousRoutineCommitteeCount = await getRoutineAndCommitteeCount(previousMonth);
 
     return NextResponse.json({ 
       currentStats,
       currentCompletion,
       currentContributors,
       currentMonth,
+      currentRoutineCommitteeCount,
       previousStats,
       previousContributors,
-      previousMonth
+      previousMonth,
+      previousRoutineCommitteeCount
     });
   } catch (error) {
     console.error('Stats error:', error);

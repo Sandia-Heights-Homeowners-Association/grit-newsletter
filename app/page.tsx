@@ -13,6 +13,8 @@ export default function Home() {
   const [previousContributors, setPreviousContributors] = useState<string[]>([]);
   const [currentMonthKey, setCurrentMonthKey] = useState('');
   const [previousMonthKey, setPreviousMonthKey] = useState('');
+  const [currentRoutineCommitteeCount, setCurrentRoutineCommitteeCount] = useState(0);
+  const [previousRoutineCommitteeCount, setPreviousRoutineCommitteeCount] = useState(0);
   const { month, deadline } = getNextPublicationInfo();
 
   useEffect(() => {
@@ -25,6 +27,8 @@ export default function Home() {
         setPreviousContributors(data.previousContributors || []);
         setCurrentMonthKey(data.currentMonth || '');
         setPreviousMonthKey(data.previousMonth || '');
+        setCurrentRoutineCommitteeCount(data.currentRoutineCommitteeCount || 0);
+        setPreviousRoutineCommitteeCount(data.previousRoutineCommitteeCount || 0);
       })
       .catch(err => console.error('Failed to load stats:', err));
   }, []);
@@ -85,7 +89,8 @@ export default function Home() {
                 <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
                 and we want to hear from you. Share your stories, announcements, photos, ideas, and more. We welcome any contributions,
                 from short thoughts to full-length articles. Simple text format without photos is preferred for ease of publication, but 
-                if you have photos you may email them to shhagrit@gmail.com
+                if you have photos you may email them to shhagrit@gmail.com.
+                Unsure which category to use? Select "On My Mind" for general thoughts or articles.
               </p>
               <p>
                 <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
@@ -186,6 +191,10 @@ export default function Home() {
                     <span className="font-semibold text-red-700">{currentStats[cat] || 0}</span>
                   </li>
                 ))}
+                <li className="flex justify-between text-gray-800 border-t border-gray-300 pt-2 mt-2">
+                  <span>Routine & Committee:</span>
+                  <span className="font-semibold text-red-700">{currentRoutineCommitteeCount}</span>
+                </li>
               </ul>
               
               {/* Current Contributors List */}
@@ -224,6 +233,10 @@ export default function Home() {
                     <span className="font-semibold text-gray-700">{previousStats[cat] || 0}</span>
                   </li>
                 ))}
+                <li className="flex justify-between text-gray-600 border-t border-gray-300 pt-2 mt-2">
+                  <span>Routine & Committee:</span>
+                  <span className="font-semibold text-gray-700">{previousRoutineCommitteeCount}</span>
+                </li>
               </ul>
               
               {/* Previous Contributors List */}

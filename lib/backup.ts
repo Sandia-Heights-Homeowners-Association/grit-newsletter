@@ -58,9 +58,9 @@ export async function listBackups(): Promise<string[]> {
 /**
  * Export all data as a single downloadable JSON file
  */
-export function exportAllData(): any {
-  const submissions = getAllSubmissions();
-  const sectionProgress = getAllSectionProgress();
+export async function exportAllData(): Promise<any> {
+  const submissions = await getAllSubmissions();
+  const sectionProgress = await getAllSectionProgress();
   
   return {
     exportedAt: new Date().toISOString(),

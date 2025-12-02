@@ -10,6 +10,7 @@ const PROGRESS_BLOB = 'section-progress.json';
 // In-memory cache
 let submissions: Submission[] = [];
 let sectionProgress: Map<string, SectionProgress[]> = new Map();
+let isInitialized = false;
 
 // Load data from Vercel Blob
 async function loadSubmissions(): Promise<Submission[]> {
@@ -69,16 +70,28 @@ async function saveSectionProgress(progress: Map<string, SectionProgress[]>): Pr
   }
 }
 
-// Initialize data on module load
-(async () => {
-  submissions = await loadSubmissions();
-  sectionProgress = await loadSectionProgress();
-})();
+// Initialize data
+async function initializeData(): Promise<void> {
+  if (!isInitialized) {
+    submissions = await loadSubmissions();
+    sectionProgress = await loadSectionProgress();
+    isInitialized = true;
+    console.log('Data initialized:', { submissions: submissions.length, progress: sectionProgress.size });
+  }
+}
+
+// Ensure data is loaded before any operation
+async function ensureInitialized(): Promise<void> {
+  if (!isInitialized) {
+    await initializeData();
+  }
+}
 
 // Reload data from blob (useful for refreshing in-memory cache)
 export async function reloadData(): Promise<void> {
   submissions = await loadSubmissions();
   sectionProgress = await loadSectionProgress();
+  isInitialized = true;
 }
 
 // Generate unique ID
@@ -92,6 +105,8 @@ export async function addSubmission(
   content: string,
   publishedName?: string
 ): Promise<Submission> {
+  await ensureInitialized();
+  
   const submission: Submission = {
     id: generateId(),
     category,
@@ -108,15 +123,17 @@ export async function addSubmission(
 }
 
 // Get all submissions for a specific month
-export function getSubmissionsByMonth(month: string): Submission[] {
+export async function getSubmissionsByMonth(month: string): Promise<Submission[]> {
+  await ensureInitialized();
   return submissions.filter(s => s.month === month);
 }
 
 // Get submissions by category and month
-export function getSubmissionsByCategory(
+export async function getSubmissionsByCategory(
   category: SubmissionCategory,
   month: string
-): Submission[] {
+): Promise<Submission[]> {
+  await ensureInitialized();
   return submissions.filter(s => s.category === category && s.month === month);
 }
 
@@ -125,6 +142,8 @@ export async function updateSubmissionDisposition(
   id: string,
   disposition: DispositionStatus
 ): Promise<Submission | null> {
+  await ensureInitialized();
+  
   const submission = submissions.find(s => s.id === id);
   if (submission) {
     submission.disposition = disposition;
@@ -135,7 +154,9 @@ export async function updateSubmissionDisposition(
 }
 
 // Get category statistics
-export function getCategoryStats(month: string): Record<string, number> {
+export async function getCategoryStats(month: string): Promise<Record<string, number>> {
+  await ensureInitialized();
+  
   const stats: Record<string, number> = {};
   
   const allCategories = [
@@ -201,10 +222,12 @@ export async function getNewsletterCompletion(month: string): Promise<number> {
 }
 
 // Get backlogged submissions (from previous months)
-export function getBackloggedSubmissions(
+export async function getBackloggedSubmissions(
   category: SubmissionCategory,
   currentMonth: string
-): Submission[] {
+): Promise<Submission[]> {
+  await ensureInitialized();
+  
   return submissions.filter(
     s => s.category === category && 
         s.disposition === 'backlogged' && 
@@ -217,7 +240,7 @@ export async function exportNewsletterText(month: string): Promise<string> {
   const progress = await getSectionProgress(month);
   let output = '';
   
-  progress.forEach(section => {
+  progress.forEach(async (section) => {
     if (section.isComplete) {
       output += `\n${'='.repeat(60)}\n`;
       output += `${section.category.toUpperCase()}\n`;
@@ -226,9 +249,9 @@ export async function exportNewsletterText(month: string): Promise<string> {
       if (section.editedContent) {
         output += section.editedContent;
       } else {
-        const subs = getSubmissionsByCategory(section.category, month)
-          .filter(s => s.disposition === 'published');
-        subs.forEach((sub, idx) => {
+        const subs = await getSubmissionsByCategory(section.category, month);
+        const published = subs.filter(s => s.disposition === 'published');
+        published.forEach((sub, idx) => {
           if (idx > 0) output += '\n\n---\n\n';
           output += sub.content;
         });
@@ -242,16 +265,20 @@ export async function exportNewsletterText(month: string): Promise<string> {
 }
 
 // Get all data (for API endpoints)
-export function getAllSubmissions(): Submission[] {
+export async function getAllSubmissions(): Promise<Submission[]> {
+  await ensureInitialized();
   return [...submissions];
 }
 
-export function getAllSectionProgress(): Map<string, SectionProgress[]> {
+export async function getAllSectionProgress(): Promise<Map<string, SectionProgress[]>> {
+  await ensureInitialized();
   return sectionProgress;
 }
 
 // Get list of contributor names for current month
-export function getContributorNames(month: string): string[] {
+export async function getContributorNames(month: string): Promise<string[]> {
+  await ensureInitialized();
+  
   const contributors = submissions
     .filter(s => s.month === month && s.publishedName && s.disposition === 'published')
     .map(s => s.publishedName!)

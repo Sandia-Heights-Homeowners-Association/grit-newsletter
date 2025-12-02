@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       const backups = await listBackups();
       return NextResponse.json({ backups });
     } else if (action === 'export') {
-      const data = exportAllData();
+      const data = await exportAllData();
       return NextResponse.json(data);
     }
 

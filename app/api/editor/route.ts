@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     await reloadData();
     
     const month = getCurrentMonthKey();
-    const submissions = getSubmissionsByMonth(month);
+    const submissions = await getSubmissionsByMonth(month);
     const progress = await getSectionProgress(month);
 
     console.log('Editor GET:', { month, submissions: submissions.length, progress: progress.length });
@@ -82,13 +82,13 @@ export async function POST(request: NextRequest) {
       case 'getBacklog':
         const { category: cat } = data;
         const month2 = getCurrentMonthKey();
-        const backlog = getBackloggedSubmissions(cat as SubmissionCategory, month2);
+        const backlog = await getBackloggedSubmissions(cat as SubmissionCategory, month2);
         return NextResponse.json({ backlog });
 
       case 'getCategorySubmissions':
         const { category: category3 } = data;
         const month3 = getCurrentMonthKey();
-        const subs = getSubmissionsByCategory(category3 as SubmissionCategory, month3);
+        const subs = await getSubmissionsByCategory(category3 as SubmissionCategory, month3);
         return NextResponse.json({ submissions: subs });
 
       case 'export':

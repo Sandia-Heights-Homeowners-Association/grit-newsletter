@@ -7,12 +7,12 @@ export async function GET(request: NextRequest) {
     const currentMonth = getCurrentMonthKey();
     const previousMonth = getPreviousMonthKey();
     
-    const currentStats = getCategoryStats(currentMonth);
+    const currentStats = await getCategoryStats(currentMonth);
     const currentCompletion = await getNewsletterCompletion(currentMonth);
-    const currentContributors = getContributorNames(currentMonth);
+    const currentContributors = await getContributorNames(currentMonth);
     
-    const previousStats = getCategoryStats(previousMonth);
-    const previousContributors = getContributorNames(previousMonth);
+    const previousStats = await getCategoryStats(previousMonth);
+    const previousContributors = await getContributorNames(previousMonth);
 
     return NextResponse.json({ 
       currentStats,

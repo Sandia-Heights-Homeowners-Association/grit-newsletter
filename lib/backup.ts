@@ -9,8 +9,8 @@ export async function createBackup(): Promise<string> {
   const backupPrefix = `backups/${timestamp}/`;
   
   try {
-    const submissions = getAllSubmissions();
-    const sectionProgress = getAllSectionProgress();
+    const submissions = await getAllSubmissions();
+    const sectionProgress = await getAllSectionProgress();
     
     // Save submissions backup
     await put(`${backupPrefix}submissions.json`, JSON.stringify(submissions, null, 2), {

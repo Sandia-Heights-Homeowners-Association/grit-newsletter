@@ -32,6 +32,10 @@ export default function EditorPage() {
     setExpandedGroups(newExpanded);
   };
 
+  const getWordCount = (text: string): number => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
   // Helper function to extract just the content (no metadata, no names)
   const extractContent = (rawContent: string): string => {
     // Find the actual content after the metadata lines
@@ -253,7 +257,7 @@ export default function EditorPage() {
     }
   };
 
-  const saveSection = async (isComplete: boolean) => {
+  const saveSection = async () => {
     if (!selectedCategory) return;
 
     try {
@@ -266,14 +270,14 @@ export default function EditorPage() {
         body: JSON.stringify({
           action: 'updateSection',
           category: selectedCategory,
-          isComplete,
+          isComplete: false,
           editedContent,
         }),
       });
 
       if (response.ok) {
         await loadEditorData();
-        alert(`Section ${isComplete ? 'completed' : 'saved'} successfully!`);
+        alert('Section saved successfully!');
       }
     } catch (err) {
       console.error('Failed to save section:', err);
@@ -919,9 +923,14 @@ export default function EditorPage() {
 
                 {/* Concatenated Editor */}
                 <div className="mb-6">
-                  <h3 className="mb-3 font-semibold text-red-800">
-                    Edit Combined Section
-                  </h3>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="font-semibold text-red-800">
+                      Edit Combined Section
+                    </h3>
+                    <span className="text-sm text-gray-600">
+                      {getWordCount(editedContent)} words
+                    </span>
+                  </div>
                   <textarea
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
@@ -934,16 +943,20 @@ export default function EditorPage() {
                 {/* Actions */}
                 <div className="flex gap-4">
                   <button
-                    onClick={() => saveSection(false)}
-                    className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition hover:bg-blue-700"
-                  >
-                    Save Progress
-                  </button>
-                  <button
-                    onClick={() => saveSection(true)}
+                    onClick={saveSection}
                     className="rounded-lg bg-green-600 px-6 py-2 font-semibold text-white transition hover:bg-green-700"
                   >
-                    Mark as Complete
+                    Save Section
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (selectedCategory) {
+                        loadCategoryContent(selectedCategory);
+                      }
+                    }}
+                    className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Re-import from Submissions
                   </button>
                 </div>
               </div>

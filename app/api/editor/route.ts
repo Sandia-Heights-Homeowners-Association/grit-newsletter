@@ -3,10 +3,13 @@ import {
   getSubmissionsByMonth,
   getSectionProgress,
   getBackloggedSubmissions,
+  getArchivedSubmissions,
   updateSubmissionDisposition,
   updateSectionProgress,
   exportNewsletterText,
   getSubmissionsByCategory,
+  deleteSubmission,
+  getCategorySubmissionCounts,
   reloadData
 } from '@/lib/store';
 import { getCurrentMonthKey, EDITOR_PASSWORD } from '@/lib/constants';
@@ -83,13 +86,25 @@ export async function POST(request: NextRequest) {
         const { category: cat } = data;
         const month2 = getCurrentMonthKey();
         const backlog = await getBackloggedSubmissions(cat as SubmissionCategory, month2);
-        return NextResponse.json({ backlog });
+        const archived = await getArchivedSubmissions(cat as SubmissionCategory);
+        return NextResponse.json({ backlog, archived });
 
       case 'getCategorySubmissions':
         const { category: category3 } = data;
         const month3 = getCurrentMonthKey();
         const subs = await getSubmissionsByCategory(category3 as SubmissionCategory, month3);
         return NextResponse.json({ submissions: subs });
+
+      case 'getCategoryCounts':
+        const { category: countCat } = data;
+        const countMonth = getCurrentMonthKey();
+        const counts = await getCategorySubmissionCounts(countCat as SubmissionCategory, countMonth);
+        return NextResponse.json({ counts });
+
+      case 'deleteSubmission':
+        const { submissionId: deleteId } = data;
+        const deleted = await deleteSubmission(deleteId);
+        return NextResponse.json({ success: deleted });
 
       case 'export':
         const exportMonth = getCurrentMonthKey();

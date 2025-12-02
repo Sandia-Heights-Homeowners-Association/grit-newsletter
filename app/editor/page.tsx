@@ -15,6 +15,7 @@ export default function EditorPage() {
   const [selectedCategory, setSelectedCategory] = useState<SubmissionCategory | null>(null);
   const [editedContent, setEditedContent] = useState('');
   const [backlog, setBacklog] = useState<Submission[]>([]);
+  const [archived, setArchived] = useState<Submission[]>([]);
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showJsonViewer, setShowJsonViewer] = useState(false);
@@ -156,9 +157,38 @@ export default function EditorPage() {
 
       if (response.ok) {
         loadEditorData();
+        if (selectedCategory) {
+          loadCategoryContent(selectedCategory);
+        }
       }
     } catch (err) {
       console.error('Failed to update disposition:', err);
+    }
+  };
+
+  const deleteSubmission = async (submissionId: string, preview: string) => {
+    if (!confirm(`Are you sure you want to permanently delete this submission?\n\n"${preview.substring(0, 100)}..."\n\nThis cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'deleteSubmission', submissionId }),
+      });
+
+      if (response.ok) {
+        loadEditorData();
+        if (selectedCategory) {
+          loadCategoryContent(selectedCategory);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete submission:', err);
     }
   };
 
@@ -192,6 +222,7 @@ export default function EditorPage() {
       if (response.ok) {
         const data = await response.json();
         setBacklog(data.backlog || []);
+        setArchived(data.archived || []);
       }
     } catch (err) {
       console.error('Failed to load backlog:', err);
@@ -562,6 +593,9 @@ export default function EditorPage() {
                             const publishedCount = categorySubmissions.filter(
                               s => s.disposition === 'published'
                             ).length;
+                            const backlogCount = categorySubmissions.filter(
+                              s => s.disposition === 'backlogged'
+                            ).length;
 
                             return (
                               <button
@@ -583,6 +617,7 @@ export default function EditorPage() {
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
                                 </div>
                               </button>
                             );
@@ -618,6 +653,9 @@ export default function EditorPage() {
                             const publishedCount = categorySubmissions.filter(
                               s => s.disposition === 'published'
                             ).length;
+                            const backlogCount = categorySubmissions.filter(
+                              s => s.disposition === 'backlogged'
+                            ).length;
 
                             return (
                               <button
@@ -639,6 +677,7 @@ export default function EditorPage() {
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
                                 </div>
                               </button>
                             );
@@ -674,6 +713,9 @@ export default function EditorPage() {
                             const publishedCount = categorySubmissions.filter(
                               s => s.disposition === 'published'
                             ).length;
+                            const backlogCount = categorySubmissions.filter(
+                              s => s.disposition === 'backlogged'
+                            ).length;
 
                             return (
                               <button
@@ -695,6 +737,7 @@ export default function EditorPage() {
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
+                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
                                 </div>
                               </button>
                             );
@@ -739,7 +782,7 @@ export default function EditorPage() {
                           <div className="mb-2 text-sm text-gray-800 line-clamp-2">
                             {sub.content}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <button
                               onClick={() => updateDisposition(sub.id, 'published')}
                               className={`rounded px-3 py-1 text-xs font-semibold ${
@@ -764,11 +807,17 @@ export default function EditorPage() {
                               onClick={() => updateDisposition(sub.id, 'archived')}
                               className={`rounded px-3 py-1 text-xs font-semibold ${
                                 sub.disposition === 'archived'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-orange-100 text-orange-800 hover:bg-red-100 border border-orange-300'
+                                  ? 'bg-gray-600 text-white'
+                                  : 'bg-orange-100 text-orange-800 hover:bg-gray-100 border border-orange-300'
                               }`}
                             >
                               Archive
+                            </button>
+                            <button
+                              onClick={() => deleteSubmission(sub.id, sub.content)}
+                              className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                            >
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -787,10 +836,56 @@ export default function EditorPage() {
                         {backlog.map(sub => (
                           <div
                             key={sub.id}
-                            className="rounded bg-yellow-50 p-2 text-sm"
+                            className="rounded bg-yellow-50 border-2 border-yellow-200 p-3"
                           >
-                            {sub.content.substring(0, 200)}
-                            {sub.content.length > 200 ? '...' : ''}
+                            <div className="mb-2 text-sm text-gray-800">
+                              {sub.content.substring(0, 200)}
+                              {sub.content.length > 200 ? '...' : ''}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => updateDisposition(sub.id, 'published')}
+                                className="rounded px-3 py-1 text-xs font-semibold bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
+                              >
+                                Publish
+                              </button>
+                              <button
+                                onClick={() => deleteSubmission(sub.id, sub.content)}
+                                className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                {/* Archived */}
+                {archived.length > 0 && (
+                  <div className="mb-6">
+                    <details className="rounded border-2 border-gray-300 bg-gray-50 p-3">
+                      <summary className="cursor-pointer font-semibold text-gray-700">
+                        Archived Submissions ({archived.length})
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {archived.map(sub => (
+                          <div
+                            key={sub.id}
+                            className="rounded bg-gray-100 border-2 border-gray-200 p-3"
+                          >
+                            <div className="mb-2 text-sm text-gray-700">
+                              {sub.content.substring(0, 200)}
+                              {sub.content.length > 200 ? '...' : ''}
+                            </div>
+                            <button
+                              onClick={() => deleteSubmission(sub.id, sub.content)}
+                              className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                            >
+                              Delete
+                            </button>
                           </div>
                         ))}
                       </div>

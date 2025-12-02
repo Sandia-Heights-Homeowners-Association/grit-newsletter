@@ -255,6 +255,47 @@ export async function getBackloggedSubmissions(
   );
 }
 
+// Get archived submissions for a category
+export async function getArchivedSubmissions(
+  category: SubmissionCategory
+): Promise<Submission[]> {
+  await ensureInitialized();
+  
+  return submissions.filter(
+    s => s.category === category && s.disposition === 'archived'
+  );
+}
+
+// Delete a submission permanently
+export async function deleteSubmission(id: string): Promise<boolean> {
+  await ensureInitialized();
+  
+  const index = submissions.findIndex(s => s.id === id);
+  if (index !== -1) {
+    submissions.splice(index, 1);
+    await saveSubmissions(submissions);
+    return true;
+  }
+  return false;
+}
+
+// Get submission counts for a category (published, backlogged, archived)
+export async function getCategorySubmissionCounts(
+  category: SubmissionCategory,
+  currentMonth: string
+): Promise<{ published: number; backlogged: number; archived: number }> {
+  await ensureInitialized();
+  
+  const categorySubs = submissions.filter(s => s.category === category);
+  const currentMonthSubs = categorySubs.filter(s => s.month === currentMonth);
+  
+  return {
+    published: currentMonthSubs.filter(s => s.disposition === 'published').length,
+    backlogged: categorySubs.filter(s => s.disposition === 'backlogged').length,
+    archived: categorySubs.filter(s => s.disposition === 'archived').length,
+  };
+}
+
 // Export all submissions for a month as text
 export async function exportNewsletterText(month: string): Promise<string> {
   const progress = await getSectionProgress(month);

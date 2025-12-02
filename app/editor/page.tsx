@@ -31,8 +31,8 @@ export default function EditorPage() {
     setExpandedGroups(newExpanded);
   };
 
-  // Helper function to extract just the content and published name
-  const extractContent = (rawContent: string, publishedName?: string): string => {
+  // Helper function to extract just the content (no metadata, no names)
+  const extractContent = (rawContent: string): string => {
     // Find the actual content after the metadata lines
     const lines = rawContent.split('\n');
     let contentStart = 0;
@@ -46,11 +46,6 @@ export default function EditorPage() {
     }
     
     const actualContent = lines.slice(contentStart).join('\n').trim();
-    
-    // Return content with published name if available
-    if (publishedName) {
-      return `${actualContent}\n—${publishedName}`;
-    }
     return actualContent;
   };
 
@@ -58,32 +53,40 @@ export default function EditorPage() {
     const sections: string[] = [];
     const emptySections: string[] = [];
     
-    // Group categories by type
-    const categoryGroups = [
-      { title: 'COMMUNITY SUBMISSIONS', categories: COMMUNITY_CATEGORIES },
-      { title: 'ROUTINE CONTENT', categories: ROUTINE_CATEGORIES },
-      { title: 'COMMITTEE REPORTS', categories: COMMITTEE_CATEGORIES },
-    ];
-
-    categoryGroups.forEach(group => {
-      group.categories.forEach(category => {
-        const section = progress.find(p => p.category === category);
-        const categorySubs = submissions.filter(s => s.category === category && s.disposition === 'published');
+    // Helper to add section content
+    const addSection = (category: SubmissionCategory, isH2: boolean = false) => {
+      const section = progress.find(p => p.category === category);
+      const categorySubs = submissions.filter(s => s.category === category && s.disposition === 'published');
+      
+      if (categorySubs.length > 0 || section?.editedContent) {
+        const heading = isH2 ? `#### ${category}` : `## ${category}`;
+        sections.push(`\n${heading}\n`);
         
-        if (categorySubs.length > 0 || section?.editedContent) {
-          sections.push(`\n${'='.repeat(60)}\n${category.toUpperCase()}\n${'='.repeat(60)}\n`);
-          
-          if (section?.editedContent) {
-            sections.push(section.editedContent);
-          } else {
-            const formattedSubs = categorySubs.map(s => extractContent(s.content, s.publishedName));
-            sections.push(formattedSubs.join('\n\n---\n\n'));
-          }
+        if (section?.editedContent) {
+          sections.push(section.editedContent);
         } else {
-          emptySections.push(category);
+          const formattedSubs = categorySubs.map(s => extractContent(s.content));
+          sections.push(formattedSubs.join('\n\n'));
         }
-      });
-    });
+      } else {
+        emptySections.push(category);
+      }
+    };
+
+    // Order: President, Board, Office, Community (all H2), ACC, CSC, Security, Committee (all H2)
+    addSection('President\'s Note');
+    addSection('Board Notes');
+    addSection('Office Notes');
+    
+    // Community Contributions as H2
+    COMMUNITY_CATEGORIES.forEach(cat => addSection(cat, true));
+    
+    addSection('ACC Activity Log');
+    addSection('CSC Table');
+    addSection('Security Report');
+    
+    // Committee Contributions as H2
+    COMMITTEE_CATEGORIES.forEach(cat => addSection(cat, true));
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 
@@ -708,9 +711,17 @@ export default function EditorPage() {
           <div className="lg:col-span-2">
             {selectedCategory ? (
               <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-                <h2 className="mb-4 text-2xl font-bold text-orange-900">
-                  {selectedCategory}
-                </h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-orange-900">
+                    {selectedCategory}
+                  </h2>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
+                  >
+                    ← Back to Full Preview
+                  </button>
+                </div>
 
                 {/* Individual Submissions */}
                 <div className="mb-6">

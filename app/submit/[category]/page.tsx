@@ -136,7 +136,7 @@ export default function SubmitPage() {
                 onClick={createConfetti}
                 className="mt-4 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
               >
-                🎉 More Confetti!
+                🎉 More Confetti
               </button>
               <Link 
                 href="/"
@@ -185,7 +185,7 @@ export default function SubmitPage() {
                   onChange={(e) => setLocation(e.target.value)}
                   required
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
-                  placeholder="e.g., 'Tramway near Copper' or 'Unit 123'"
+                  placeholder="e.g. Tramway & Live Oak"
                 />
               </div>
 

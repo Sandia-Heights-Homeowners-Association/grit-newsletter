@@ -68,13 +68,25 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
       throw new Error('Blob storage not configured');
     }
     
+    // Delete old blobs with this name first
+    try {
+      const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
+      for (const blob of blobs) {
+        if (blob.pathname === SUBMISSIONS_BLOB || blob.pathname.startsWith(SUBMISSIONS_BLOB)) {
+          await del(blob.url);
+          console.log('Deleted old blob:', blob.pathname);
+        }
+      }
+    } catch (delError) {
+      console.log('No old blobs to delete or error deleting:', delError);
+    }
+    
     const jsonData = JSON.stringify(submissions, null, 2);
     console.log('JSON data size:', jsonData.length, 'bytes');
     
     const result = await put(SUBMISSIONS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
-      addRandomSuffix: false,
     });
     
     console.log('Successfully saved submissions to blob:', result.url);
@@ -87,12 +99,24 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
 
 async function saveSectionProgress(progress: Map<string, SectionProgress[]>): Promise<void> {
   try {
+    // Delete old blobs with this name first
+    try {
+      const { blobs } = await list({ prefix: PROGRESS_BLOB });
+      for (const blob of blobs) {
+        if (blob.pathname === PROGRESS_BLOB || blob.pathname.startsWith(PROGRESS_BLOB)) {
+          await del(blob.url);
+          console.log('Deleted old progress blob:', blob.pathname);
+        }
+      }
+    } catch (delError) {
+      console.log('No old progress blobs to delete or error deleting:', delError);
+    }
+    
     const obj = Object.fromEntries(progress);
     const jsonData = JSON.stringify(obj, null, 2);
     await put(PROGRESS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
-      addRandomSuffix: false,
     });
   } catch (error) {
     console.error('Error saving section progress to blob:', error);

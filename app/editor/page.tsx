@@ -498,29 +498,6 @@ export default function EditorPage() {
           </div>
         )}
 
-        {/* Newsletter Progress */}
-        {progress.length > 0 && (
-          <div className="mb-6 rounded-lg bg-white border-2 border-orange-200 p-6 shadow-lg">
-            <h3 className="mb-4 text-lg font-semibold text-orange-900">Newsletter Completion Progress</h3>
-            <div className="mb-2 flex items-center justify-between text-sm text-gray-800">
-              <span>
-                {progress.filter(s => s.isComplete).length} of {progress.length} sections complete
-              </span>
-              <span className="font-semibold text-orange-900">
-                {Math.round((progress.filter(s => s.isComplete).length / progress.length) * 100)}%
-              </span>
-            </div>
-            <div className="h-4 w-full rounded-full bg-orange-100 border-2 border-orange-300 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500"
-                style={{ 
-                  width: `${Math.round((progress.filter(s => s.isComplete).length / progress.length) * 100)}%` 
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Data Viewer */}
         {showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
@@ -562,11 +539,6 @@ export default function EditorPage() {
                       <div key={section.category} className="rounded-lg bg-white p-3 border border-orange-200">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-orange-900">{section.category}</span>
-                          {section.isComplete ? (
-                            <span className="text-green-600 text-xl">✓</span>
-                          ) : (
-                            <span className="text-gray-400 text-xl">○</span>
-                          )}
                         </div>
                         {section.editedContent && (
                           <div className="mt-2 text-xs text-gray-600">
@@ -639,9 +611,6 @@ export default function EditorPage() {
                                   <span className="font-semibold text-sm text-orange-900">
                                     {section.category}
                                   </span>
-                                  {section.isComplete && (
-                                    <span className="text-green-600 text-lg">✓</span>
-                                  )}
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
@@ -699,9 +668,6 @@ export default function EditorPage() {
                                   <span className="font-semibold text-sm text-orange-900">
                                     {section.category}
                                   </span>
-                                  {section.isComplete && (
-                                    <span className="text-green-600 text-lg">✓</span>
-                                  )}
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
@@ -759,9 +725,6 @@ export default function EditorPage() {
                                   <span className="font-semibold text-sm text-orange-900">
                                     {section.category}
                                   </span>
-                                  {section.isComplete && (
-                                    <span className="text-green-600 text-lg">✓</span>
-                                  )}
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
                                   {publishedCount} submission{publishedCount !== 1 ? 's' : ''}

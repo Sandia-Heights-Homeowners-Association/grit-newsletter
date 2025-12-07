@@ -204,9 +204,14 @@ export default function SubmitPage() {
               </div>
 
               <div className="mb-6">
-                <label className="mb-2 block font-semibold text-orange-900">
-                  Your Submission *
-                </label>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="font-semibold text-orange-900">
+                    Your Submission *
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
+                  </span>
+                </div>
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}

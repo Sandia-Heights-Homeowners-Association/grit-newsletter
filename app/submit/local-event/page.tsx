@@ -247,6 +247,18 @@ export default function LocalEventPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
+                  Event Start Time (optional)
+                </label>
+                <input
+                  type="time"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Event End Time (optional)
                 </label>
                 <input

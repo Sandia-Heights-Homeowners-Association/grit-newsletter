@@ -135,19 +135,6 @@ export default function KidsCornerPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Title (optional)
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Give the submission a title"
-                />
-              </div>
-
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Published Info */}
@@ -163,7 +150,7 @@ export default function KidsCornerPage() {
                       onChange={(e) => setChildName(e.target.value)}
                       required
                       className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                      placeholder="Child's first name or full name"
+                      placeholder="Child's first name or initials"
                     />
                   </div>
                   <div className="mb-4">
@@ -230,16 +217,20 @@ export default function KidsCornerPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
+                  Title (optional)
                 </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
-                </div>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="Give the submission a title"
+                />
               </div>
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Child's Submission *
                   </label>
                   <span className="text-sm text-gray-600">
@@ -254,6 +245,15 @@ export default function KidsCornerPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Enter jokes, stories, poems, or describe the drawing/artwork. For images, include a link or note that you'll email them."
                 />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Photo (optional)
+                </label>
+                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
+                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                </div>
               </div>
 
               {error && (

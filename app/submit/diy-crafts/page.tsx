@@ -134,38 +134,6 @@ export default function DIYCraftsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Title (optional)
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Give your project a title"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Project Type *
-                </label>
-                <select
-                  value={projectType}
-                  onChange={(e) => setProjectType(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
-                >
-                  <option value="">Select a type...</option>
-                  <option value="Recipe">Recipe</option>
-                  <option value="Craft Project">Craft Project</option>
-                  <option value="Gardening Tip">Gardening Tip</option>
-                  <option value="Home Improvement">Home Improvement</option>
-                  <option value="Other DIY">Other DIY</option>
-                </select>
-              </div>
-
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Published Info */}
@@ -233,17 +201,40 @@ export default function DIYCraftsPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
+                  Title (optional)
                 </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
-                </div>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="Give your project a title"
+                />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Project Type *
+                </label>
+                <select
+                  value={projectType}
+                  onChange={(e) => setProjectType(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
+                >
+                  <option value="">Select a type...</option>
+                  <option value="Recipe">Recipe</option>
+                  <option value="Craft Project">Craft Project</option>
+                  <option value="Gardening Tip">Gardening Tip</option>
+                  <option value="Home Improvement">Home Improvement</option>
+                  <option value="Other DIY">Other DIY</option>
+                </select>
+              </div>
+
+              <div className="mb-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
-                    Instructions & Details *
+                  <label className="font-semibold text-orange-900 text-sm">
+                    Your Submission *
                   </label>
                   <span className="text-sm text-gray-600">
                     {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
@@ -257,6 +248,15 @@ export default function DIYCraftsPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Share your recipe, project steps, tips, materials needed, etc. Be as detailed as you'd like!"
                 />
+              </div>
+
+              <div className="mb-6">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Photo (optional)
+                </label>
+                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
+                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                </div>
               </div>
 
               {error && (

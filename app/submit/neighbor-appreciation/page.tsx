@@ -103,7 +103,7 @@ export default function NeighborAppreciationPage() {
           
           <div className="mb-6">
             <p className="text-gray-800 leading-relaxed mb-2">
-              Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you.
+            Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you. Please make sure your neighbor is comfortable being mentioned before submitting.
             </p>
             <p className="text-sm text-gray-600">
               You will not receive an email confirmation, but the editor will reach out if clarification is needed.
@@ -134,33 +134,6 @@ export default function NeighborAppreciationPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Title (optional)
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Title for your appreciation"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Neighbor's Name *
-                </label>
-                <input
-                  type="text"
-                  value={neighborName}
-                  onChange={(e) => setNeighborName(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Who you're appreciating"
-                />
-              </div>
-
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Published Info */}
@@ -228,16 +201,34 @@ export default function NeighborAppreciationPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
+                  Title (optional)
                 </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
-                </div>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="Title for your appreciation"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Neighbor's Name *
+                </label>
+                <input
+                  type="text"
+                  value={neighborName}
+                  onChange={(e) => setNeighborName(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="Who you're appreciating"
+                />
               </div>
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Your Message of Appreciation *
                   </label>
                   <span className="text-sm text-gray-600">

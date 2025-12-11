@@ -60,7 +60,8 @@ export default function NatureWildlifePage() {
 
     try {
       const titleInfo = title ? `Title: ${title}\n` : '';
-      const fullContent = `${titleInfo}Sighting Location: ${sightingLocation}\nSighting Date: ${sightingDate}\nPublished Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const locationInfo = sightingLocation ? `Location: ${sightingLocation}\n` : '';
+      const fullContent = `${titleInfo}${locationInfo}Published Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -101,12 +102,12 @@ export default function NatureWildlifePage() {
 
         <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
           <h1 className="mb-4 text-3xl font-bold text-orange-900">
-            Nature & Wildlife
+            Nature, Wildlife, and Scenery
           </h1>
           
           <div className="mb-6">
             <p className="text-gray-800 leading-relaxed mb-2">
-              Share wildlife sightings, nature photography, unusual plants, or environmental observations from around Sandia Heights.
+              Share your favorite glimpses of the natural world in and around Sandia Heights, whether it is wildlife, scenery, plants, or any outdoor moment that made you pause. From peaceful foothills mornings to surprise animal visitors, we welcome the scenes that capture the beauty of living here. If you are submitting a playful or funny animal photo, feel free to include a humorous caption.
             </p>
             <p className="text-sm text-gray-600">
               You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submission.
@@ -137,46 +138,6 @@ export default function NatureWildlifePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Title (optional)
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Title for your observation"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Sighting/Observation Location *
-                </label>
-                <input
-                  type="text"
-                  value={sightingLocation}
-                  onChange={(e) => setSightingLocation(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="e.g. My backyard, Tramway Trail, Near the foothills"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Date of Sighting/Observation *
-                </label>
-                <input
-                  type="date"
-                  value={sightingDate}
-                  onChange={(e) => setSightingDate(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
-                />
-              </div>
-
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Published Info */}
@@ -244,17 +205,34 @@ export default function NatureWildlifePage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
+                  Title (optional)
                 </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
-                </div>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="Title for your observation"
+                />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Location (optional)
+                </label>
+                <input
+                  type="text"
+                  value={sightingLocation}
+                  onChange={(e) => setSightingLocation(e.target.value)}
+                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="e.g. My backyard, Tramway Trail, Near the foothills"
+                />
+              </div>
+
+              <div className="mb-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
-                    Description of Sighting/Observation *
+                  <label className="font-semibold text-orange-900 text-sm">
+                    Description *
                   </label>
                   <span className="text-sm text-gray-600">
                     {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
@@ -268,6 +246,15 @@ export default function NatureWildlifePage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="What did you see? Animals, plants, weather, environmental changes? Include species names if known, behaviors observed, or any interesting details..."
                 />
+              </div>
+
+              <div className="mb-6">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Photo (optional)
+                </label>
+                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
+                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                </div>
               </div>
 
               {error && (

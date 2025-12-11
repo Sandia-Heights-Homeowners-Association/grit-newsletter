@@ -5,11 +5,9 @@ import { put, list, del } from '@vercel/blob';
 
 // Blob storage keys
 const SUBMISSIONS_BLOB = 'submissions.json';
-const PROGRESS_BLOB = 'section-progress.json';
 
 // In-memory cache
 let submissions: Submission[] = [];
-let sectionProgress: Map<string, SectionProgress[]> = new Map();
 let isInitialized = false;
 
 // Load data from Vercel Blob
@@ -38,25 +36,7 @@ async function loadSubmissions(): Promise<Submission[]> {
   return [];
 }
 
-async function loadSectionProgress(): Promise<Map<string, SectionProgress[]>> {
-  try {
-    const { blobs } = await list({ prefix: PROGRESS_BLOB });
-    console.log('Loading section progress, found blobs:', blobs.length, blobs.map(b => b.pathname));
-    
-    // Find the exact match (not just prefix match)
-    const exactBlob = blobs.find(b => b.pathname === PROGRESS_BLOB);
-    if (exactBlob) {
-      const response = await fetch(exactBlob.url);
-      const data = await response.json();
-      console.log('Loaded section progress entries:', Object.keys(data).length);
-      return new Map(Object.entries(data));
-    }
-    console.log('No progress blob found with exact name:', PROGRESS_BLOB);
-  } catch (error) {
-    console.error('Error loading section progress from blob:', error);
-  }
-  return new Map();
-}
+
 
 async function saveSubmissions(submissions: Submission[]): Promise<void> {
   try {
@@ -97,39 +77,14 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
   }
 }
 
-async function saveSectionProgress(progress: Map<string, SectionProgress[]>): Promise<void> {
-  try {
-    // Delete old blobs with this name first
-    try {
-      const { blobs } = await list({ prefix: PROGRESS_BLOB });
-      for (const blob of blobs) {
-        if (blob.pathname === PROGRESS_BLOB || blob.pathname.startsWith(PROGRESS_BLOB)) {
-          await del(blob.url);
-          console.log('Deleted old progress blob:', blob.pathname);
-        }
-      }
-    } catch (delError) {
-      console.log('No old progress blobs to delete or error deleting:', delError);
-    }
-    
-    const obj = Object.fromEntries(progress);
-    const jsonData = JSON.stringify(obj, null, 2);
-    await put(PROGRESS_BLOB, jsonData, {
-      access: 'public',
-      contentType: 'application/json',
-    });
-  } catch (error) {
-    console.error('Error saving section progress to blob:', error);
-  }
-}
+
 
 // Initialize data
 async function initializeData(): Promise<void> {
   if (!isInitialized) {
     submissions = await loadSubmissions();
-    sectionProgress = await loadSectionProgress();
     isInitialized = true;
-    console.log('Data initialized:', { submissions: submissions.length, progress: sectionProgress.size });
+    console.log('Data initialized:', { submissions: submissions.length });
   }
 }
 
@@ -143,7 +98,6 @@ async function ensureInitialized(): Promise<void> {
 // Reload data from blob (useful for refreshing in-memory cache)
 export async function reloadData(): Promise<void> {
   submissions = await loadSubmissions();
-  sectionProgress = await loadSectionProgress();
   isInitialized = true;
 }
 
@@ -167,7 +121,7 @@ export async function addSubmission(
     category,
     content,
     submittedAt: new Date(),
-    disposition: 'published',
+    disposition: undefined, // Unreviewed until editor accepts for a month
     month: getCurrentMonthKey(),
     publishedName,
   };
@@ -206,7 +160,7 @@ export async function getSubmissionsByCategory(
 // Update submission disposition
 export async function updateSubmissionDisposition(
   id: string,
-  disposition: DispositionStatus
+  disposition: string
 ): Promise<Submission | null> {
   await ensureInitialized();
   
@@ -254,54 +208,9 @@ export async function getRoutineAndCommitteeCount(month: string): Promise<number
   ).length;
 }
 
-// Initialize section progress for a month
-function initializeSectionProgress(month: string): SectionProgress[] {
-  const allCategories: SubmissionCategory[] = [
-    ...COMMUNITY_CATEGORIES,
-    ...ROUTINE_CATEGORIES,
-    ...COMMITTEE_CATEGORIES,
-  ];
-  
-  return allCategories.map(category => ({
-    category,
-    isComplete: false,
-  }));
-}
 
-// Get section progress for a month
-export async function getSectionProgress(month: string): Promise<SectionProgress[]> {
-  if (!sectionProgress.has(month)) {
-    sectionProgress.set(month, initializeSectionProgress(month));
-    await saveSectionProgress(sectionProgress);
-  }
-  return sectionProgress.get(month)!;
-}
 
-// Update section progress
-export async function updateSectionProgress(
-  month: string,
-  category: SubmissionCategory,
-  isComplete: boolean,
-  editedContent?: string
-): Promise<void> {
-  const progress = await getSectionProgress(month);
-  const section = progress.find(s => s.category === category);
-  
-  if (section) {
-    section.isComplete = isComplete;
-    section.editedContent = editedContent;
-    await saveSectionProgress(sectionProgress);
-  }
-}
-
-// Calculate overall newsletter completion percentage
-export async function getNewsletterCompletion(month: string): Promise<number> {
-  const progress = await getSectionProgress(month);
-  const completed = progress.filter(s => s.isComplete).length;
-  return Math.round((completed / progress.length) * 100);
-}
-
-// Get backlogged submissions (from previous months)
+// Get backlogged submissions
 export async function getBackloggedSubmissions(
   category: SubmissionCategory,
   currentMonth: string
@@ -310,8 +219,7 @@ export async function getBackloggedSubmissions(
   
   return submissions.filter(
     s => s.category === category && 
-        s.disposition === 'backlogged' && 
-        s.month !== currentMonth
+        s.disposition === 'backlog'
   );
 }
 
@@ -345,48 +253,51 @@ export async function deleteSubmission(id: string): Promise<boolean> {
   return false;
 }
 
-// Get submission counts for a category (published, backlogged, archived)
+// Get submission counts for a category (accepted for month, backlogged, archived)
 export async function getCategorySubmissionCounts(
   category: SubmissionCategory,
   currentMonth: string
-): Promise<{ published: number; backlogged: number; archived: number }> {
+): Promise<{ accepted: number; backlog: number; archived: number }> {
   await ensureInitialized();
   
   const categorySubs = submissions.filter(s => s.category === category);
-  const currentMonthSubs = categorySubs.filter(s => s.month === currentMonth);
   
   return {
-    published: currentMonthSubs.filter(s => s.disposition === 'published').length,
-    backlogged: categorySubs.filter(s => s.disposition === 'backlogged').length,
+    accepted: categorySubs.filter(s => s.disposition === currentMonth).length,
+    backlog: categorySubs.filter(s => s.disposition === 'backlog').length,
     archived: categorySubs.filter(s => s.disposition === 'archived').length,
   };
 }
 
 // Export all submissions for a month as text
 export async function exportNewsletterText(month: string): Promise<string> {
-  const progress = await getSectionProgress(month);
+  await ensureInitialized();
+  
+  const allCategories: SubmissionCategory[] = [
+    ...COMMUNITY_CATEGORIES,
+    ...ROUTINE_CATEGORIES,
+    ...COMMITTEE_CATEGORIES,
+  ];
+  
   let output = '';
   
-  progress.forEach(async (section) => {
-    if (section.isComplete) {
+  for (const category of allCategories) {
+    const subs = await getSubmissionsByCategory(category, month);
+    const accepted = subs.filter(s => s.disposition === month);
+    
+    if (accepted.length > 0) {
       output += `\n${'='.repeat(60)}\n`;
-      output += `${section.category.toUpperCase()}\n`;
+      output += `${category.toUpperCase()}\n`;
       output += `${'='.repeat(60)}\n\n`;
       
-      if (section.editedContent) {
-        output += section.editedContent;
-      } else {
-        const subs = await getSubmissionsByCategory(section.category, month);
-        const published = subs.filter(s => s.disposition === 'published');
-        published.forEach((sub, idx) => {
-          if (idx > 0) output += '\n\n---\n\n';
-          output += sub.content;
-        });
-      }
+      accepted.forEach((sub, idx) => {
+        if (idx > 0) output += '\n\n---\n\n';
+        output += sub.content;
+      });
       
       output += '\n\n';
     }
-  });
+  }
   
   return output;
 }
@@ -397,17 +308,14 @@ export async function getAllSubmissions(): Promise<Submission[]> {
   return [...submissions];
 }
 
-export async function getAllSectionProgress(): Promise<Map<string, SectionProgress[]>> {
-  await ensureInitialized();
-  return sectionProgress;
-}
+
 
 // Get list of contributor names for current month
 export async function getContributorNames(month: string): Promise<string[]> {
   await ensureInitialized();
   
   const contributors = submissions
-    .filter(s => s.month === month && s.publishedName && s.disposition === 'published')
+    .filter(s => s.month === month && s.publishedName && s.disposition === month)
     .map(s => s.publishedName!)
     .filter((name, index, self) => self.indexOf(name) === index) // unique names
     .sort();

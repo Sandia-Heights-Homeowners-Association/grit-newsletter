@@ -1,5 +1,5 @@
 import { put, list } from '@vercel/blob';
-import { getAllSubmissions, getAllSectionProgress } from './store';
+import { getAllSubmissions } from './store';
 
 /**
  * Create a timestamped backup in Vercel Blob
@@ -10,18 +10,9 @@ export async function createBackup(): Promise<string> {
   
   try {
     const submissions = await getAllSubmissions();
-    const sectionProgress = await getAllSectionProgress();
     
     // Save submissions backup
     await put(`${backupPrefix}submissions.json`, JSON.stringify(submissions, null, 2), {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-    });
-    
-    // Save progress backup
-    const progressObj = Object.fromEntries(sectionProgress);
-    await put(`${backupPrefix}section-progress.json`, JSON.stringify(progressObj, null, 2), {
       access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
@@ -62,12 +53,10 @@ export async function listBackups(): Promise<string[]> {
  */
 export async function exportAllData(): Promise<any> {
   const submissions = await getAllSubmissions();
-  const sectionProgress = await getAllSectionProgress();
   
   return {
     exportedAt: new Date().toISOString(),
     submissions,
-    sectionProgress: Object.fromEntries(sectionProgress),
   };
 }
 

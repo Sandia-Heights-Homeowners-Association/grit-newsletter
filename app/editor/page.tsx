@@ -388,8 +388,8 @@ export default function EditorPage() {
             <Image 
               src="/logo.png" 
               alt="The GRIT Logo" 
-              width={480} 
-              height={120}
+              width={400} 
+              height={100}
               className="object-contain"
             />
           </div>
@@ -451,8 +451,8 @@ export default function EditorPage() {
           <Image 
             src="/logo.png" 
             alt="The GRIT Logo" 
-            width={480} 
-            height={120}
+            width={400} 
+            height={100}
             className="object-contain"
           />
         </div>
@@ -639,7 +639,7 @@ export default function EditorPage() {
                         </div>
                         <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
                         <div className="mt-2 text-xs text-gray-600">
-                          ID: {sub.id} | {new Date(sub.submittedAt).toLocaleDateString()}
+                          ID: {sub.id} | {new Date(sub.submittedAt).toISOString().split('T')[0]}
                           {sub.publishedName && ` | By: ${sub.publishedName}`}
                         </div>
                       </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
-import { APP_NAME, APP_SUBTITLE, getNextPublicationInfo, getMonthName } from '@/lib/constants';
+import { APP_NAME, APP_SUBTITLE, getMonthName } from '@/lib/constants';
 
 export default function Home() {
   const [currentStats, setCurrentStats] = useState<Record<string, number>>({});
@@ -15,7 +15,7 @@ export default function Home() {
   const [previousMonthKey, setPreviousMonthKey] = useState('');
   const [currentRoutineCommitteeCount, setCurrentRoutineCommitteeCount] = useState(0);
   const [previousRoutineCommitteeCount, setPreviousRoutineCommitteeCount] = useState(0);
-  const { month, deadline } = getNextPublicationInfo();
+  const [deadlineInfo, setDeadlineInfo] = useState({ month: '', deadline: '' });
 
   useEffect(() => {
     fetch('/api/stats')
@@ -29,6 +29,7 @@ export default function Home() {
         setPreviousMonthKey(data.previousMonth || '');
         setCurrentRoutineCommitteeCount(data.currentRoutineCommitteeCount || 0);
         setPreviousRoutineCommitteeCount(data.previousRoutineCommitteeCount || 0);
+        setDeadlineInfo(data.deadlineInfo || { month: '', deadline: '' });
       })
       .catch(err => console.error('Failed to load stats:', err));
   }, []);
@@ -43,8 +44,8 @@ export default function Home() {
             <Image 
               src="/logo.png" 
               alt="The GRIT Logo" 
-              width={480} 
-              height={120}
+              width={400} 
+              height={100}
               className="object-contain"
             />
           </div>
@@ -81,22 +82,24 @@ export default function Home() {
         {/* Call to Action - Community Contributions */}
         <div className="mb-12">
           <div className="mb-8">
-            <h2 className="mb-4 text-3xl font-bold text-orange-900">
-              Now Collecting Contributions for the {month} Issue
+            <h2 className="mb-4 text-center text-3xl font-bold text-orange-900">
+              Now Collecting Contributions for the <span className="text-orange-700">{deadlineInfo.month || 'Upcoming'} Issue</span>
             </h2>
-            <div className="space-y-4 text-gray-900">
+            <p className="mb-4 text-center text-xl font-semibold text-red-800">
+              Local Events | Photos | Little Things Worth Sharing
+            </p>
+            <div className="mx-auto max-w-3xl space-y-4 text-center text-gray-900">
               <p className="text-lg">
                 <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
-                and we want to hear from you. Share your stories, announcements, photos, ideas, and more. We welcome any contributions,
-                from short thoughts to full-length articles. Simple text format without photos is preferred for ease of publication, but 
-                if you have photos you may email them to shhagrit@gmail.com.
-                Unsure which category to use? Select "On My Mind" for general thoughts or articles.
+                and we want to hear from you. We welcome any neighborhood-relevant content, 
+                from short thoughts to full articles.
               </p>
               <p>
-                <strong className="text-orange-900">Deadline:</strong> All content for the {month} issue must be 
-                submitted by <strong className="text-red-700">{deadline}</strong>. Click any category below to submit your contribution.
+                <strong className="text-orange-900">Deadline:</strong> All content for the {deadlineInfo.month || 'upcoming'} issue must be 
+                submitted by <strong className="text-red-700">{deadlineInfo.deadline || 'TBD'}</strong>.
               </p>
-              <p className="text-sm">
+              <p>
+                <strong className="text-orange-900">Content Guidelines</strong> are <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline font-medium">below</a>. 
                 By submitting, you agree to our <a href="#terms" className="text-green-700 hover:text-green-800 underline font-medium">submission terms</a>.
               </p>
             </div>
@@ -265,6 +268,30 @@ export default function Home() {
           </div>
         </div>
 
+        {/* SHHA Committee & Routine Monthly Submissions */}
+        <div className="mb-8 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 p-8 shadow-xl border-2 border-teal-200">
+          <h2 className="mb-4 text-2xl font-bold text-teal-900 text-center">
+            SHHA Committee & Routine Monthly Submissions
+          </h2>
+          <p className="mb-6 text-center text-gray-700">
+            For committee members and regular contributors
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link 
+              href="/routine"
+              className="rounded-lg bg-teal-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-800 hover:shadow-xl"
+            >
+              Routine Content
+            </Link>
+            <Link 
+              href="/committee"
+              className="rounded-lg bg-teal-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-800 hover:shadow-xl"
+            >
+              Committee Content
+            </Link>
+          </div>
+        </div>
+
         {/* Navigation to protected pages */}
         <div className="rounded-xl bg-gradient-to-br from-amber-900 to-red-900 p-8 shadow-xl">
           <h2 className="mb-4 text-2xl font-bold text-amber-100 text-center">
@@ -277,26 +304,56 @@ export default function Home() {
             >
               Editor Dashboard
             </Link>
-            <Link 
-              href="/routine"
-              className="rounded-lg bg-orange-800 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-900 hover:shadow-xl"
-            >
-              Routine Content
-            </Link>
-            <Link 
-              href="/committee"
-              className="rounded-lg bg-orange-800 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-orange-900 hover:shadow-xl"
-            >
-              Committee Content
-            </Link>
           </div>
           <p className="mt-4 text-center text-sm text-amber-200">
             Password required • For authorized users only
           </p>
         </div>
 
+        {/* Content Guidelines */}
+        <div id="guidelines" className="mt-12 bg-orange-50 p-6 border-2 border-red-300 rounded-xl">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">Content Guidelines</h3>
+          <div className="space-y-3 text-base text-gray-800">
+            <p>
+              To help us publish a clear, readable newsletter each month, please keep these in mind:
+            </p>
+            <ul className="ml-6 space-y-2 list-disc">
+              <li>Submissions may be very short or up to ~500 words.</li>
+              <li>Write for a general neighborhood audience. Keep content respectful, constructive, and appropriate for all ages.</li>
+              <li>Avoid inflammatory language, personal attacks, or speculation presented as fact.</li>
+              <li>Only plain text submissions are accepted in this portal.</li>
+              <li>
+                If your piece has sections, use simple headings such as:<br/>
+                <code className="bg-gray-200 px-1 py-0.5 rounded">HEADING:</code> on its own line, or <code className="bg-gray-200 px-1 py-0.5 rounded">### Heading</code>.
+              </li>
+              <li>If you reference links, include the full URL.</li>
+            </ul>
+            
+            <h4 className="mt-4 font-semibold text-gray-900">Photos</h4>
+            <p>If you would like photos included:</p>
+            <ul className="ml-6 space-y-2 list-disc">
+              <li>
+                Place a clear placeholder in your text where the photo should appear, for example:<br/>
+                <code className="bg-gray-200 px-1 py-0.5 rounded">[PHOTO: roadrunner on wall]</code> or <code className="bg-gray-200 px-1 py-0.5 rounded">[PHOTO 1: caption here]</code>
+              </li>
+              <li>Then email the photo(s) to <a href="mailto:griteditor@sandiahomeowners.org" className="text-blue-700 hover:text-blue-800 underline">griteditor@sandiahomeowners.org</a></li>
+            </ul>
+            
+            <h4 className="mt-4 font-semibold text-gray-900">Editing & Placement</h4>
+            <p>
+              Editors may shorten or edit submissions for clarity and fit. Not all content will appear in the same issue it is submitted; 
+              some items may be saved for a future month.
+            </p>
+            
+            <h4 className="mt-4 font-semibold text-gray-900">Not Sure Where It Fits?</h4>
+            <p>
+              If you're unsure which category to choose, select "On My Mind."
+            </p>
+          </div>
+        </div>
+
         {/* Submission Terms - Plain text at bottom */}
-        <div id="terms" className="mt-12 rounded-lg bg-gray-50 p-6 border border-gray-300">
+        <div id="terms" className="mt-8 bg-orange-50 p-6 border-2 border-red-300 rounded-xl">
           <h3 className="mb-3 text-lg font-semibold text-gray-900">Submission Terms & Conditions</h3>
           <div className="space-y-3 text-sm text-gray-800">
             <p>

@@ -107,7 +107,7 @@ export default function KidsCornerPage() {
               Submit jokes, drawings, stories, poems, or other creative work from young residents. Parents: please submit on behalf of your child.
             </p>
             <p className="text-sm text-gray-600">
-              You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos or drawings to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submission.
+              You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos or drawings to griteditor@sandiahomeowners.org, or upload them to a 3rd party service and share a link within your submission.
             </p>
           </div>
 
@@ -252,7 +252,7 @@ export default function KidsCornerPage() {
                   Photo (optional)
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                  <p className="text-sm text-gray-600">Email photos to griteditor@sandiahomeowners.org or include a link in your description</p>
                 </div>
               </div>
 

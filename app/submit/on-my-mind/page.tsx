@@ -234,7 +234,7 @@ export default function OnMyMindPage() {
                   Photo (optional)
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                  <p className="text-sm text-gray-600">Email photos to griteditor@sandiahomeowners.org or include a link in your description</p>
                 </div>
               </div>
 

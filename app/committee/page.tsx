@@ -5,12 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { COMMITTEE_CATEGORIES } from '@/lib/types';
-import { COMMITTEE_PASSWORD } from '@/lib/constants';
 
 export default function CommitteePage() {
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
   const [category, setCategory] = useState<typeof COMMITTEE_CATEGORIES[number]>(COMMITTEE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
@@ -53,16 +50,6 @@ export default function CommitteePage() {
     fire(0.1, { spread: 120, startVelocity: 45 });
   };
 
-  const handleAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === COMMITTEE_PASSWORD) {
-      setAuthenticated(true);
-      setError('');
-    } else {
-      setError('Incorrect password');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -96,70 +83,6 @@ export default function CommitteePage() {
     }
   };
 
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-        <main className="mx-auto max-w-md px-4 py-20">
-          {/* Logo Header */}
-          <div className="mb-8 flex justify-center">
-            <Image 
-              src="/logo.png" 
-              alt="The GRIT Logo" 
-              width={480} 
-              height={120}
-              className="object-contain"
-            />
-          </div>
-          
-          <Link 
-            href="/"
-            className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
-          >
-            ← Back to Dashboard
-          </Link>
-
-          <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
-            <h1 className="mb-6 text-3xl font-bold text-orange-900">
-              Committee Content Submission
-            </h1>
-            <p className="mb-6 text-gray-600">
-              This page is password-protected. Please enter the password to continue.
-            </p>
-
-            <form onSubmit={handleAuth}>
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
-                  placeholder="Enter password"
-                />
-              </div>
-
-              {error && (
-                <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-700">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl"
-              >
-                Access
-              </button>
-            </form>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
@@ -168,8 +91,8 @@ export default function CommitteePage() {
           <Image 
             src="/logo.png" 
             alt="The GRIT Logo" 
-            width={480} 
-            height={120}
+            width={400} 
+            height={100}
             className="object-contain"
           />
         </div>

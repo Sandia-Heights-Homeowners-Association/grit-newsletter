@@ -106,7 +106,7 @@ export default function DIYCraftsPage() {
               Share your favorite recipes, craft projects, gardening tips, or DIY home improvement advice. Include step-by-step instructions if applicable.
             </p>
             <p className="text-sm text-gray-600">
-              You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to shhagrit@gmail.com, or upload them to a 3rd party service and share a link within your submission.
+              You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to griteditor@sandiahomeowners.org, or upload them to a 3rd party service and share a link within your submission.
             </p>
           </div>
 
@@ -255,7 +255,7 @@ export default function DIYCraftsPage() {
                   Photo (optional)
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to shhagrit@gmail.com or include a link in your description</p>
+                  <p className="text-sm text-gray-600">Email photos to griteditor@sandiahomeowners.org or include a link in your description</p>
                 </div>
               </div>
 

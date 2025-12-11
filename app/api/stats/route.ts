@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount } from '@/lib/store';
-import { getCurrentMonthKey, getPreviousMonthKey } from '@/lib/constants';
+import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
     const currentMonth = getCurrentMonthKey();
     const previousMonth = getPreviousMonthKey();
+    const deadlineInfo = getNextPublicationInfo();
     
     const currentStats = await getCategoryStats(currentMonth);
     const currentContributors = await getContributorNames(currentMonth);
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest) {
       previousStats,
       previousContributors,
       previousMonth,
-      previousRoutineCommitteeCount
+      previousRoutineCommitteeCount,
+      deadlineInfo
     });
   } catch (error) {
     console.error('Stats error:', error);

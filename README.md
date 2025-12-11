@@ -109,15 +109,22 @@ npm start
 ### For Editors
 1. Click "Editor Dashboard" on the main page
 2. Enter password: `grit2025`
-3. Select a section from the left sidebar to edit
-4. For each submission:
+3. **Select Month**: Use the prominent month selector at the top to choose which newsletter issue to edit
+   - Defaults to the current collection month (based on deadline)
+   - Can switch between past, current, and future months
+   - Useful for handling late submissions near deadline boundaries
+4. **Settings**: Click the ⚙️ Settings button to:
+   - Change the submission deadline day (1-28 of month)
+   - View current deadline and target publication month
+5. Select a section from the left sidebar to edit
+6. For each submission:
    - Set disposition (Published, Backlogged, or Archived)
    - Only "Published" submissions appear in the concatenated content
-5. Edit the combined text in the main editor
-6. Access backlogged content from previous months if needed
-7. Click "Save Progress" to save changes
-8. Click "Mark as Complete" when section is finalized
-9. Use "Export Newsletter" button to download the complete newsletter as a .txt file
+7. Edit the combined text in the main editor
+8. Access backlogged content from previous months if needed
+9. Click "Save Progress" to save changes
+10. Click "Mark as Complete" when section is finalized
+11. Use "Export Newsletter" button to download the complete newsletter as a .txt file
 
 ## Data Storage
 
@@ -199,10 +206,19 @@ export const COMMITTEE_CATEGORIES = [...];
 ```
 
 ### Changing Submission Deadline
-Edit `SUBMISSION_DEADLINE_DAY` in `lib/constants.ts`:
+**Recommended Method:** Use the Settings panel in the Editor Dashboard:
+1. Click "Editor Dashboard" and log in
+2. Click the ⚙️ Settings button
+3. Enter a new deadline day (1-28)
+4. Click "Update Deadline"
+
+The deadline setting is stored in Vercel Blob and persists across deployments.
+
+**Alternative Method:** Edit `SUBMISSION_DEADLINE_DAY` in `lib/constants.ts`:
 ```typescript
 export const SUBMISSION_DEADLINE_DAY = 10; // Day of the month
 ```
+Note: This requires redeployment and will be overridden by the Settings panel value if one exists.
 
 ## File Structure
 

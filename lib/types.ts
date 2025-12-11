@@ -37,30 +37,24 @@ export type RoutineCategory = typeof ROUTINE_CATEGORIES[number];
 export type CommitteeCategory = typeof COMMITTEE_CATEGORIES[number];
 export type SubmissionCategory = CommunityCategory | RoutineCategory | CommitteeCategory;
 
-export type DispositionStatus = 'published' | 'backlogged' | 'archived';
+// Disposition can be: specific month (YYYY-MM), 'backlog', or 'archived'
+// If disposition is a month string, it means "Accepted for [Month]"
+// 'backlog' means saved for future use
+// 'archived' means not being used
+// Empty/undefined means not yet reviewed
+export type DispositionStatus = string; // Either YYYY-MM format, 'backlog', or 'archived', or empty
 
 export interface Submission {
   id: string;
   category: SubmissionCategory;
   content: string;
   submittedAt: Date;
-  disposition: DispositionStatus;
-  month: string; // Format: YYYY-MM
+  disposition?: DispositionStatus; // Optional - undefined means not yet reviewed
+  month: string; // Format: YYYY-MM - the month this was originally submitted for
   publishedName?: string; // Name as it should appear in contributor list
-}
-
-export interface SectionProgress {
-  category: SubmissionCategory;
-  isComplete: boolean;
-  editedContent?: string;
 }
 
 export interface CategoryStats {
   category: SubmissionCategory;
   count: number;
-}
-
-export interface NewsletterMonth {
-  month: string; // Format: YYYY-MM
-  sections: SectionProgress[];
 }

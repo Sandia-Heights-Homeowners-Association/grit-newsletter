@@ -5,15 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { EDITOR_PASSWORD } from '@/lib/constants';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
-import type { Submission, SectionProgress, SubmissionCategory } from '@/lib/types';
+import type { Submission, SubmissionCategory } from '@/lib/types';
 
 export default function EditorPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [progress, setProgress] = useState<SectionProgress[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<SubmissionCategory | null>(null);
-  const [editedContent, setEditedContent] = useState('');
   const [backlog, setBacklog] = useState<Submission[]>([]);
   const [archived, setArchived] = useState<Submission[]>([]);
   const [authError, setAuthError] = useState('');
@@ -23,6 +21,11 @@ export default function EditorPage() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Community Submissions']));
   const [blobStatus, setBlobStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [blobError, setBlobError] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [deadlineDay, setDeadlineDay] = useState<number>(10);
+  const [currentDeadlineInfo, setCurrentDeadlineInfo] = useState<{month: string; deadline: string}>({month: '', deadline: ''});
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [availableMonths, setAvailableMonths] = useState<Array<{key: string; label: string}>>([]);
 
   const toggleGroup = (groupName: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -62,18 +65,14 @@ export default function EditorPage() {
     
     // Helper to add section content
     const addSection = (category: SubmissionCategory, heading: string) => {
-      const section = progress.find(p => p.category === category);
-      const categorySubs = submissions.filter(s => s.category === category && s.disposition === 'published');
+      const categorySubs = submissions.filter(s => 
+        s.category === category && s.disposition === selectedMonth
+      );
       
-      if (categorySubs.length > 0 || section?.editedContent) {
+      if (categorySubs.length > 0) {
         sections.push(`\n${heading}\n`);
-        
-        if (section?.editedContent) {
-          sections.push(section.editedContent);
-        } else {
-          const formattedSubs = categorySubs.map(s => extractContent(s.content));
-          sections.push(formattedSubs.join('\n\n'));
-        }
+        const formattedSubs = categorySubs.map(s => extractContent(s.content));
+        sections.push(formattedSubs.join('\n\n'));
       } else {
         emptySections.push(category);
       }
@@ -90,9 +89,8 @@ export default function EditorPage() {
     
     // Community Contributions header
     const communityHasContent = COMMUNITY_CATEGORIES.some(cat => {
-      const section = progress.find(p => p.category === cat);
-      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === 'published');
-      return categorySubs.length > 0 || section?.editedContent;
+      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === selectedMonth);
+      return categorySubs.length > 0;
     });
     
     if (communityHasContent) {
@@ -137,11 +135,12 @@ export default function EditorPage() {
     }
   };
 
-  const loadEditorData = async () => {
+  const loadEditorData = async (monthKey?: string) => {
     setLoading(true);
     setBlobStatus('checking');
     try {
-      const response = await fetch('/api/editor', {
+      const url = monthKey ? `/api/editor?month=${monthKey}` : '/api/editor';
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${password}`,
         },
@@ -150,14 +149,18 @@ export default function EditorPage() {
       if (response.ok) {
         const data = await response.json();
         setSubmissions(data.submissions || []);
-        setProgress(data.progress || []);
         setCurrentMonth(data.month || '');
+        setSelectedMonth(data.month || '');
+        setAvailableMonths(data.availableMonths || []);
+        setDeadlineDay(data.deadlineDay || 10);
+        setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         setBlobStatus('connected');
         setBlobError('');
         console.log('Editor data loaded:', { 
           submissions: data.submissions?.length || 0, 
           progress: data.progress?.length || 0,
-          month: data.month 
+          month: data.month,
+          deadlineDay: data.deadlineDay
         });
       } else {
         console.error('Failed to load editor data:', response.status, response.statusText);
@@ -174,7 +177,7 @@ export default function EditorPage() {
     }
   };
 
-  const updateDisposition = async (submissionId: string, disposition: 'published' | 'backlogged' | 'archived') => {
+  const updateDisposition = async (submissionId: string, disposition: string) => {
     try {
       const response = await fetch('/api/editor', {
         method: 'POST',
@@ -232,21 +235,8 @@ export default function EditorPage() {
 
   const loadCategoryContent = async (category: SubmissionCategory) => {
     setSelectedCategory(category);
-    
-    // Get current submissions for this category
-    const categorySubs = submissions.filter(s => s.category === category);
-    const published = categorySubs.filter(s => s.disposition === 'published');
-    
-    // Concatenate published submissions using clean formatting
-    const concatenated = published
-      .map(s => extractContent(s.content))
-      .join('\n\n---\n\n');
-    
-    // Check if there's already edited content
-    const section = progress.find(p => p.category === category);
-    setEditedContent(section?.editedContent || concatenated);
 
-    // Load backlog
+    // Load backlog and archived
     try {
       const response = await fetch('/api/editor', {
         method: 'POST',
@@ -264,34 +254,6 @@ export default function EditorPage() {
       }
     } catch (err) {
       console.error('Failed to load backlog:', err);
-    }
-  };
-
-  const saveSection = async () => {
-    if (!selectedCategory) return;
-
-    try {
-      const response = await fetch('/api/editor', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${password}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'updateSection',
-          category: selectedCategory,
-          isComplete: false,
-          editedContent,
-        }),
-      });
-
-      if (response.ok) {
-        await loadEditorData();
-        alert('Section saved successfully!');
-      }
-    } catch (err) {
-      console.error('Failed to save section:', err);
-      alert('Failed to save section');
     }
   };
 
@@ -346,6 +308,46 @@ export default function EditorPage() {
     } catch (err) {
       console.error('Failed to create backup:', err);
       alert('Failed to create backup');
+    }
+  };
+
+  const handleMonthChange = async (monthKey: string) => {
+    setSelectedMonth(monthKey);
+    setSelectedCategory(null); // Clear selected category when changing months
+    await loadEditorData(monthKey);
+  };
+
+  const updateDeadlineDay = async () => {
+    if (deadlineDay < 1 || deadlineDay > 28) {
+      alert('Please enter a day between 1 and 28');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDeadline',
+          deadlineDay: deadlineDay,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
+        alert('Deadline updated successfully! The new deadline will be reflected on the homepage.');
+        setShowSettings(false);
+        await loadEditorData(); // Reload to get updated data
+      } else {
+        alert('Failed to update deadline');
+      }
+    } catch (err) {
+      console.error('Failed to update deadline:', err);
+      alert('An error occurred while updating the deadline');
     }
   };
 
@@ -464,6 +466,13 @@ export default function EditorPage() {
           </Link>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="rounded-lg bg-gradient-to-r from-gray-600 to-slate-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-gray-700 hover:to-slate-700"
+              title="Manage settings including submission deadline"
+            >
+              ⚙️ Settings
+            </button>
+            <button
               onClick={() => setShowJsonViewer(!showJsonViewer)}
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
@@ -498,13 +507,111 @@ export default function EditorPage() {
           Editor Dashboard
         </h1>
         
-        {currentMonth && (
-          <div className="mb-6 rounded-lg bg-amber-100 border-2 border-orange-300 p-4">
-            <p className="text-gray-900">
-              <span className="font-semibold">Editing month:</span> {currentMonth} | 
-              <span className="font-semibold ml-4">Submissions:</span> {submissions.length} | 
-              <span className="font-semibold ml-4">Sections:</span> {progress.length}
-            </p>
+        {/* Month Selector */}
+        <div className="mb-6 rounded-xl bg-gradient-to-r from-orange-100 to-amber-100 border-2 border-orange-400 p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-orange-900 mb-2">Select Newsletter Issue</h2>
+              <p className="text-sm text-gray-700">
+                Choose which month's content you want to edit. The current collection month (based on deadline) is pre-selected.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="text-lg font-semibold text-orange-900">
+                Editing:
+              </label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="text-lg font-semibold rounded-lg border-2 border-orange-400 bg-white px-4 py-3 text-orange-900 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 min-w-[250px]"
+              >
+                {availableMonths.map(month => (
+                  <option key={month.key} value={month.key}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        {showSettings && (
+          <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-6 shadow-lg">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">Settings</h2>
+            
+            <div className="mb-6">
+              <h3 className="mb-3 text-lg font-semibold text-gray-800">Submission Deadline</h3>
+              <p className="mb-4 text-sm text-gray-700">
+                The submission deadline determines which month submissions are collected for. 
+                Current deadline: <strong>{currentDeadlineInfo.deadline}</strong> for the <strong>{currentDeadlineInfo.month}</strong> issue.
+              </p>
+              
+              <div className="flex items-center gap-4">
+                <label className="font-medium text-gray-800">
+                  Deadline Day of Month:
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="28"
+                  value={deadlineDay}
+                  onChange={(e) => setDeadlineDay(parseInt(e.target.value))}
+                  className="w-20 rounded-lg border-2 border-gray-300 p-2 text-gray-900 focus:border-orange-500 focus:outline-none"
+                />
+                <button
+                  onClick={updateDeadlineDay}
+                  className="rounded-lg bg-orange-600 px-4 py-2 font-semibold text-white transition hover:bg-orange-700"
+                >
+                  Update Deadline
+                </button>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="rounded-lg bg-gray-400 px-4 py-2 font-semibold text-white transition hover:bg-gray-500"
+                >
+                  Cancel
+                </button>
+              </div>
+              
+              <p className="mt-3 text-xs text-gray-600">
+                Note: Day must be between 1-28. Recommended: 10th of the month. This affects the homepage deadline display and which month submissions are collected for.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Stats Bar - only show if not showing settings */}
+        {!showSettings && currentMonth && (
+          <div className="mb-6 rounded-lg bg-white border-2 border-orange-300 p-4 shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-6">
+                <div>
+                  <span className="text-sm text-gray-600">Total Submissions</span>
+                  <p className="text-2xl font-bold text-orange-900">{submissions.length}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">Accepted for {selectedMonth}</span>
+                  <p className="text-2xl font-bold text-green-700">
+                    {submissions.filter(s => s.disposition === selectedMonth).length}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">Backlogged</span>
+                  <p className="text-2xl font-bold text-yellow-700">
+                    {submissions.filter(s => s.disposition === 'backlog').length}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">Unreviewed</span>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {submissions.filter(s => !s.disposition || s.disposition === '').length}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-sm text-gray-600">Current Collection Deadline</span>
+                <p className="text-lg font-semibold text-red-700">{currentDeadlineInfo.deadline}</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -524,37 +631,17 @@ export default function EditorPage() {
                         <div className="mb-2">
                           <span className="font-semibold text-orange-900">{sub.category}</span>
                           <span className={`ml-2 inline-block rounded px-2 py-1 text-xs font-semibold ${
-                            sub.disposition === 'published' ? 'bg-green-100 text-green-800' :
-                            sub.disposition === 'backlogged' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>{sub.disposition}</span>
+                            sub.disposition === selectedMonth ? 'bg-green-100 text-green-800' :
+                            sub.disposition === 'backlog' ? 'bg-yellow-100 text-yellow-800' :
+                            sub.disposition === 'archived' ? 'bg-gray-100 text-gray-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>{sub.disposition || 'unreviewed'}</span>
                         </div>
                         <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
                         <div className="mt-2 text-xs text-gray-600">
                           ID: {sub.id} | {new Date(sub.submittedAt).toLocaleDateString()}
                           {sub.publishedName && ` | By: ${sub.publishedName}`}
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-3 text-lg font-semibold text-red-800">Section Progress ({progress.length})</h3>
-                <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-2">
-                  {progress.length === 0 ? (
-                    <p className="text-gray-800">No sections initialized</p>
-                  ) : (
-                    progress.map((section) => (
-                      <div key={section.category} className="rounded-lg bg-white p-3 border border-orange-200">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-orange-900">{section.category}</span>
-                        </div>
-                        {section.editedContent && (
-                          <div className="mt-2 text-xs text-gray-600">
-                            Has edited content ({section.editedContent.length} chars)
-                          </div>
-                        )}
                       </div>
                     ))
                   )}
@@ -594,37 +681,42 @@ export default function EditorPage() {
                     </button>
                     {expandedGroups.has('Community Submissions') && (
                       <div className="bg-white p-2 space-y-1">
-                        {progress
-                          .filter(section => COMMUNITY_CATEGORIES.includes(section.category as any))
-                          .map((section) => {
+                        {COMMUNITY_CATEGORIES.map((category) => {
                             const categorySubmissions = submissions.filter(
-                              s => s.category === section.category
+                              s => s.category === category
                             );
-                            const publishedCount = categorySubmissions.filter(
-                              s => s.disposition === 'published'
+                            const acceptedCount = categorySubmissions.filter(
+                              s => s.disposition === selectedMonth
                             ).length;
                             const backlogCount = categorySubmissions.filter(
-                              s => s.disposition === 'backlogged'
+                              s => s.disposition === 'backlog'
+                            ).length;
+                            const unreviewed = categorySubmissions.filter(
+                              s => !s.disposition || s.disposition === ''
                             ).length;
 
                             return (
                               <button
-                                key={section.category}
-                                onClick={() => loadCategoryContent(section.category)}
+                                key={category}
+                                onClick={() => loadCategoryContent(category)}
                                 className={`w-full rounded-lg p-2 text-left transition ${
-                                  selectedCategory === section.category
+                                  selectedCategory === category
                                     ? 'bg-orange-100 border-2 border-orange-500'
                                     : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="font-semibold text-sm text-orange-900">
-                                    {section.category}
+                                    {category}
                                   </span>
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
-                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
-                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
+                                  {unreviewed > 0 && <span className="text-blue-700">{unreviewed} new</span>}
+                                  {unreviewed > 0 && (acceptedCount > 0 || backlogCount > 0) && <span> | </span>}
+                                  {acceptedCount > 0 && <span className="text-green-700">{acceptedCount} accepted</span>}
+                                  {acceptedCount > 0 && backlogCount > 0 && <span> | </span>}
+                                  {backlogCount > 0 && <span className="text-yellow-700">{backlogCount} backlog</span>}
+                                  {unreviewed === 0 && acceptedCount === 0 && backlogCount === 0 && <span className="text-gray-500">no submissions</span>}
                                 </div>
                               </button>
                             );
@@ -651,37 +743,42 @@ export default function EditorPage() {
                     </button>
                     {expandedGroups.has('Routine Content') && (
                       <div className="bg-white p-2 space-y-1">
-                        {progress
-                          .filter(section => ROUTINE_CATEGORIES.includes(section.category as any))
-                          .map((section) => {
+                        {ROUTINE_CATEGORIES.map((category) => {
                             const categorySubmissions = submissions.filter(
-                              s => s.category === section.category
+                              s => s.category === category
                             );
-                            const publishedCount = categorySubmissions.filter(
-                              s => s.disposition === 'published'
+                            const acceptedCount = categorySubmissions.filter(
+                              s => s.disposition === selectedMonth
                             ).length;
                             const backlogCount = categorySubmissions.filter(
-                              s => s.disposition === 'backlogged'
+                              s => s.disposition === 'backlog'
+                            ).length;
+                            const unreviewed = categorySubmissions.filter(
+                              s => !s.disposition || s.disposition === ''
                             ).length;
 
                             return (
                               <button
-                                key={section.category}
-                                onClick={() => loadCategoryContent(section.category)}
+                                key={category}
+                                onClick={() => loadCategoryContent(category)}
                                 className={`w-full rounded-lg p-2 text-left transition ${
-                                  selectedCategory === section.category
+                                  selectedCategory === category
                                     ? 'bg-orange-100 border-2 border-orange-500'
                                     : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="font-semibold text-sm text-orange-900">
-                                    {section.category}
+                                    {category}
                                   </span>
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
-                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
-                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
+                                  {unreviewed > 0 && <span className="text-blue-700">{unreviewed} new</span>}
+                                  {unreviewed > 0 && (acceptedCount > 0 || backlogCount > 0) && <span> | </span>}
+                                  {acceptedCount > 0 && <span className="text-green-700">{acceptedCount} accepted</span>}
+                                  {acceptedCount > 0 && backlogCount > 0 && <span> | </span>}
+                                  {backlogCount > 0 && <span className="text-yellow-700">{backlogCount} backlog</span>}
+                                  {unreviewed === 0 && acceptedCount === 0 && backlogCount === 0 && <span className="text-gray-500">no submissions</span>}
                                 </div>
                               </button>
                             );
@@ -708,37 +805,42 @@ export default function EditorPage() {
                     </button>
                     {expandedGroups.has('Committee Content') && (
                       <div className="bg-white p-2 space-y-1">
-                        {progress
-                          .filter(section => COMMITTEE_CATEGORIES.includes(section.category as any))
-                          .map((section) => {
+                        {COMMITTEE_CATEGORIES.map((category) => {
                             const categorySubmissions = submissions.filter(
-                              s => s.category === section.category
+                              s => s.category === category
                             );
-                            const publishedCount = categorySubmissions.filter(
-                              s => s.disposition === 'published'
+                            const acceptedCount = categorySubmissions.filter(
+                              s => s.disposition === selectedMonth
                             ).length;
                             const backlogCount = categorySubmissions.filter(
-                              s => s.disposition === 'backlogged'
+                              s => s.disposition === 'backlog'
+                            ).length;
+                            const unreviewed = categorySubmissions.filter(
+                              s => !s.disposition || s.disposition === ''
                             ).length;
 
                             return (
                               <button
-                                key={section.category}
-                                onClick={() => loadCategoryContent(section.category)}
+                                key={category}
+                                onClick={() => loadCategoryContent(category)}
                                 className={`w-full rounded-lg p-2 text-left transition ${
-                                  selectedCategory === section.category
+                                  selectedCategory === category
                                     ? 'bg-orange-100 border-2 border-orange-500'
                                     : 'bg-amber-50 hover:bg-amber-100 border border-orange-200'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="font-semibold text-sm text-orange-900">
-                                    {section.category}
+                                    {category}
                                   </span>
                                 </div>
                                 <div className="text-xs text-gray-800 mt-1">
-                                  {publishedCount} submission{publishedCount !== 1 ? 's' : ''}
-                                  {backlogCount > 0 && ` / ${backlogCount} backlog`}
+                                  {unreviewed > 0 && <span className="text-blue-700">{unreviewed} new</span>}
+                                  {unreviewed > 0 && (acceptedCount > 0 || backlogCount > 0) && <span> | </span>}
+                                  {acceptedCount > 0 && <span className="text-green-700">{acceptedCount} accepted</span>}
+                                  {acceptedCount > 0 && backlogCount > 0 && <span> | </span>}
+                                  {backlogCount > 0 && <span className="text-yellow-700">{backlogCount} backlog</span>}
+                                  {unreviewed === 0 && acceptedCount === 0 && backlogCount === 0 && <span className="text-gray-500">no submissions</span>}
                                 </div>
                               </button>
                             );
@@ -785,19 +887,19 @@ export default function EditorPage() {
                           </div>
                           <div className="flex gap-2 flex-wrap">
                             <button
-                              onClick={() => updateDisposition(sub.id, 'published')}
+                              onClick={() => updateDisposition(sub.id, selectedMonth)}
                               className={`rounded px-3 py-1 text-xs font-semibold ${
-                                sub.disposition === 'published'
+                                sub.disposition === selectedMonth
                                   ? 'bg-green-600 text-white'
                                   : 'bg-orange-100 text-orange-800 hover:bg-green-100 border border-orange-300'
                               }`}
                             >
-                              Published
+                              Accept for {selectedMonth}
                             </button>
                             <button
-                              onClick={() => updateDisposition(sub.id, 'backlogged')}
+                              onClick={() => updateDisposition(sub.id, 'backlog')}
                               className={`rounded px-3 py-1 text-xs font-semibold ${
-                                sub.disposition === 'backlogged'
+                                sub.disposition === 'backlog'
                                   ? 'bg-yellow-600 text-white'
                                   : 'bg-orange-100 text-orange-800 hover:bg-yellow-100 border border-orange-300'
                               }`}
@@ -845,10 +947,10 @@ export default function EditorPage() {
                             </div>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => updateDisposition(sub.id, 'published')}
+                                onClick={() => updateDisposition(sub.id, selectedMonth)}
                                 className="rounded px-3 py-1 text-xs font-semibold bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
                               >
-                                Publish
+                                Accept for {selectedMonth}
                               </button>
                               <button
                                 onClick={() => deleteSubmission(sub.id, sub.content)}
@@ -894,43 +996,19 @@ export default function EditorPage() {
                   </div>
                 )}
 
-                {/* Concatenated Editor */}
+                {/* Combined Section Preview */}
                 <div className="mb-6">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="font-semibold text-red-800">
-                      Edit Combined Section
-                    </h3>
-                    <span className="text-sm text-gray-600">
-                      {getWordCount(editedContent)} words
-                    </span>
+                  <h3 className="mb-3 font-semibold text-red-800">
+                    Combined Section Preview
+                  </h3>
+                  <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-4 max-h-[600px] overflow-y-auto">
+                    <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
+                      {submissions
+                        .filter(s => s.category === selectedCategory && s.disposition === selectedMonth)
+                        .map(s => extractContent(s.content))
+                        .join('\\n\\n---\\n\\n') || 'No submissions accepted for this month yet.'}
+                    </pre>
                   </div>
-                  <textarea
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    rows={20}
-                    className="w-full rounded-lg border border-gray-300 p-4 font-mono text-sm text-amber-700 focus:border-blue-500 focus:outline-none placeholder:text-amber-600"
-                    placeholder="Published submissions will be concatenated here. You can edit the combined text directly."
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={saveSection}
-                    className="rounded-lg bg-green-600 px-6 py-2 font-semibold text-white transition hover:bg-green-700"
-                  >
-                    Save Section
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (selectedCategory) {
-                        loadCategoryContent(selectedCategory);
-                      }
-                    }}
-                    className="rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition hover:bg-blue-700"
-                  >
-                    Re-import from Submissions
-                  </button>
                 </div>
               </div>
             ) : (
@@ -939,7 +1017,7 @@ export default function EditorPage() {
                   Full Newsletter Preview
                 </h2>
                 <p className="mb-4 text-gray-700">
-                  This is a read-only preview of all published content. To edit individual sections, select a category from the left sidebar.
+                  This is a read-only preview of all content accepted for {selectedMonth}. To view individual sections, select a category from the left sidebar.
                 </p>
                 <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
                   <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
@@ -953,28 +1031,28 @@ export default function EditorPage() {
 
         {/* Blob Storage Status Indicator */}
         {authenticated && (
-          <div className="fixed bottom-4 right-4 z-50">
+          <div className="mt-6 flex justify-center">
             {blobStatus === 'checking' && (
-              <div className="rounded-lg bg-gray-100 border-2 border-gray-300 px-4 py-2 shadow-lg flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full"></div>
-                <span className="text-sm text-gray-700">Checking blob storage...</span>
+              <div className="rounded-lg bg-gray-100 border border-gray-300 px-4 py-2 flex items-center gap-2">
+                <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
+                <span className="text-xs text-gray-600">Checking blob storage...</span>
               </div>
             )}
             {blobStatus === 'connected' && (
-              <div className="rounded-lg bg-green-50 border-2 border-green-500 px-4 py-2 shadow-lg flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <span className="text-sm font-semibold text-green-900">Blob storage connected</span>
+              <div className="rounded-lg bg-green-50 border border-green-400 px-4 py-2 flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <span className="text-xs text-green-800">Blob storage connected</span>
               </div>
             )}
             {blobStatus === 'error' && (
-              <div className="rounded-lg bg-red-50 border-2 border-red-500 px-4 py-2 shadow-lg">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                  <span className="text-sm font-semibold text-red-900">Blob storage error</span>
+              <div className="rounded-lg bg-red-50 border border-red-400 px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                  <span className="text-xs text-red-800">Blob storage error</span>
+                  {blobError && (
+                    <span className="text-xs text-red-700">- {blobError}</span>
+                  )}
                 </div>
-                {blobError && (
-                  <p className="text-xs text-red-700 ml-5">{blobError}</p>
-                )}
               </div>
             )}
           </div>

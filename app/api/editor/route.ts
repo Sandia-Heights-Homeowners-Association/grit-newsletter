@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { 
   getSubmissionsByMonth,
-  getSectionProgress,
   getBackloggedSubmissions,
   getArchivedSubmissions,
   updateSubmissionDisposition,
-  updateSectionProgress,
   exportNewsletterText,
   getSubmissionsByCategory,
   deleteSubmission,
   getCategorySubmissionCounts,
   reloadData
 } from '@/lib/store';
-import { getCurrentMonthKey, EDITOR_PASSWORD } from '@/lib/constants';
-import type { SubmissionCategory, DispositionStatus } from '@/lib/types';
+import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD, SUBMISSION_DEADLINE_DAY } from '@/lib/constants';
+import { SubmissionCategory } from '@/lib/types';
+import { put } from '@vercel/blob';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -22,6 +21,22 @@ function verifyPassword(request: NextRequest): boolean {
   
   const password = authHeader.replace('Bearer ', '');
   return password === EDITOR_PASSWORD;
+}
+
+// Helper to generate available months (current, next, and previous)
+function getAvailableMonths(): Array<{key: string; label: string}> {
+  const months: Array<{key: string; label: string}> = [];
+  const now = new Date();
+  
+  // Generate 6 months: 2 past, current, 3 future
+  for (let i = -2; i <= 3; i++) {
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const key = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+    const label = targetDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    months.push({ key, label });
+  }
+  
+  return months;
 }
 
 // GET - Get all editor data
@@ -37,11 +52,16 @@ export async function GET(request: NextRequest) {
     // Reload data from blob to ensure fresh data
     await reloadData();
     
-    const month = getCurrentMonthKey();
+    // Check if a specific month is requested
+    const { searchParams } = new URL(request.url);
+    const requestedMonth = searchParams.get('month');
+    const month = requestedMonth || getCurrentMonthKey();
+    
     const submissions = await getSubmissionsByMonth(month);
-    const progress = await getSectionProgress(month);
+    const deadlineInfo = getNextPublicationInfo();
+    const availableMonths = getAvailableMonths();
 
-    console.log('Editor GET:', { month, submissions: submissions.length, progress: progress.length });
+    console.log('Editor GET:', { month, submissions: submissions.length });
     console.log('Submissions by category:', submissions.reduce((acc, s) => {
       acc[s.category] = (acc[s.category] || 0) + 1;
       return acc;
@@ -49,8 +69,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       submissions,
-      progress,
-      month
+      month,
+      availableMonths,
+      deadlineDay: SUBMISSION_DEADLINE_DAY,
+      deadlineInfo
     });
   } catch (error) {
     console.error('Editor GET error:', error);
@@ -77,14 +99,8 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'updateDisposition':
         const { submissionId, disposition } = data;
-        const updated = await updateSubmissionDisposition(submissionId, disposition as DispositionStatus);
+        const updated = await updateSubmissionDisposition(submissionId, disposition);
         return NextResponse.json({ success: true, submission: updated });
-
-      case 'updateSection':
-        const { category, isComplete, editedContent } = data;
-        const month = getCurrentMonthKey();
-        await updateSectionProgress(month, category as SubmissionCategory, isComplete, editedContent);
-        return NextResponse.json({ success: true });
 
       case 'getBacklog':
         const { category: cat } = data;
@@ -114,6 +130,41 @@ export async function POST(request: NextRequest) {
         const exportMonth = getCurrentMonthKey();
         const text = await exportNewsletterText(exportMonth);
         return NextResponse.json({ text });
+
+      case 'updateDeadline':
+        const { deadlineDay } = data;
+        if (typeof deadlineDay !== 'number' || deadlineDay < 1 || deadlineDay > 28) {
+          return NextResponse.json(
+            { error: 'Invalid deadline day. Must be between 1 and 28.' },
+            { status: 400 }
+          );
+        }
+
+        try {
+          // Store the deadline in Vercel Blob
+          const deadlineBlob = await put('config/deadline.json', JSON.stringify({ deadlineDay }), {
+            access: 'public',
+            addRandomSuffix: false,
+          });
+
+          // Update the environment variable for the current session
+          process.env.NEXT_PUBLIC_SUBMISSION_DEADLINE_DAY = deadlineDay.toString();
+
+          const updatedDeadlineInfo = getNextPublicationInfo();
+          
+          return NextResponse.json({ 
+            success: true, 
+            deadlineDay,
+            deadlineInfo: updatedDeadlineInfo,
+            message: 'Deadline updated successfully. Note: You may need to reload pages to see the updated deadline.'
+          });
+        } catch (err) {
+          console.error('Failed to update deadline:', err);
+          return NextResponse.json(
+            { error: 'Failed to store deadline configuration' },
+            { status: 500 }
+          );
+        }
 
       default:
         return NextResponse.json(

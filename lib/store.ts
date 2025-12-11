@@ -1,4 +1,4 @@
-import { Submission, SectionProgress, SubmissionCategory, DispositionStatus } from './types';
+import { Submission, SubmissionCategory } from './types';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from './types';
 import { getCurrentMonthKey } from './constants';
 import { put, list, del } from '@vercel/blob';

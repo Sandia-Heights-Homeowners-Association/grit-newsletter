@@ -21,6 +21,8 @@ export default function EditorPage() {
   const [showJsonViewer, setShowJsonViewer] = useState(false);
   const [currentMonth, setCurrentMonth] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Community Submissions']));
+  const [blobStatus, setBlobStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [blobError, setBlobError] = useState('');
 
   const toggleGroup = (groupName: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -137,6 +139,7 @@ export default function EditorPage() {
 
   const loadEditorData = async () => {
     setLoading(true);
+    setBlobStatus('checking');
     try {
       const response = await fetch('/api/editor', {
         headers: {
@@ -149,6 +152,8 @@ export default function EditorPage() {
         setSubmissions(data.submissions || []);
         setProgress(data.progress || []);
         setCurrentMonth(data.month || '');
+        setBlobStatus('connected');
+        setBlobError('');
         console.log('Editor data loaded:', { 
           submissions: data.submissions?.length || 0, 
           progress: data.progress?.length || 0,
@@ -156,9 +161,14 @@ export default function EditorPage() {
         });
       } else {
         console.error('Failed to load editor data:', response.status, response.statusText);
+        const errorData = await response.json().catch(() => ({}));
+        setBlobStatus('error');
+        setBlobError(errorData.error || 'Failed to load data');
       }
     } catch (err) {
       console.error('Failed to load editor data:', err);
+      setBlobStatus('error');
+      setBlobError(err instanceof Error ? err.message : 'Network error');
     } finally {
       setLoading(false);
     }
@@ -940,6 +950,35 @@ export default function EditorPage() {
             )}
           </div>
         </div>
+
+        {/* Blob Storage Status Indicator */}
+        {authenticated && (
+          <div className="fixed bottom-4 right-4 z-50">
+            {blobStatus === 'checking' && (
+              <div className="rounded-lg bg-gray-100 border-2 border-gray-300 px-4 py-2 shadow-lg flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full"></div>
+                <span className="text-sm text-gray-700">Checking blob storage...</span>
+              </div>
+            )}
+            {blobStatus === 'connected' && (
+              <div className="rounded-lg bg-green-50 border-2 border-green-500 px-4 py-2 shadow-lg flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                <span className="text-sm font-semibold text-green-900">Blob storage connected</span>
+              </div>
+            )}
+            {blobStatus === 'error' && (
+              <div className="rounded-lg bg-red-50 border-2 border-red-500 px-4 py-2 shadow-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm font-semibold text-red-900">Blob storage error</span>
+                </div>
+                {blobError && (
+                  <p className="text-xs text-red-700 ml-5">{blobError}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -109,67 +109,67 @@ export default function Home() {
             </h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Link
-                href="/submit/Classifieds"
+                href="/submit/classifieds"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Classifieds</div>
                 <div className="mt-1 text-sm text-gray-700">Buy, sell, trade, or offer help.</div>
               </Link>
               <Link
-                href="/submit/Lost & Found"
+                href="/submit/lost-found"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Lost & Found</div>
                 <div className="mt-1 text-sm text-gray-700">Report lost items or found property.</div>
               </Link>
               <Link
-                href="/submit/On My Mind"
+                href="/submit/on-my-mind"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">On My Mind</div>
-                <div className="mt-1 text-sm text-gray-700">Share thoughts, ideas, or opinions.</div>
+                <div className="mt-1 text-sm text-gray-700">Thoughts, observations, opinions.</div>
               </Link>
               <Link
-                href="/submit/Response to Prior Content"
+                href="/submit/response"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Response to Prior Content</div>
-                <div className="mt-1 text-sm text-gray-700">React to articles from past issues.</div>
+                <div className="mt-1 text-sm text-gray-700">Comment on past articles.</div>
               </Link>
               <Link
-                href="/submit/Local Event Announcement"
+                href="/submit/local-event"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Local Event Announcement</div>
-                <div className="mt-1 text-sm text-gray-700">Promote neighborhood events and meetups.</div>
+                <div className="mt-1 text-sm text-gray-700">Promote gatherings & activities.</div>
               </Link>
               <Link
-                href="/submit/Kids' Corner"
+                href="/submit/kids-corner"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Kids' Corner</div>
-                <div className="mt-1 text-sm text-gray-700">Jokes, art, stories, or kid creations.</div>
+                <div className="mt-1 text-sm text-gray-700">Jokes, drawings, stories from kids.</div>
               </Link>
               <Link
-                href="/submit/DIY & Crafts"
+                href="/submit/diy-crafts"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">DIY & Crafts</div>
-                <div className="mt-1 text-sm text-gray-700">Simple projects, recipes, or creative tips.</div>
+                <div className="mt-1 text-sm text-gray-700">Recipes, crafts, gardening tips.</div>
               </Link>
               <Link
-                href="/submit/Neighbor Appreciation"
+                href="/submit/neighbor-appreciation"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Neighbor Appreciation</div>
-                <div className="mt-1 text-sm text-gray-700">Thank, celebrate, or recognize a neighbor.</div>
+                <div className="mt-1 text-sm text-gray-700">Recognize & thank neighbors.</div>
               </Link>
               <Link
-                href="/submit/Nature & Wildlife"
+                href="/submit/nature-wildlife"
                 className="rounded-lg border-2 border-red-700 bg-transparent p-4 text-center transition hover:bg-red-50 hover:shadow-lg"
               >
                 <div className="font-semibold text-red-800">Nature & Wildlife</div>
-                <div className="mt-1 text-sm text-gray-700">Animals, scenery, unusual sightings.</div>
+                <div className="mt-1 text-sm text-gray-700">Wildlife sightings, nature photos.</div>
               </Link>
             </div>
           </div>

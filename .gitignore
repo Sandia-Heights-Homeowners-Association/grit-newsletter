@@ -45,3 +45,4 @@ next-env.d.ts
 
 # backups (optional - remove this line if you want to commit backups)
 /data/backups/
+.env*.local

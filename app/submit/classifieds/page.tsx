@@ -140,7 +140,7 @@ export default function ClassifiedsPage() {
                   <h3 className="text-sm font-bold text-green-700 mb-3 uppercase">Will be Published</h3>
                   <div className="mb-4">
                     <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                      Name *
+                      Name for Publication *
                     </label>
                     <input
                       type="text"
@@ -148,7 +148,7 @@ export default function ClassifiedsPage() {
                       onChange={(e) => setPublishedName(e.target.value)}
                       required
                       className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                      placeholder="As you want it to appear in newsletter"
+                      placeholder="Your name as you want it to appear"
                     />
                   </div>
                 </div>

@@ -366,10 +366,10 @@ export default function Home() {
               <li>
                 Then email the photo(s) to{" "}
                 <a
-                  href="mailto:shhagrit@gmail.com"
+                  href="mailto:griteditor@sandiahomeowners.org"
                   className="text-blue-700 hover:text-blue-800 underline"
                 >
-                  shhagrit@gmail.com
+                  griteditor@sandiahomeowners.org
                 </a>.
               </li>
             </ul>

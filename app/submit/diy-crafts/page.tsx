@@ -245,7 +245,7 @@ export default function DIYCraftsPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={14}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Share your recipe, project steps, tips, materials needed, etc. Be as detailed as you'd like!"
                 />
               </div>

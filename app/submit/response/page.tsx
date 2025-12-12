@@ -229,7 +229,7 @@ export default function ResponsePage() {
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Your Response *
                   </label>
                   <span className="text-sm text-gray-600">

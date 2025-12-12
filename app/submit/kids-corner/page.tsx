@@ -242,7 +242,7 @@ export default function KidsCornerPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={10}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Enter jokes, stories, poems, or describe the drawing/artwork. For images, include a link or note that you'll email them."
                 />
               </div>

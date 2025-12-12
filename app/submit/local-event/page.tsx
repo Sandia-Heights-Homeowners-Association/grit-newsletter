@@ -209,7 +209,7 @@ export default function LocalEventPage() {
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
                   Event Date *
                 </label>
                 <input
@@ -217,60 +217,36 @@ export default function LocalEventPage() {
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
                   Event Start Time (optional)
                 </label>
                 <input
                   type="time"
                   value={eventTime}
                   onChange={(e) => setEventTime(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
                   Event End Time (optional)
                 </label>
                 <input
                   type="time"
                   value={eventEndTime}
                   onChange={(e) => setEventEndTime(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
-                  Event Start Time (optional)
-                </label>
-                <input
-                  type="time"
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
-                  Event End Time (optional)
-                </label>
-                <input
-                  type="time"
-                  value={eventEndTime}
-                  onChange={(e) => setEventEndTime(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
                   Event Location *
                 </label>
                 <input
@@ -278,14 +254,14 @@ export default function LocalEventPage() {
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
                   required
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="e.g. Community Center, 123 Main St"
                 />
               </div>
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Event Details *
                   </label>
                   <span className="text-sm text-gray-600">
@@ -297,7 +273,7 @@ export default function LocalEventPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={10}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Describe the event, RSVP details, contact info, parking instructions, etc..."
                 />
               </div>

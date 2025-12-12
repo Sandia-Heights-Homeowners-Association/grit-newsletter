@@ -627,7 +627,7 @@ export default function EditorPage() {
               </div>
               
               <p className="mt-3 text-xs text-gray-600">
-                Note: Day must be between 1-28. Recommended: 10th of the month. This affects the homepage deadline display and which month submissions are collected for.
+                Note: Day must be between 1-28. Recommended: 20th of the month. This affects the homepage deadline display and which month submissions are collected for.
               </p>
             </div>
           </div>
@@ -692,7 +692,7 @@ export default function EditorPage() {
                   <select
                     value={dataViewerFilter}
                     onChange={(e) => setDataViewerFilter(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded"
+                    className="px-3 py-1 border border-gray-300 rounded text-gray-900"
                   >
                     <option value="all">All Submissions</option>
                     <option value="unreviewed">Unreviewed</option>
@@ -706,7 +706,7 @@ export default function EditorPage() {
                   <select
                     value={dataViewerSort}
                     onChange={(e) => setDataViewerSort(e.target.value as 'newest' | 'oldest')}
-                    className="px-3 py-1 border border-gray-300 rounded"
+                    className="px-3 py-1 border border-gray-300 rounded text-gray-900"
                   >
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -758,7 +758,10 @@ export default function EditorPage() {
                         </div>
                         <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
                         <div className="mt-2 text-xs text-gray-600">
-                          ID: {sub.id} | {new Date(sub.submittedAt).toISOString().split('T')[0]}
+                          Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-600">
+                          ID: {sub.id}
                           {sub.publishedName && ` | By: ${sub.publishedName}`}
                         </div>
                         <button

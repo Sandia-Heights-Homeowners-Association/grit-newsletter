@@ -16,7 +16,7 @@
 **Multiple Blob Files**
 - Check if there are multiple `submissions.json` files in your blob storage
 - Go to Vercel Dashboard → Storage → grit-storage → Browse
-- Delete any duplicate or old files (keep only `submissions.json` and `section-progress.json`)
+- Delete any duplicate or old files (keep only `submissions.json`)
 
 **Race Conditions**
 - If multiple people are editing simultaneously, saves might overwrite each other

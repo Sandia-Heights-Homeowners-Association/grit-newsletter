@@ -279,11 +279,12 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
   allCategories.forEach(category => {
     stats[category] = submissions.filter(
       s => s.category === category && (
-        s.disposition === month || 
-        s.disposition === 'backlog' ||
-        s.disposition === 'archived' ||
+        // Explicitly assigned to this month
+        s.disposition === month ||
+        // Unreviewed items from this collection period
         (!s.disposition && s.month === month) ||
-        (s.disposition === 'published' && s.month === month) // Legacy published items
+        // Legacy published items from this collection period
+        (s.disposition === 'published' && s.month === month)
       )
     ).length;
   });
@@ -302,11 +303,12 @@ export async function getRoutineAndCommitteeCount(month: string): Promise<number
   
   return submissions.filter(
     s => routineAndCommitteeCategories.includes(s.category) && (
-      s.disposition === month || 
-      s.disposition === 'backlog' ||
-      s.disposition === 'archived' ||
+      // Explicitly assigned to this month
+      s.disposition === month ||
+      // Unreviewed items from this collection period
       (!s.disposition && s.month === month) ||
-      (s.disposition === 'published' && s.month === month) // Legacy published items
+      // Legacy published items from this collection period
+      (s.disposition === 'published' && s.month === month)
     )
   ).length;
 }
@@ -419,11 +421,12 @@ export async function getContributorNames(month: string): Promise<string[]> {
   
   const contributors = submissions
     .filter(s => (
-      s.disposition === month || 
-      s.disposition === 'backlog' ||
-      s.disposition === 'archived' ||
+      // Explicitly assigned to this month
+      s.disposition === month ||
+      // Unreviewed items from this collection period
       (!s.disposition && s.month === month) ||
-      (s.disposition === 'published' && s.month === month) // Legacy published items
+      // Legacy published items from this collection period
+      (s.disposition === 'published' && s.month === month)
     ) && s.publishedName)
     .map(s => s.publishedName!)
     .filter((name, index, self) => self.indexOf(name) === index) // unique names

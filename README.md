@@ -130,8 +130,9 @@ npm start
 
 **File-Based JSON Storage** - All data is stored in human-readable JSON files in the `/data` directory:
 
-- `data/submissions.json` - All newsletter submissions
-- `data/section-progress.json` - Editor progress and completed sections
+- `data/submissions.json` - All newsletter submissions (master log)
+  - `month`: Immutable, records which collection period submission was originally for
+  - `disposition`: Mutable, current status (assigned month, backlog, archived, or unreviewed)
 - `data/backups/` - Automatic timestamped backups
 
 ### Data Persistence
@@ -152,16 +153,14 @@ Editors can:
 
 ```
 data/
-├── submissions.json          # All submissions with metadata
-├── section-progress.json     # Section completion status
+├── submissions.json          # All submissions (master log)
 └── backups/                  # Timestamped backups
     ├── 2025-11-27T10-30-00/
-    │   ├── submissions.json
-    │   └── section-progress.json
+    │   └── submissions.json
     └── 2025-12-01T15-45-00/
-        ├── submissions.json
-        └── section-progress.json
+        └── submissions.json
 ```
+
 
 ### Month-to-Month Handling
 

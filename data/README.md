@@ -5,14 +5,14 @@ This directory contains all newsletter submission data and backups.
 ## Files
 
 - **submissions.json** - All newsletter submissions with metadata
-- **section-progress.json** - Editor progress and section completion status
+  - `month`: Immutable field showing which collection period the submission was originally for
+  - `disposition`: Mutable field showing current status (month assignment, backlog, archived, or undefined for unreviewed)
 - **backups/** - Timestamped backups created by editors
 
 ## Initial State
 
-The JSON files start empty:
+The JSON file starts empty:
 - `submissions.json`: `[]`
-- `section-progress.json`: `{}`
 
 Data will be automatically created and updated as submissions come in and editors work.
 

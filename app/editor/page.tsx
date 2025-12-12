@@ -682,19 +682,18 @@ export default function EditorPage() {
         </div>
         
         {showSettings && (
-          <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-6 shadow-lg">
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">Settings</h2>
+          <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
+            <h2 className="mb-3 text-xl font-bold text-gray-900">Settings</h2>
             
-            <div className="mb-6">
-              <h3 className="mb-3 text-lg font-semibold text-gray-800">Submission Deadline</h3>
-              <p className="mb-4 text-sm text-gray-700">
-                The submission deadline determines which month submissions are collected for. 
+            <div>
+              <h3 className="mb-2 text-base font-semibold text-gray-800">Submission Deadline</h3>
+              <p className="mb-3 text-sm text-gray-700">
                 Current deadline: <strong>{currentDeadlineInfo.deadline}</strong> for the <strong>{currentDeadlineInfo.month}</strong> issue.
               </p>
               
-              <div className="flex items-center gap-4">
-                <label className="font-medium text-gray-800">
-                  Deadline Day of Month:
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="text-sm font-medium text-gray-800">
+                  Day of Month:
                 </label>
                 <input
                   type="number"
@@ -702,26 +701,24 @@ export default function EditorPage() {
                   max="28"
                   value={deadlineDay}
                   onChange={(e) => setDeadlineDay(parseInt(e.target.value))}
-                  className="w-20 rounded-lg border-2 border-gray-300 p-2 text-gray-900 focus:border-orange-500 focus:outline-none"
+                  className="w-16 rounded border border-gray-300 px-2 py-1 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
                 />
                 <button
                   onClick={updateDeadlineDay}
-                  className="rounded-lg bg-orange-600 px-4 py-2 font-semibold text-white transition hover:bg-orange-700"
+                  className="rounded bg-orange-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-orange-700"
                 >
-                  Update Deadline
+                  Update
                 </button>
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="rounded-lg bg-gray-400 px-4 py-2 font-semibold text-white transition hover:bg-gray-500"
+                  className="rounded bg-gray-400 px-3 py-1 text-sm font-semibold text-white transition hover:bg-gray-500"
                 >
-                  Cancel
+                  Close
                 </button>
               </div>
               
-              <p className="mt-3 text-xs text-gray-600">
-                Note: Day must be between 1-28. Recommended: 20th of the month. This affects the homepage deadline display and which month submissions are collected for.
-                <br />
-                <span className="text-orange-700 font-semibold">Changes may take up to 5 minutes to appear due to caching.</span>
+              <p className="mt-2 text-xs text-gray-600">
+                <span className="text-orange-700 font-semibold">Note:</span> Changes may take up to 5 minutes to appear due to caching.
               </p>
             </div>
           </div>
@@ -912,7 +909,7 @@ export default function EditorPage() {
                             </div>
                           )}
                           <div className="flex-1">
-                            <div className="mb-2 flex items-center gap-2">
+                            <div className="mb-2 flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-orange-900">{sub.category}</span>
                               <span className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
                                 sub.disposition === selectedMonth ? 'bg-green-100 text-green-800' :
@@ -922,18 +919,22 @@ export default function EditorPage() {
                                 'bg-blue-100 text-blue-800'
                               }`}>{sub.disposition || 'unreviewed'}</span>
                               {!bulkDeleteMode && (
-                                <select
-                                  value={sub.disposition || ''}
-                                  onChange={(e) => updateDisposition(sub.id, e.target.value)}
-                                  className="text-xs border border-gray-300 rounded px-2 py-1 text-gray-900"
-                                >
-                                  <option value="">Unreviewed</option>
-                                  {availableMonths.map(m => (
-                                    <option key={m.key} value={m.key}>{m.label}</option>
-                                  ))}
-                                  <option value="backlog">Backlog</option>
-                                  <option value="archived">Archived</option>
-                                </select>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-600">→</span>
+                                  <select
+                                    value={sub.disposition || ''}
+                                    onChange={(e) => updateDisposition(sub.id, e.target.value)}
+                                    className="text-xs border border-gray-300 rounded px-2 py-1 text-gray-900"
+                                    title="Reassign status"
+                                  >
+                                    <option value="">Unreviewed</option>
+                                    {availableMonths.map(m => (
+                                      <option key={m.key} value={m.key}>{m.label}</option>
+                                    ))}
+                                    <option value="backlog">Backlog</option>
+                                    <option value="archived">Archived</option>
+                                  </select>
+                                </div>
                               )}
                             </div>
                             <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>

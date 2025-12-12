@@ -40,9 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# data storage
-/data/*.json
+# local data storage (not used - app uses Vercel Blob)
+/data/
 
-# backups (optional - remove this line if you want to commit backups)
-/data/backups/
+# local scripts (migration/debugging scripts, not part of app)
+/scripts/
+
 .env*.local

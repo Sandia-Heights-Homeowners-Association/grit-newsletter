@@ -909,14 +909,29 @@ export default function EditorPage() {
                             </div>
                           )}
                           <div className="flex-1">
-                            <div className="mb-2">
+                            <div className="mb-2 flex items-center gap-2">
                               <span className="font-semibold text-orange-900">{sub.category}</span>
-                              <span className={`ml-2 inline-block rounded px-2 py-1 text-xs font-semibold ${
+                              <span className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
                                 sub.disposition === selectedMonth ? 'bg-green-100 text-green-800' :
                                 sub.disposition === 'backlog' ? 'bg-yellow-100 text-yellow-800' :
                                 sub.disposition === 'archived' ? 'bg-gray-100 text-gray-800' :
+                                sub.disposition === 'published' ? 'bg-purple-100 text-purple-800' :
                                 'bg-blue-100 text-blue-800'
                               }`}>{sub.disposition || 'unreviewed'}</span>
+                              {!bulkDeleteMode && (
+                                <select
+                                  value={sub.disposition || ''}
+                                  onChange={(e) => updateDisposition(sub.id, e.target.value)}
+                                  className="text-xs border border-gray-300 rounded px-2 py-1 text-gray-900"
+                                >
+                                  <option value="">Unreviewed</option>
+                                  {availableMonths.map(m => (
+                                    <option key={m.key} value={m.key}>{m.label}</option>
+                                  ))}
+                                  <option value="backlog">Backlog</option>
+                                  <option value="archived">Archived</option>
+                                </select>
+                              )}
                             </div>
                             <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
                             <div className="mt-2 text-xs text-gray-600">

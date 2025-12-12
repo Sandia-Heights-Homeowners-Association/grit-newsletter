@@ -282,7 +282,8 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
         s.disposition === month || 
         s.disposition === 'backlog' ||
         s.disposition === 'archived' ||
-        (!s.disposition && s.month === month)
+        (!s.disposition && s.month === month) ||
+        (s.disposition === 'published' && s.month === month) // Legacy published items
       )
     ).length;
   });
@@ -304,7 +305,8 @@ export async function getRoutineAndCommitteeCount(month: string): Promise<number
       s.disposition === month || 
       s.disposition === 'backlog' ||
       s.disposition === 'archived' ||
-      (!s.disposition && s.month === month)
+      (!s.disposition && s.month === month) ||
+      (s.disposition === 'published' && s.month === month) // Legacy published items
     )
   ).length;
 }
@@ -420,7 +422,8 @@ export async function getContributorNames(month: string): Promise<string[]> {
       s.disposition === month || 
       s.disposition === 'backlog' ||
       s.disposition === 'archived' ||
-      (!s.disposition && s.month === month)
+      (!s.disposition && s.month === month) ||
+      (s.disposition === 'published' && s.month === month) // Legacy published items
     ) && s.publishedName)
     .map(s => s.publishedName!)
     .filter((name, index, self) => self.indexOf(name) === index) // unique names

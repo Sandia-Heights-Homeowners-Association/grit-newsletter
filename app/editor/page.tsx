@@ -28,6 +28,8 @@ export default function EditorPage() {
   const [availableMonths, setAvailableMonths] = useState<Array<{key: string; label: string}>>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [dataViewerFilter, setDataViewerFilter] = useState<string>('all');
+  const [dataViewerSort, setDataViewerSort] = useState<'newest' | 'oldest'>('newest');
 
   const toggleGroup = (groupName: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -684,12 +686,66 @@ export default function EditorPage() {
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
             <h2 className="mb-4 text-2xl font-bold text-orange-900">Data Viewer</h2>
             <div>
-              <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
+              <div className="mb-4 flex gap-4 items-center">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mr-2">Filter by:</label>
+                  <select
+                    value={dataViewerFilter}
+                    onChange={(e) => setDataViewerFilter(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="all">All Submissions</option>
+                    <option value="unreviewed">Unreviewed</option>
+                    <option value="backlog">Backlog</option>
+                    <option value="archived">Archived</option>
+                    <option value="accepted">Accepted (Any Month)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mr-2">Sort by:</label>
+                  <select
+                    value={dataViewerSort}
+                    onChange={(e) => setDataViewerSort(e.target.value as 'newest' | 'oldest')}
+                    className="px-3 py-1 border border-gray-300 rounded"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                  </select>
+                </div>
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({(() => {
+                const filtered = submissions.filter(s => {
+                  if (dataViewerFilter === 'all') return true;
+                  if (dataViewerFilter === 'unreviewed') return !s.disposition || s.disposition === '';
+                  if (dataViewerFilter === 'backlog') return s.disposition === 'backlog';
+                  if (dataViewerFilter === 'archived') return s.disposition === 'archived';
+                  if (dataViewerFilter === 'accepted') return s.disposition && s.disposition !== 'backlog' && s.disposition !== 'archived' && s.disposition !== '';
+                  return true;
+                });
+                return filtered.length;
+              })()})</h3>
               <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-3">
-                  {submissions.length === 0 ? (
-                    <p className="text-gray-800">No submissions yet</p>
-                  ) : (
-                    submissions.map((sub) => (
+                  {(() => {
+                    const filtered = submissions.filter(s => {
+                      if (dataViewerFilter === 'all') return true;
+                      if (dataViewerFilter === 'unreviewed') return !s.disposition || s.disposition === '';
+                      if (dataViewerFilter === 'backlog') return s.disposition === 'backlog';
+                      if (dataViewerFilter === 'archived') return s.disposition === 'archived';
+                      if (dataViewerFilter === 'accepted') return s.disposition && s.disposition !== 'backlog' && s.disposition !== 'archived' && s.disposition !== '';
+                      return true;
+                    });
+                    
+                    const sorted = [...filtered].sort((a, b) => {
+                      const timeA = new Date(a.submittedAt).getTime();
+                      const timeB = new Date(b.submittedAt).getTime();
+                      return dataViewerSort === 'newest' ? timeB - timeA : timeA - timeB;
+                    });
+                    
+                    if (sorted.length === 0) {
+                      return <p className="text-gray-800">No submissions match the current filter</p>;
+                    }
+                    
+                    return sorted.map((sub) => (
                       <div key={sub.id} className="rounded-lg bg-white p-3 border border-orange-200">
                         <div className="mb-2">
                           <span className="font-semibold text-orange-900">{sub.category}</span>
@@ -712,8 +768,8 @@ export default function EditorPage() {
                           Delete Permanently
                         </button>
                       </div>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
           </div>
@@ -955,6 +1011,9 @@ export default function EditorPage() {
                               <div className="mb-2 text-sm text-gray-800 line-clamp-3">
                                 {sub.content}
                               </div>
+                              <div className="mb-2 text-xs text-gray-500">
+                                Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
                               <div className="flex gap-2 flex-wrap">
                                 <button
                                   onClick={() => updateDisposition(sub.id, selectedMonth)}
@@ -999,12 +1058,21 @@ export default function EditorPage() {
                               {sub.content.substring(0, 200)}
                               {sub.content.length > 200 ? '...' : ''}
                             </div>
+                            <div className="mb-2 text-xs text-gray-500">
+                              Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </div>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => updateDisposition(sub.id, selectedMonth)}
                                 className="rounded px-3 py-1 text-xs font-semibold bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
                               >
                                 Accept for {selectedMonth}
+                              </button>
+                              <button
+                                onClick={() => updateDisposition(sub.id, 'archived')}
+                                className="rounded px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300"
+                              >
+                                Archive
                               </button>
                             </div>
                           </div>
@@ -1032,6 +1100,9 @@ export default function EditorPage() {
                               <div className="text-sm text-gray-800 line-clamp-2 mb-2">
                                 {extractContent(sub.content)}
                               </div>
+                              <div className="mb-2 text-xs text-gray-500">
+                                Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
                               <button
                                 onClick={() => updateDisposition(sub.id, 'backlog')}
                                 className="rounded px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300"
@@ -1045,29 +1116,7 @@ export default function EditorPage() {
                   </div>
                 )}
 
-                {/* Archived (kept at bottom) */}
-                {archived.length > 0 && (
-                  <div className="mb-6">
-                    <details className="rounded border-2 border-gray-300 bg-gray-50 p-3">
-                      <summary className="cursor-pointer font-semibold text-gray-700">
-                        Archived Submissions ({archived.length})
-                      </summary>
-                      <div className="mt-3 space-y-2">
-                        {archived.map(sub => (
-                          <div
-                            key={sub.id}
-                            className="rounded bg-gray-100 border-2 border-gray-200 p-3"
-                          >
-                            <div className="mb-2 text-sm text-gray-700">
-                              {sub.content.substring(0, 200)}
-                              {sub.content.length > 200 ? '...' : ''}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  </div>
-                )}
+
 
                 {/* 4. Combined Section Preview */}
                 <div className="mb-6">

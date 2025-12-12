@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
 
+// Disable caching for this dynamic stats endpoint
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const deadlineDay = await getDeadlineDay();

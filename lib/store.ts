@@ -149,6 +149,10 @@ async function initializeData(): Promise<void> {
 async function ensureInitialized(): Promise<void> {
   if (!isInitialized) {
     await initializeData();
+  } else {
+    // Reload data from blob to ensure freshness for read operations
+    // This prevents stale in-memory cache issues
+    submissions = await loadSubmissions();
   }
 }
 

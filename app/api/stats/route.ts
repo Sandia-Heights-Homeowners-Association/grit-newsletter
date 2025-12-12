@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay } from '@/lib/store';
+import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay, reloadData } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
 
 // Disable caching for this dynamic stats endpoint
@@ -8,6 +8,9 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    // Explicitly reload data from blob to ensure fresh stats
+    await reloadData();
+    
     const deadlineDay = await getDeadlineDay();
     const currentMonth = getCurrentMonthKey(deadlineDay);
     const previousMonth = getPreviousMonthKey(deadlineDay);

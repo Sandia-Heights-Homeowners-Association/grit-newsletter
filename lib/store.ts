@@ -267,8 +267,6 @@ export async function saveAllSubmissions(updatedSubmissions: Submission[]): Prom
 // Get category statistics
 export async function getCategoryStats(month: string): Promise<Record<string, number>> {
   await ensureInitialized();
-  // Reload from blob to ensure fresh stats
-  submissions = await loadSubmissions();
   
   const stats: Record<string, number> = {};
   
@@ -295,8 +293,6 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
 // Get total count of routine and committee submissions
 export async function getRoutineAndCommitteeCount(month: string): Promise<number> {
   await ensureInitialized();
-  // Reload from blob to ensure fresh stats
-  submissions = await loadSubmissions();
   
   const routineAndCommitteeCategories: SubmissionCategory[] = [
     ...ROUTINE_CATEGORIES,
@@ -321,8 +317,6 @@ export async function getBackloggedSubmissions(
   currentMonth: string
 ): Promise<Submission[]> {
   await ensureInitialized();
-  // Reload from blob to ensure fresh data
-  submissions = await loadSubmissions();
   
   return submissions.filter(
     s => s.category === category && 
@@ -335,8 +329,6 @@ export async function getArchivedSubmissions(
   category: SubmissionCategory
 ): Promise<Submission[]> {
   await ensureInitialized();
-  // Reload from blob to ensure fresh data
-  submissions = await loadSubmissions();
   
   return submissions.filter(
     s => s.category === category && s.disposition === 'archived'
@@ -422,8 +414,6 @@ export async function getAllSubmissions(): Promise<Submission[]> {
 // Get list of contributor names for current month
 export async function getContributorNames(month: string): Promise<string[]> {
   await ensureInitialized();
-  // Reload from blob to ensure fresh stats
-  submissions = await loadSubmissions();
   
   const contributors = submissions
     .filter(s => (

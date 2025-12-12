@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { EDITOR_PASSWORD } from '@/lib/constants';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 
@@ -130,13 +129,9 @@ export default function EditorPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === EDITOR_PASSWORD) {
-      setAuthenticated(true);
-      setAuthError('');
-      loadEditorData();
-    } else {
-      setAuthError('Incorrect password');
-    }
+    setAuthError('');
+    // Try to load editor data - the server will validate the password
+    await loadEditorData();
   };
 
   const loadEditorData = async (monthKey?: string) => {
@@ -156,10 +151,11 @@ export default function EditorPage() {
         setCurrentMonth(data.month || '');
         setSelectedMonth(data.month || '');
         setAvailableMonths(data.availableMonths || []);
-        setDeadlineDay(data.deadlineDay || 10);
+        setDeadlineDay(data.deadlineDay || 20);
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         setBlobStatus('connected');
         setBlobError('');
+        setAuthenticated(true);
         console.log('Editor data loaded:', { 
           submissions: data.submissions?.length || 0, 
           progress: data.progress?.length || 0,
@@ -171,6 +167,7 @@ export default function EditorPage() {
         const errorData = await response.json().catch(() => ({}));
         setBlobStatus('error');
         setBlobError(errorData.error || 'Failed to load data');
+        setAuthError(response.status === 401 ? 'Incorrect password' : 'Failed to load data');
       }
     } catch (err) {
       console.error('Failed to load editor data:', err);

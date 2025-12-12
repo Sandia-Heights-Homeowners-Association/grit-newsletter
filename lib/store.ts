@@ -5,10 +5,30 @@ import { put, list, del, head } from '@vercel/blob';
 
 // Blob storage keys
 const SUBMISSIONS_BLOB = 'submissions.json';
+const DEADLINE_BLOB = 'config/deadline.json';
 
 // In-memory cache
 let submissions: Submission[] = [];
 let isInitialized = false;
+
+// Load deadline from blob storage
+export async function getDeadlineDay(): Promise<number> {
+  try {
+    const { blobs } = await list({ prefix: DEADLINE_BLOB });
+    const exactBlob = blobs.find(b => b.pathname === DEADLINE_BLOB);
+    
+    if (exactBlob) {
+      const response = await fetch(exactBlob.url);
+      if (response.ok) {
+        const data = await response.json();
+        return data.deadlineDay || 20;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading deadline from blob:', error);
+  }
+  return 20; // Default fallback
+}
 
 // Load data from Vercel Blob
 async function loadSubmissions(): Promise<Submission[]> {

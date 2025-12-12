@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount } from '@/lib/store';
+import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
-    const currentMonth = getCurrentMonthKey();
-    const previousMonth = getPreviousMonthKey();
-    const deadlineInfo = getNextPublicationInfo();
+    const deadlineDay = await getDeadlineDay();
+    const currentMonth = getCurrentMonthKey(deadlineDay);
+    const previousMonth = getPreviousMonthKey(deadlineDay);
+    const deadlineInfo = getNextPublicationInfo(deadlineDay);
     
     const currentStats = await getCategoryStats(currentMonth);
     const currentContributors = await getContributorNames(currentMonth);

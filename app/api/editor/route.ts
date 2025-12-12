@@ -9,9 +9,10 @@ import {
   getSubmissionsByCategory,
   deleteSubmission,
   getCategorySubmissionCounts,
-  reloadData
+  reloadData,
+  getDeadlineDay
 } from '@/lib/store';
-import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD, SUBMISSION_DEADLINE_DAY } from '@/lib/constants';
+import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
 import { put, list, del } from '@vercel/blob';
 
@@ -53,13 +54,16 @@ export async function GET(request: NextRequest) {
     // Reload data from blob to ensure fresh data
     await reloadData();
     
+    // Load deadline from blob
+    const deadlineDay = await getDeadlineDay();
+    
     // Check if a specific month is requested
     const { searchParams } = new URL(request.url);
     const requestedMonth = searchParams.get('month');
-    const month = requestedMonth || getCurrentMonthKey();
+    const month = requestedMonth || getCurrentMonthKey(deadlineDay);
     
     const submissions = await getSubmissionsByMonth(month);
-    const deadlineInfo = getNextPublicationInfo();
+    const deadlineInfo = getNextPublicationInfo(deadlineDay);
     const availableMonths = getAvailableMonths();
 
     console.log('Editor GET:', { month, submissions: submissions.length });
@@ -72,7 +76,7 @@ export async function GET(request: NextRequest) {
       submissions,
       month,
       availableMonths,
-      deadlineDay: SUBMISSION_DEADLINE_DAY,
+      deadlineDay: deadlineDay,
       deadlineInfo
     });
   } catch (error) {
@@ -97,6 +101,9 @@ export async function POST(request: NextRequest) {
     // Reload data from blob to ensure fresh data
     await reloadData();
     
+    // Load deadline from blob
+    const deadlineDay = await getDeadlineDay();
+    
     const body = await request.json();
     const { action, ...data } = body;
 
@@ -113,20 +120,20 @@ export async function POST(request: NextRequest) {
 
       case 'getBacklog':
         const { category: cat } = data;
-        const month2 = getCurrentMonthKey();
+        const month2 = getCurrentMonthKey(deadlineDay);
         const backlog = await getBackloggedSubmissions(cat as SubmissionCategory, month2);
         const archived = await getArchivedSubmissions(cat as SubmissionCategory);
         return NextResponse.json({ backlog, archived });
 
       case 'getCategorySubmissions':
         const { category: category3 } = data;
-        const month3 = getCurrentMonthKey();
+        const month3 = getCurrentMonthKey(deadlineDay);
         const subs = await getSubmissionsByCategory(category3 as SubmissionCategory, month3);
         return NextResponse.json({ submissions: subs });
 
       case 'getCategoryCounts':
         const { category: countCat } = data;
-        const countMonth = getCurrentMonthKey();
+        const countMonth = getCurrentMonthKey(deadlineDay);
         const counts = await getCategorySubmissionCounts(countCat as SubmissionCategory, countMonth);
         return NextResponse.json({ counts });
 
@@ -136,13 +143,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: deleted });
 
       case 'export':
-        const exportMonth = getCurrentMonthKey();
+        const exportMonth = getCurrentMonthKey(deadlineDay);
         const text = await exportNewsletterText(exportMonth);
         return NextResponse.json({ text });
 
       case 'updateDeadline':
-        const { deadlineDay } = data;
-        if (typeof deadlineDay !== 'number' || deadlineDay < 1 || deadlineDay > 28) {
+        const { deadlineDay: newDeadlineDay } = data;
+        if (typeof newDeadlineDay !== 'number' || newDeadlineDay < 1 || newDeadlineDay > 28) {
           return NextResponse.json(
             { error: 'Invalid deadline day. Must be between 1 and 28.' },
             { status: 400 }
@@ -159,19 +166,16 @@ export async function POST(request: NextRequest) {
           }
           
           // Store the deadline in Vercel Blob
-          const deadlineBlob = await put('config/deadline.json', JSON.stringify({ deadlineDay }), {
+          const deadlineBlob = await put('config/deadline.json', JSON.stringify({ deadlineDay: newDeadlineDay }), {
             access: 'public',
             addRandomSuffix: false,
           });
 
-          // Update the environment variable for the current session
-          process.env.NEXT_PUBLIC_SUBMISSION_DEADLINE_DAY = deadlineDay.toString();
-
-          const updatedDeadlineInfo = getNextPublicationInfo();
+          const updatedDeadlineInfo = getNextPublicationInfo(newDeadlineDay);
           
           return NextResponse.json({ 
             success: true, 
-            deadlineDay,
+            deadlineDay: newDeadlineDay,
             deadlineInfo: updatedDeadlineInfo,
             message: 'Deadline updated successfully. Note: You may need to reload pages to see the updated deadline.'
           });

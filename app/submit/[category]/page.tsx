@@ -61,7 +61,8 @@ export default function SubmitPage() {
     setError('');
 
     try {
-      const fullContent = `Published Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `Full Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

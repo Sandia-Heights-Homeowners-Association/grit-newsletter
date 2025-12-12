@@ -59,9 +59,9 @@ export default function NatureWildlifePage() {
     setError('');
 
     try {
-      const titleInfo = title ? `Title: ${title}\n` : '';
-      const locationInfo = sightingLocation ? `Location: ${sightingLocation}\n` : '';
-      const fullContent = `${titleInfo}${locationInfo}Published Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const sightingInfo = sightingLocation ? `Sighting Location: ${sightingLocation}\n` : '';
+      const metadata = `Full Name: ${fullName}\nEmail: ${email}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${sightingInfo}${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

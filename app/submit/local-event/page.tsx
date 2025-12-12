@@ -61,10 +61,8 @@ export default function LocalEventPage() {
     setError('');
 
     try {
-      const eventInfo = `Event Date: ${eventDate}\nEvent Time: ${eventTime}${eventEndTime ? ` - ${eventEndTime}` : ''}\nEvent Location: ${eventLocation}\nPublished Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
-      const fullContent = title 
-        ? `${title}\n\n${eventInfo}\n\n${content}`
-        : `${eventInfo}\n\n${content}`;
+      const metadata = `Event Date: ${eventDate}\nEvent Time: ${eventTime}${eventEndTime ? ` - ${eventEndTime}` : ''}\nEvent Location: ${eventLocation}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

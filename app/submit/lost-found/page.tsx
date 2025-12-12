@@ -57,7 +57,8 @@ export default function LostFoundPage() {
     setError('');
 
     try {
-      const fullContent = `Type: ${itemType.toUpperCase()}\nPublished Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `Type: ${itemType.toUpperCase()}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

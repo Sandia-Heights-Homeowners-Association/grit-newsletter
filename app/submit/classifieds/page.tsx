@@ -57,7 +57,8 @@ export default function ClassifiedsPage() {
     setError('');
 
     try {
-      const fullContent = `${title ? `Title: ${title}\n` : ''}Published Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `Full Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

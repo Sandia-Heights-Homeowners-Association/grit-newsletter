@@ -59,7 +59,8 @@ export default function KidsCornerPage() {
 
     try {
       const publishedName = childAge ? `${childName}, age ${childAge}` : childName;
-      const fullContent = `Published Name: ${publishedName}\nParent Name: ${parentName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `Parent Name: ${parentName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

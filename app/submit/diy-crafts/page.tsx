@@ -58,7 +58,8 @@ export default function DIYCraftsPage() {
     setError('');
 
     try {
-      const fullContent = `Project Type: ${projectType}\nPublished Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `Project Type: ${projectType}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

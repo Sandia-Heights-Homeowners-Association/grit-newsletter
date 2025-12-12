@@ -58,8 +58,8 @@ export default function ResponsePage() {
     setError('');
 
     try {
-      const titlePrefix = title.trim() ? `Title: ${title}\n` : '';
-      const fullContent = `${titlePrefix}In Response To: ${referencedArticle}\nPublished Name: ${publishedName}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}\n\n${content}`;
+      const metadata = `In Response To: ${referencedArticle}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',

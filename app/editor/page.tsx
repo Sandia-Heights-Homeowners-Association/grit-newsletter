@@ -31,6 +31,9 @@ export default function EditorPage() {
   const [dataViewerSort, setDataViewerSort] = useState<'newest' | 'oldest'>('newest');
   const [toastMessage, setToastMessage] = useState<string>('');
   const [showToast, setShowToast] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<Array<{id: string; category: string; action: string}>>([]);
+  const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
 
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -192,6 +195,21 @@ export default function EditorPage() {
       s.id === submissionId ? { ...s, disposition } : s
     ));
     
+    // Track the change
+    const sub = submissions.find(s => s.id === submissionId);
+    if (sub) {
+      const actionText = disposition === 'backlog' ? 'Moved to backlog' :
+                        disposition === 'archived' ? 'Archived' :
+                        disposition === selectedMonth ? `Accepted for ${selectedMonth}` :
+                        'Updated';
+      setPendingChanges(prev => {
+        // Remove existing change for this submission
+        const filtered = prev.filter(c => c.id !== submissionId);
+        // Add new change
+        return [...filtered, { id: submissionId, category: sub.category, action: actionText }];
+      });
+    }
+    
     // Update backlog array if needed
     if (disposition === 'backlog') {
       const sub = submissions.find(s => s.id === submissionId);
@@ -235,6 +253,7 @@ export default function EditorPage() {
 
       if (response.ok) {
         setHasUnsavedChanges(false);
+        setPendingChanges([]);
         showToastNotification('Changes saved successfully!');
       } else {
         showToastNotification('Failed to save changes');
@@ -265,19 +284,83 @@ export default function EditorPage() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          await loadEditorData();
-          if (selectedCategory) {
-            await loadCategoryContent(selectedCategory);
-          }
+          // Update local state immediately
+          setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+          setBacklog(prev => prev.filter(b => b.id !== submissionId));
+          setArchived(prev => prev.filter(a => a.id !== submissionId));
+          showToastNotification('Submission deleted');
         } else {
-          alert('Failed to delete submission. It may not exist.');
+          showToastNotification('Failed to delete submission');
         }
       } else {
-        alert('Failed to delete submission. Please try again.');
+        showToastNotification('Failed to delete submission');
       }
     } catch (err) {
       console.error('Failed to delete submission:', err);
-      alert('An error occurred while deleting. Please try again.');
+      showToastNotification('Error deleting submission');
+    }
+  };
+
+  const toggleSubmissionSelection = (submissionId: string) => {
+    setSelectedSubmissions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(submissionId)) {
+        newSet.delete(submissionId);
+      } else {
+        newSet.add(submissionId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllVisible = () => {
+    const filtered = submissions.filter(s => {
+      if (dataViewerFilter === 'all') return true;
+      if (dataViewerFilter === 'unreviewed') return !s.disposition || s.disposition === '';
+      if (dataViewerFilter === 'backlog') return s.disposition === 'backlog';
+      if (dataViewerFilter === 'archived') return s.disposition === 'archived';
+      if (dataViewerFilter === 'accepted') return s.disposition && s.disposition !== 'backlog' && s.disposition !== 'archived' && s.disposition !== '';
+      return true;
+    });
+    setSelectedSubmissions(new Set(filtered.map(s => s.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedSubmissions(new Set());
+  };
+
+  const bulkDelete = async () => {
+    if (selectedSubmissions.size === 0) return;
+
+    if (!confirm(`Are you sure you want to permanently delete ${selectedSubmissions.size} submission(s)?\n\nThis cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = Array.from(selectedSubmissions).map(submissionId =>
+        fetch('/api/editor', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${password}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action: 'deleteSubmission', submissionId }),
+        })
+      );
+
+      await Promise.all(deletePromises);
+
+      // Update local state
+      setSubmissions(prev => prev.filter(s => !selectedSubmissions.has(s.id)));
+      setBacklog(prev => prev.filter(b => !selectedSubmissions.has(b.id)));
+      setArchived(prev => prev.filter(a => !selectedSubmissions.has(a.id)));
+      
+      showToastNotification(`${selectedSubmissions.size} submission(s) deleted`);
+      setSelectedSubmissions(new Set());
+      setBulkDeleteMode(false);
+    } catch (err) {
+      console.error('Failed to bulk delete:', err);
+      showToastNotification('Error during bulk delete');
     }
   };
 
@@ -694,7 +777,7 @@ export default function EditorPage() {
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
             <h2 className="mb-4 text-2xl font-bold text-orange-900">Data Viewer</h2>
             <div>
-              <div className="mb-4 flex gap-4 items-center">
+              <div className="mb-4 flex gap-4 items-center flex-wrap">
                 <div>
                   <label className="text-sm font-semibold text-gray-700 mr-2">Filter by:</label>
                   <select
@@ -720,7 +803,59 @@ export default function EditorPage() {
                     <option value="oldest">Oldest First</option>
                   </select>
                 </div>
+                <div className="ml-auto">
+                  <button
+                    onClick={() => setBulkDeleteMode(!bulkDeleteMode)}
+                    className={`px-4 py-2 rounded-lg font-semibold transition ${
+                      bulkDeleteMode 
+                        ? 'bg-red-600 text-white hover:bg-red-700' 
+                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
+                  >
+                    {bulkDeleteMode ? 'Exit Bulk Mode' : 'Bulk Delete Mode'}
+                  </button>
+                </div>
               </div>
+              
+              {bulkDeleteMode && selectedSubmissions.size > 0 && (
+                <div className="mb-4 flex gap-3 items-center bg-red-50 border-2 border-red-200 rounded-lg p-3">
+                  <span className="font-semibold text-red-900">
+                    {selectedSubmissions.size} selected
+                  </span>
+                  <button
+                    onClick={selectAllVisible}
+                    className="px-3 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200 text-sm font-semibold"
+                  >
+                    Select All Visible
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm font-semibold"
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    onClick={bulkDelete}
+                    className="ml-auto px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-semibold"
+                  >
+                    Delete Selected ({selectedSubmissions.size})
+                  </button>
+                </div>
+              )}
+              
+              {bulkDeleteMode && selectedSubmissions.size === 0 && (
+                <div className="mb-4 flex gap-3 items-center bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
+                  <span className="text-sm text-blue-900">
+                    Click checkboxes to select items for deletion
+                  </span>
+                  <button
+                    onClick={selectAllVisible}
+                    className="ml-auto px-3 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200 text-sm font-semibold"
+                  >
+                    Select All Visible
+                  </button>
+                </div>
+              )}
               <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({(() => {
                 const filtered = submissions.filter(s => {
                   if (dataViewerFilter === 'all') return true;
@@ -754,30 +889,53 @@ export default function EditorPage() {
                     }
                     
                     return sorted.map((sub) => (
-                      <div key={sub.id} className="rounded-lg bg-white p-3 border border-orange-200">
-                        <div className="mb-2">
-                          <span className="font-semibold text-orange-900">{sub.category}</span>
-                          <span className={`ml-2 inline-block rounded px-2 py-1 text-xs font-semibold ${
-                            sub.disposition === selectedMonth ? 'bg-green-100 text-green-800' :
-                            sub.disposition === 'backlog' ? 'bg-yellow-100 text-yellow-800' :
-                            sub.disposition === 'archived' ? 'bg-gray-100 text-gray-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>{sub.disposition || 'unreviewed'}</span>
+                      <div 
+                        key={sub.id} 
+                        className={`rounded-lg p-3 border transition ${
+                          selectedSubmissions.has(sub.id)
+                            ? 'bg-red-50 border-red-300'
+                            : 'bg-white border-orange-200'
+                        }`}
+                      >
+                        <div className="flex gap-3">
+                          {bulkDeleteMode && (
+                            <div className="flex items-start pt-1">
+                              <input
+                                type="checkbox"
+                                checked={selectedSubmissions.has(sub.id)}
+                                onChange={() => toggleSubmissionSelection(sub.id)}
+                                className="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="mb-2">
+                              <span className="font-semibold text-orange-900">{sub.category}</span>
+                              <span className={`ml-2 inline-block rounded px-2 py-1 text-xs font-semibold ${
+                                sub.disposition === selectedMonth ? 'bg-green-100 text-green-800' :
+                                sub.disposition === 'backlog' ? 'bg-yellow-100 text-yellow-800' :
+                                sub.disposition === 'archived' ? 'bg-gray-100 text-gray-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>{sub.disposition || 'unreviewed'}</span>
+                            </div>
+                            <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
+                            <div className="mt-2 text-xs text-gray-600">
+                              Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-600">
+                              ID: {sub.id}
+                              {sub.publishedName && ` | By: ${sub.publishedName}`}
+                            </div>
+                            {!bulkDeleteMode && (
+                              <button
+                                onClick={() => deleteSubmission(sub.id, sub.content)}
+                                className="mt-2 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                              >
+                                Delete Permanently
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
-                        <div className="mt-2 text-xs text-gray-600">
-                          Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div className="mt-1 text-xs text-gray-600">
-                          ID: {sub.id}
-                          {sub.publishedName && ` | By: ${sub.publishedName}`}
-                        </div>
-                        <button
-                          onClick={() => deleteSubmission(sub.id, sub.content)}
-                          className="mt-2 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
-                        >
-                          Delete Permanently
-                        </button>
                       </div>
                     ));
                   })()}
@@ -1208,25 +1366,49 @@ export default function EditorPage() {
         
         {/* Sticky Save Button */}
         {hasUnsavedChanges && (
-          <div className="fixed bottom-6 right-6 z-50">
-            <button
-              onClick={saveChanges}
-              disabled={isSaving}
-              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-2xl transition disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                <>💾 Save All Changes</>
+          <div className="fixed bottom-6 right-6 z-50 max-w-md">
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-red-500 overflow-hidden">
+              {/* Pending Changes List */}
+              {pendingChanges.length > 0 && (
+                <div className="bg-red-50 border-b-2 border-red-200 p-3 max-h-48 overflow-y-auto">
+                  <div className="text-xs font-semibold text-red-900 mb-2">Pending Changes ({pendingChanges.length}):</div>
+                  <div className="space-y-1">
+                    {pendingChanges.slice(0, 10).map((change, idx) => (
+                      <div key={idx} className="text-xs text-gray-700 flex items-start gap-2">
+                        <span className="text-red-600">•</span>
+                        <span className="flex-1">
+                          <span className="font-semibold">{change.category}:</span> {change.action}
+                        </span>
+                      </div>
+                    ))}
+                    {pendingChanges.length > 10 && (
+                      <div className="text-xs text-gray-500 italic">
+                        ...and {pendingChanges.length - 10} more
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
-            <div className="text-xs text-center text-gray-700 mt-1 bg-white rounded px-2 py-1 shadow">Unsaved changes</div>
+              
+              {/* Save Button */}
+              <button
+                onClick={saveChanges}
+                disabled={isSaving}
+                className="w-full px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold transition disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>💾 Save All Changes</>
+                )}
+              </button>
+            </div>
           </div>
         )}
         

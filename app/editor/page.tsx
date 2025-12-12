@@ -26,6 +26,8 @@ export default function EditorPage() {
   const [currentDeadlineInfo, setCurrentDeadlineInfo] = useState<{month: string; deadline: string}>({month: '', deadline: ''});
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [availableMonths, setAvailableMonths] = useState<Array<{key: string; label: string}>>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleGroup = (groupName: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -177,7 +179,39 @@ export default function EditorPage() {
     }
   };
 
-  const updateDisposition = async (submissionId: string, disposition: string) => {
+  const updateDisposition = (submissionId: string, disposition: string) => {
+    // Update in memory only
+    setSubmissions(prev => prev.map(s => 
+      s.id === submissionId ? { ...s, disposition } : s
+    ));
+    
+    // Update backlog array if needed
+    if (disposition === 'backlog') {
+      const sub = submissions.find(s => s.id === submissionId);
+      if (sub && !backlog.find(b => b.id === submissionId)) {
+        setBacklog(prev => [...prev, { ...sub, disposition }]);
+      }
+    } else {
+      // Remove from backlog if moved to another disposition
+      setBacklog(prev => prev.filter(b => b.id !== submissionId));
+    }
+    
+    // Update archived array if needed
+    if (disposition === 'archived') {
+      const sub = submissions.find(s => s.id === submissionId);
+      if (sub && !archived.find(a => a.id === submissionId)) {
+        setArchived(prev => [...prev, { ...sub, disposition }]);
+      }
+    } else {
+      // Remove from archived if moved to another disposition
+      setArchived(prev => prev.filter(a => a.id !== submissionId));
+    }
+    
+    setHasUnsavedChanges(true);
+  };
+
+  const saveChanges = async () => {
+    setIsSaving(true);
     try {
       const response = await fetch('/api/editor', {
         method: 'POST',
@@ -185,18 +219,23 @@ export default function EditorPage() {
           'Authorization': `Bearer ${password}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'updateDisposition', submissionId, disposition }),
+        body: JSON.stringify({ 
+          action: 'saveAllSubmissions', 
+          submissions: submissions 
+        }),
       });
 
       if (response.ok) {
-        // Reload data for the currently selected month
-        await loadEditorData(selectedMonth);
-        if (selectedCategory) {
-          await loadCategoryContent(selectedCategory);
-        }
+        setHasUnsavedChanges(false);
+        alert('Changes saved successfully!');
+      } else {
+        alert('Failed to save changes');
       }
     } catch (err) {
-      console.error('Failed to update disposition:', err);
+      console.error('Failed to save changes:', err);
+      alert('Failed to save changes');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -596,6 +635,18 @@ export default function EditorPage() {
         {!showSettings && currentMonth && (
           <div className="mb-6 rounded-lg bg-white border-2 border-orange-300 p-4 shadow">
             <div className="flex items-center justify-between">
+              {hasUnsavedChanges && (
+                <div className="flex-shrink-0 mr-6">
+                  <button
+                    onClick={saveChanges}
+                    disabled={isSaving}
+                    className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? 'Saving...' : '💾 Save All Changes'}
+                  </button>
+                  <div className="text-xs text-red-600 mt-1 font-semibold">Unsaved changes</div>
+                </div>
+              )}
               <div className="flex gap-6">
                 <div>
                   <span className="text-sm text-gray-600">Total Submissions</span>

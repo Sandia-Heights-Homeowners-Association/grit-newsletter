@@ -199,6 +199,25 @@ export async function updateSubmissionDisposition(
   return null;
 }
 
+// Save all submissions (batch update)
+export async function saveAllSubmissions(updatedSubmissions: Submission[]): Promise<boolean> {
+  await ensureInitialized();
+  
+  try {
+    // Replace the entire submissions array
+    submissions = updatedSubmissions.map(s => ({
+      ...s,
+      submittedAt: new Date(s.submittedAt), // Ensure Date objects
+    }));
+    
+    await saveSubmissions(submissions);
+    return true;
+  } catch (error) {
+    console.error('Failed to save all submissions:', error);
+    return false;
+  }
+}
+
 // Get category statistics
 export async function getCategoryStats(month: string): Promise<Record<string, number>> {
   await ensureInitialized();

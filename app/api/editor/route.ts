@@ -4,6 +4,7 @@ import {
   getBackloggedSubmissions,
   getArchivedSubmissions,
   updateSubmissionDisposition,
+  saveAllSubmissions,
   exportNewsletterText,
   getSubmissionsByCategory,
   deleteSubmission,
@@ -100,6 +101,11 @@ export async function POST(request: NextRequest) {
     const { action, ...data } = body;
 
     switch (action) {
+      case 'saveAllSubmissions':
+        const { submissions: allSubmissions } = data;
+        const saved = await saveAllSubmissions(allSubmissions);
+        return NextResponse.json({ success: saved });
+
       case 'updateDisposition':
         const { submissionId, disposition } = data;
         const updated = await updateSubmissionDisposition(submissionId, disposition);

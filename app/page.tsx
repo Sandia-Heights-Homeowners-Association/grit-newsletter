@@ -375,7 +375,7 @@ export default function Home() {
 
             <h4 className="mt-4 font-semibold text-gray-900">Editing & Placement</h4>
             <p>
-              Editors may shorten or lightly edit submissions for clarity and fit. Not all content
+              Editors may shorten or edit submissions for clarity and fit. Not all content
               will appear in the same issue it is submitted; some items may be saved for a future
               month.
             </p>

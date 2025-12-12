@@ -945,7 +945,7 @@ export default function EditorPage() {
                               ID: {sub.id}
                               {sub.publishedName && ` | By: ${sub.publishedName}`}
                             </div>
-                            {!bulkDeleteMode && (
+                            {!bulkDeleteMode && sub.disposition === 'archived' && (
                               <button
                                 onClick={() => deleteSubmission(sub.id, sub.content)}
                                 className="mt-2 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"

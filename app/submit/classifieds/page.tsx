@@ -100,8 +100,8 @@ export default function ClassifiedsPage() {
           </h1>
           
           <div className="mb-6">
-            <p className="text-gray-800 leading-relaxed mb-2">
-              Looking to buy, sell, trade, or offer services? Post your classified ad here. Include details like pricing, contact preferences, and any relevant specifics.
+            <p className="text-gray-800 leading-relaxed mb-2 text-base">
+              Looking to buy, sell, trade, or offer services? Post your classified ad here. Include details like pricing, contact preferences, and any relevant specifics. Please keep it reasonably short.
             </p>
             <p className="text-sm text-gray-600">
               We cannot accomodate photos at this time. You will not receive an email confirmation, but the editor will reach out if clarification is needed.
@@ -212,7 +212,7 @@ export default function ClassifiedsPage() {
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Your Classified Ad *
                   </label>
                   <span className="text-sm text-gray-600">
@@ -224,7 +224,7 @@ export default function ClassifiedsPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={5}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Brief description with pricing, contact info, and details..."
                 />
               </div>

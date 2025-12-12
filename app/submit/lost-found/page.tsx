@@ -100,8 +100,8 @@ export default function LostFoundPage() {
           </h1>
           
           <div className="mb-6">
-            <p className="text-gray-800 leading-relaxed mb-2">
-              Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date.
+            <p className="text-gray-800 leading-relaxed mb-2 text-base">
+              Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date. Please keep it reasonably short.
             </p>
             <p className="text-sm text-gray-600">
               We cannot accommodate photos at this time. You will not receive an email confirmation. Entries may be edited for brevity and clarity. The editor will reach out if clarification is needed. 
@@ -229,7 +229,7 @@ export default function LostFoundPage() {
 
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="font-semibold text-orange-900">
+                  <label className="font-semibold text-orange-900 text-sm">
                     Description *
                   </label>
                   <span className="text-sm text-gray-600">
@@ -241,7 +241,7 @@ export default function LostFoundPage() {
                   onChange={(e) => setContent(e.target.value)}
                   required
                   rows={5}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Brief description: what item, where/when, how to contact you..."
                 />
               </div>

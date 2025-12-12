@@ -111,11 +111,15 @@ export async function POST(request: NextRequest) {
       case 'saveAllSubmissions':
         const { submissions: allSubmissions } = data;
         const saved = await saveAllSubmissions(allSubmissions);
+        // Invalidate cache to ensure fresh data on next read
+        await reloadData();
         return NextResponse.json({ success: saved });
 
       case 'updateDisposition':
         const { submissionId, disposition } = data;
         const updated = await updateSubmissionDisposition(submissionId, disposition);
+        // Invalidate cache to ensure fresh data on next read
+        await reloadData();
         return NextResponse.json({ success: true, submission: updated });
 
       case 'getBacklog':
@@ -140,6 +144,8 @@ export async function POST(request: NextRequest) {
       case 'deleteSubmission':
         const { submissionId: deleteId } = data;
         const deleted = await deleteSubmission(deleteId);
+        // Invalidate cache to ensure fresh data on next read
+        await reloadData();
         return NextResponse.json({ success: deleted });
 
       case 'export':

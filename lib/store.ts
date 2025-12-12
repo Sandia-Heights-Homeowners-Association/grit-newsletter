@@ -278,7 +278,7 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
   
   allCategories.forEach(category => {
     stats[category] = submissions.filter(
-      s => s.category === category && s.month === month
+      s => s.category === category && s.disposition === month
     ).length;
   });
   
@@ -295,7 +295,7 @@ export async function getRoutineAndCommitteeCount(month: string): Promise<number
   ];
   
   return submissions.filter(
-    s => routineAndCommitteeCategories.includes(s.category) && s.month === month
+    s => routineAndCommitteeCategories.includes(s.category) && s.disposition === month
   ).length;
 }
 
@@ -406,7 +406,7 @@ export async function getContributorNames(month: string): Promise<string[]> {
   await ensureInitialized();
   
   const contributors = submissions
-    .filter(s => s.month === month && s.publishedName)
+    .filter(s => s.disposition === month && s.publishedName)
     .map(s => s.publishedName!)
     .filter((name, index, self) => self.indexOf(name) === index) // unique names
     .sort();

@@ -11,8 +11,19 @@ const DEADLINE_BLOB = 'config/deadline.json';
 let submissions: Submission[] = [];
 let isInitialized = false;
 
-// Load deadline from blob storage
+// Deadline caching to reduce blob reads
+let cachedDeadlineDay: number | null = null;
+let deadlineCacheTime: number = 0;
+const DEADLINE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Load deadline from blob storage with caching
 export async function getDeadlineDay(): Promise<number> {
+  // Return cached value if still fresh
+  const now = Date.now();
+  if (cachedDeadlineDay !== null && (now - deadlineCacheTime) < DEADLINE_CACHE_DURATION) {
+    return cachedDeadlineDay;
+  }
+
   try {
     const { blobs } = await list({ prefix: DEADLINE_BLOB });
     const exactBlob = blobs.find(b => b.pathname === DEADLINE_BLOB);
@@ -21,13 +32,24 @@ export async function getDeadlineDay(): Promise<number> {
       const response = await fetch(exactBlob.url);
       if (response.ok) {
         const data = await response.json();
-        return data.deadlineDay || 20;
+        const deadlineDay = data.deadlineDay || 20;
+        
+        // Update cache
+        cachedDeadlineDay = deadlineDay;
+        deadlineCacheTime = now;
+        
+        return deadlineDay;
       }
     }
   } catch (error) {
     console.error('Error loading deadline from blob:', error);
   }
-  return 20; // Default fallback
+  
+  // Default fallback
+  const defaultDeadline = 20;
+  cachedDeadlineDay = defaultDeadline;
+  deadlineCacheTime = now;
+  return defaultDeadline;
 }
 
 // Load data from Vercel Blob
@@ -149,7 +171,11 @@ export async function addSubmission(
 ): Promise<Submission> {
   await ensureInitialized();
   
-  console.log('Adding submission:', { category, contentLength: content.length, publishedName });
+  // Load deadline to calculate correct month
+  const deadlineDay = await getDeadlineDay();
+  const monthKey = getCurrentMonthKey(deadlineDay);
+  
+  console.log('Adding submission:', { category, contentLength: content.length, publishedName, monthKey, deadlineDay });
   
   const submission: Submission = {
     id: generateId(),
@@ -157,7 +183,7 @@ export async function addSubmission(
     content,
     submittedAt: new Date(),
     disposition: undefined, // Unreviewed until editor accepts for a month
-    month: getCurrentMonthKey(),
+    month: monthKey,
     publishedName,
   };
   

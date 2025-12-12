@@ -29,6 +29,14 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [dataViewerFilter, setDataViewerFilter] = useState<string>('all');
   const [dataViewerSort, setDataViewerSort] = useState<'newest' | 'oldest'>('newest');
+  const [toastMessage, setToastMessage] = useState<string>('');
+  const [showToast, setShowToast] = useState(false);
+
+  const showToastNotification = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const toggleGroup = (groupName: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -200,6 +208,7 @@ export default function EditorPage() {
       const sub = submissions.find(s => s.id === submissionId);
       if (sub && !archived.find(a => a.id === submissionId)) {
         setArchived(prev => [...prev, { ...sub, disposition }]);
+        showToastNotification('Item moved to archive');
       }
     } else {
       // Remove from archived if moved to another disposition
@@ -226,13 +235,13 @@ export default function EditorPage() {
 
       if (response.ok) {
         setHasUnsavedChanges(false);
-        alert('Changes saved successfully!');
+        showToastNotification('Changes saved successfully!');
       } else {
-        alert('Failed to save changes');
+        showToastNotification('Failed to save changes');
       }
     } catch (err) {
       console.error('Failed to save changes:', err);
-      alert('Failed to save changes');
+      showToastNotification('Failed to save changes');
     } finally {
       setIsSaving(false);
     }
@@ -625,6 +634,8 @@ export default function EditorPage() {
               
               <p className="mt-3 text-xs text-gray-600">
                 Note: Day must be between 1-28. Recommended: 20th of the month. This affects the homepage deadline display and which month submissions are collected for.
+                <br />
+                <span className="text-orange-700 font-semibold">Changes may take up to 5 minutes to appear due to caching.</span>
               </p>
             </div>
           </div>
@@ -1192,6 +1203,42 @@ export default function EditorPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Sticky Save Button */}
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={saveChanges}
+              disabled={isSaving}
+              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-2xl transition disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>💾 Save All Changes</>
+              )}
+            </button>
+            <div className="text-xs text-center text-gray-700 mt-1 bg-white rounded px-2 py-1 shadow">Unsaved changes</div>
+          </div>
+        )}
+        
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-up">
+            <div className="bg-gray-900 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{toastMessage}</span>
+            </div>
           </div>
         )}
       </main>

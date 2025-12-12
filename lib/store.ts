@@ -1,7 +1,7 @@
 import { Submission, SubmissionCategory } from './types';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from './types';
 import { getCurrentMonthKey } from './constants';
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, head } from '@vercel/blob';
 
 // Blob storage keys
 const SUBMISSIONS_BLOB = 'submissions.json';
@@ -20,9 +20,24 @@ async function loadSubmissions(): Promise<Submission[]> {
     // Find the exact match (not just prefix match)
     const exactBlob = blobs.find(b => b.pathname === SUBMISSIONS_BLOB);
     if (exactBlob) {
+      console.log('Fetching blob from:', exactBlob.url);
+      
+      // Simple fetch - the blob is public
       const response = await fetch(exactBlob.url);
+      
+      if (!response.ok) {
+        console.error('Fetch failed:', response.status, response.statusText);
+        return [];
+      }
+      
       const data = await response.json();
       console.log('Loaded submissions:', data.length);
+      
+      if (!Array.isArray(data)) {
+        console.error('Data is not an array:', typeof data);
+        return [];
+      }
+      
       // Convert date strings back to Date objects
       return data.map((s: any) => ({
         ...s,
@@ -145,7 +160,18 @@ export async function addSubmission(
 // Get all submissions for a specific month
 export async function getSubmissionsByMonth(month: string): Promise<Submission[]> {
   await ensureInitialized();
-  return submissions.filter(s => s.month === month);
+  
+  const routineAndCommitteeCategories: SubmissionCategory[] = [
+    ...ROUTINE_CATEGORIES,
+    ...COMMITTEE_CATEGORIES,
+  ];
+  
+  // Include all submissions for the specified month
+  // PLUS all routine/committee submissions regardless of month (since they're evergreen content)
+  return submissions.filter(s => 
+    s.month === month || 
+    routineAndCommitteeCategories.includes(s.category)
+  );
 }
 
 // Get submissions by category and month
@@ -315,7 +341,7 @@ export async function getContributorNames(month: string): Promise<string[]> {
   await ensureInitialized();
   
   const contributors = submissions
-    .filter(s => s.month === month && s.publishedName && s.disposition === month)
+    .filter(s => s.month === month && s.publishedName)
     .map(s => s.publishedName!)
     .filter((name, index, self) => self.indexOf(name) === index) // unique names
     .sort();

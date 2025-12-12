@@ -189,9 +189,10 @@ export default function EditorPage() {
       });
 
       if (response.ok) {
-        loadEditorData();
+        // Reload data for the currently selected month
+        await loadEditorData(selectedMonth);
         if (selectedCategory) {
-          loadCategoryContent(selectedCategory);
+          await loadCategoryContent(selectedCategory);
         }
       }
     } catch (err) {
@@ -235,6 +236,16 @@ export default function EditorPage() {
 
   const loadCategoryContent = async (category: SubmissionCategory) => {
     setSelectedCategory(category);
+    
+    // Debug: log submissions for this category
+    const categorySubmissions = submissions.filter(s => s.category === category);
+    console.log('Loading category:', category);
+    console.log('Submissions for category:', categorySubmissions.length);
+    console.log('Category submissions:', categorySubmissions.map(s => ({
+      id: s.id.substring(0, 8),
+      disposition: s.disposition,
+      month: s.month
+    })));
 
     // Load backlog and archived
     try {
@@ -251,6 +262,8 @@ export default function EditorPage() {
         const data = await response.json();
         setBacklog(data.backlog || []);
         setArchived(data.archived || []);
+        console.log('Backlog loaded:', data.backlog?.length || 0);
+        console.log('Archived loaded:', data.archived?.length || 0);
       }
     } catch (err) {
       console.error('Failed to load backlog:', err);
@@ -619,10 +632,9 @@ export default function EditorPage() {
         {showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
             <h2 className="mb-4 text-2xl font-bold text-orange-900">Data Viewer</h2>
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
-                <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-3">
+            <div>
+              <h3 className="mb-3 text-lg font-semibold text-red-800">Submissions ({submissions.length})</h3>
+              <div className="max-h-96 overflow-auto rounded-lg bg-amber-50 p-4 border border-orange-200 space-y-3">
                   {submissions.length === 0 ? (
                     <p className="text-gray-800">No submissions yet</p>
                   ) : (
@@ -642,12 +654,17 @@ export default function EditorPage() {
                           ID: {sub.id} | {new Date(sub.submittedAt).toISOString().split('T')[0]}
                           {sub.publishedName && ` | By: ${sub.publishedName}`}
                         </div>
+                        <button
+                          onClick={() => deleteSubmission(sub.id, sub.content)}
+                          className="mt-2 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                        >
+                          Delete Permanently
+                        </button>
                       </div>
                     ))
                   )}
                 </div>
               </div>
-            </div>
           </div>
         )}
 
@@ -869,77 +886,63 @@ export default function EditorPage() {
                   </button>
                 </div>
 
-                {/* Individual Submissions */}
-                <div className="mb-6">
-                  <h3 className="mb-3 font-semibold text-red-800">
-                    Individual Submissions
-                  </h3>
-                  <div className="max-h-60 space-y-2 overflow-y-auto">
-                    {submissions
-                      .filter(s => s.category === selectedCategory)
-                      .map(sub => (
-                        <div
-                          key={sub.id}
-                          className="rounded border-2 border-orange-200 bg-amber-50 p-3"
-                        >
-                          <div className="mb-2 text-sm text-gray-800 line-clamp-2">
-                            {sub.content}
-                          </div>
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              onClick={() => updateDisposition(sub.id, selectedMonth)}
-                              className={`rounded px-3 py-1 text-xs font-semibold ${
-                                sub.disposition === selectedMonth
-                                  ? 'bg-green-600 text-white'
-                                  : 'bg-orange-100 text-orange-800 hover:bg-green-100 border border-orange-300'
-                              }`}
+                {/* 1. Unreviewed Submissions */}
+                {submissions.filter(s => s.category === selectedCategory && (!s.disposition || s.disposition === '')).length > 0 && (
+                  <div className="mb-6">
+                    <details open className="rounded border-2 border-blue-300 bg-blue-50 p-3">
+                      <summary className="cursor-pointer font-semibold text-blue-900">
+                        Unreviewed Submissions ({submissions.filter(s => s.category === selectedCategory && (!s.disposition || s.disposition === '')).length})
+                      </summary>
+                      <div className="mt-3 space-y-2">
+                        {submissions
+                          .filter(s => s.category === selectedCategory && (!s.disposition || s.disposition === ''))
+                          .map(sub => (
+                            <div
+                              key={sub.id}
+                              className="rounded bg-white border-2 border-blue-200 p-3"
                             >
-                              Accept for {selectedMonth}
-                            </button>
-                            <button
-                              onClick={() => updateDisposition(sub.id, 'backlog')}
-                              className={`rounded px-3 py-1 text-xs font-semibold ${
-                                sub.disposition === 'backlog'
-                                  ? 'bg-yellow-600 text-white'
-                                  : 'bg-orange-100 text-orange-800 hover:bg-yellow-100 border border-orange-300'
-                              }`}
-                            >
-                              Backlog
-                            </button>
-                            <button
-                              onClick={() => updateDisposition(sub.id, 'archived')}
-                              className={`rounded px-3 py-1 text-xs font-semibold ${
-                                sub.disposition === 'archived'
-                                  ? 'bg-gray-600 text-white'
-                                  : 'bg-orange-100 text-orange-800 hover:bg-gray-100 border border-orange-300'
-                              }`}
-                            >
-                              Archive
-                            </button>
-                            <button
-                              onClick={() => deleteSubmission(sub.id, sub.content)}
-                              className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                              <div className="mb-2 text-sm text-gray-800 line-clamp-3">
+                                {sub.content}
+                              </div>
+                              <div className="flex gap-2 flex-wrap">
+                                <button
+                                  onClick={() => updateDisposition(sub.id, selectedMonth)}
+                                  className="rounded px-3 py-1 text-xs font-semibold bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
+                                >
+                                  Accept for {selectedMonth}
+                                </button>
+                                <button
+                                  onClick={() => updateDisposition(sub.id, 'backlog')}
+                                  className="rounded px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300"
+                                >
+                                  Backlog
+                                </button>
+                                <button
+                                  onClick={() => updateDisposition(sub.id, 'archived')}
+                                  className="rounded px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300"
+                                >
+                                  Archive
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </details>
                   </div>
-                </div>
+                )}
 
-                {/* Backlog */}
+                {/* 2. Backlog from Previous Months */}
                 {backlog.length > 0 && (
                   <div className="mb-6">
-                    <details className="rounded border-2 border-orange-200 bg-amber-50 p-3">
-                      <summary className="cursor-pointer font-semibold text-orange-900">
+                    <details className="rounded border-2 border-yellow-300 bg-yellow-50 p-3">
+                      <summary className="cursor-pointer font-semibold text-yellow-900">
                         Backlog from Previous Months ({backlog.length})
                       </summary>
                       <div className="mt-3 space-y-2">
                         {backlog.map(sub => (
                           <div
                             key={sub.id}
-                            className="rounded bg-yellow-50 border-2 border-yellow-200 p-3"
+                            className="rounded bg-white border-2 border-yellow-200 p-3"
                           >
                             <div className="mb-2 text-sm text-gray-800">
                               {sub.content.substring(0, 200)}
@@ -952,12 +955,6 @@ export default function EditorPage() {
                               >
                                 Accept for {selectedMonth}
                               </button>
-                              <button
-                                onClick={() => deleteSubmission(sub.id, sub.content)}
-                                className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
-                              >
-                                Delete
-                              </button>
                             </div>
                           </div>
                         ))}
@@ -966,7 +963,38 @@ export default function EditorPage() {
                   </div>
                 )}
 
-                {/* Archived */}
+                {/* 3. Queued Submissions for This Month */}
+                {submissions.filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id)).length > 0 && (
+                  <div className="mb-6">
+                    <div className="rounded border-2 border-green-300 bg-green-50 p-4">
+                      <h3 className="mb-3 font-semibold text-green-900">
+                        Accepted for {selectedMonth} ({submissions.filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id)).length})
+                      </h3>
+                      <div className="space-y-2">
+                        {submissions
+                          .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
+                          .map(sub => (
+                            <div
+                              key={sub.id}
+                              className="rounded bg-white border border-green-200 p-3"
+                            >
+                              <div className="text-sm text-gray-800 line-clamp-2 mb-2">
+                                {extractContent(sub.content)}
+                              </div>
+                              <button
+                                onClick={() => updateDisposition(sub.id, 'backlog')}
+                                className="rounded px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-300"
+                              >
+                                Move to Backlog
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Archived (kept at bottom) */}
                 {archived.length > 0 && (
                   <div className="mb-6">
                     <details className="rounded border-2 border-gray-300 bg-gray-50 p-3">
@@ -983,12 +1011,6 @@ export default function EditorPage() {
                               {sub.content.substring(0, 200)}
                               {sub.content.length > 200 ? '...' : ''}
                             </div>
-                            <button
-                              onClick={() => deleteSubmission(sub.id, sub.content)}
-                              className="rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
-                            >
-                              Delete
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -996,17 +1018,32 @@ export default function EditorPage() {
                   </div>
                 )}
 
-                {/* Combined Section Preview */}
+                {/* 4. Combined Section Preview */}
                 <div className="mb-6">
-                  <h3 className="mb-3 font-semibold text-red-800">
-                    Combined Section Preview
-                  </h3>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-semibold text-red-800">
+                      Combined Section Preview
+                    </h3>
+                    {(() => {
+                      const combinedText = submissions
+                        .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
+                        .map(s => extractContent(s.content))
+                        .join('\n\n---\n\n');
+                      const wordCount = combinedText.trim().split(/\s+/).filter(w => w.length > 0).length;
+                      const charCount = combinedText.length;
+                      return (
+                        <div className="text-sm text-gray-600">
+                          {wordCount} words | {charCount} characters
+                        </div>
+                      );
+                    })()}
+                  </div>
                   <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-4 max-h-[600px] overflow-y-auto">
                     <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
                       {submissions
-                        .filter(s => s.category === selectedCategory && s.disposition === selectedMonth)
+                        .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
                         .map(s => extractContent(s.content))
-                        .join('\\n\\n---\\n\\n') || 'No submissions accepted for this month yet.'}
+                        .join('\n\n---\n\n') || 'No submissions accepted for this month yet.'}
                     </pre>
                   </div>
                 </div>

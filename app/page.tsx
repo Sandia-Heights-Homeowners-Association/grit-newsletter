@@ -269,8 +269,8 @@ export default function Home() {
         </div>
 
         {/* SHHA Committee & Routine Monthly Submissions */}
-        <div className="mb-8 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 p-8 shadow-xl border-2 border-teal-200">
-          <h2 className="mb-4 text-2xl font-bold text-teal-900 text-center">
+        <div className="mb-8 rounded-xl bg-gradient-to-br from-amber-50 to-red-50 p-8 shadow-xl border-2 border-amber-400">
+          <h2 className="mb-4 text-2xl font-bold text-amber-900 text-center">
             SHHA Committee & Routine Monthly Submissions
           </h2>
           <p className="mb-6 text-center text-gray-700">
@@ -279,13 +279,13 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link 
               href="/routine"
-              className="rounded-lg bg-teal-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-800 hover:shadow-xl"
+              className="rounded-lg bg-amber-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-800 hover:shadow-xl"
             >
               Routine Content
             </Link>
             <Link 
               href="/committee"
-              className="rounded-lg bg-teal-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-teal-800 hover:shadow-xl"
+              className="rounded-lg bg-amber-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-800 hover:shadow-xl"
             >
               Committee Content
             </Link>
@@ -310,44 +310,80 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Content Guidelines */}
-        <div id="guidelines" className="mt-12 bg-orange-50 p-6 border-2 border-red-300 rounded-xl">
+       {/* Content Guidelines */}
+        <div id="guidelines" className="mt-12 bg-orange-50 p-6 border-2 border-red-600 rounded-xl">
           <h3 className="mb-4 text-lg font-semibold text-gray-900">Content Guidelines</h3>
           <div className="space-y-3 text-base text-gray-800">
             <p>
-              To help us publish a clear, readable newsletter each month, please keep these in mind:
+              To help us publish a clear, readable, and useful newsletter each month, please keep the following in mind:
             </p>
+
             <ul className="ml-6 space-y-2 list-disc">
               <li>Submissions may be very short or up to ~500 words.</li>
-              <li>Write for a general neighborhood audience. Keep content respectful, constructive, and appropriate for all ages.</li>
-              <li>Avoid inflammatory language, personal attacks, or speculation presented as fact.</li>
               <li>Only plain text submissions are accepted in this portal.</li>
               <li>
-                If your piece has sections, use simple headings such as:<br/>
-                <code className="bg-gray-200 px-1 py-0.5 rounded">HEADING:</code> on its own line, or <code className="bg-gray-200 px-1 py-0.5 rounded">### Heading</code>.
+                Content should be relevant to life in Sandia Heights or of clear interest to neighbors.
+              </li>
+              <li>
+                Write for a general neighborhood audience. Keep content respectful, constructive,
+                and appropriate for all ages.
+              </li>
+              <li>
+                Avoid inflammatory language, personal attacks, or speculation presented as fact.
+              </li>
+              <li>
+                Please avoid obvious spam or excessive business promotion. For advertising or
+                promotional placements, contact{" "}
+                <a
+                  href="mailto:office@sandiahomeowners.org"
+                  className="text-blue-700 hover:text-blue-800 underline"
+                >
+                  office@sandiahomeowners.org
+                </a>.
+              </li>
+              <li>
+                If your piece has sections, use simple headings such as:<br />
+                <code className="bg-gray-200 px-1 py-0.5 rounded">HEADING:</code> on its own line,
+                or{" "}
+                <code className="bg-gray-200 px-1 py-0.5 rounded">### Heading</code>.
               </li>
               <li>If you reference links, include the full URL.</li>
             </ul>
-            
+
             <h4 className="mt-4 font-semibold text-gray-900">Photos</h4>
             <p>If you would like photos included:</p>
             <ul className="ml-6 space-y-2 list-disc">
               <li>
-                Place a clear placeholder in your text where the photo should appear, for example:<br/>
-                <code className="bg-gray-200 px-1 py-0.5 rounded">[PHOTO: roadrunner on wall]</code> or <code className="bg-gray-200 px-1 py-0.5 rounded">[PHOTO 1: caption here]</code>
+                Place a clear placeholder in your text where the photo should appear, for example:<br />
+                <code className="bg-gray-200 px-1 py-0.5 rounded">
+                  [PHOTO: roadrunner on wall]
+                </code>{" "}
+                or{" "}
+                <code className="bg-gray-200 px-1 py-0.5 rounded">
+                  [PHOTO 1: caption here]
+                </code>
               </li>
-              <li>Then email the photo(s) to <a href="mailto:griteditor@sandiahomeowners.org" className="text-blue-700 hover:text-blue-800 underline">griteditor@sandiahomeowners.org</a></li>
+              <li>
+                Then email the photo(s) to{" "}
+                <a
+                  href="mailto:shhagrit@gmail.com"
+                  className="text-blue-700 hover:text-blue-800 underline"
+                >
+                  shhagrit@gmail.com
+                </a>.
+              </li>
             </ul>
-            
+
             <h4 className="mt-4 font-semibold text-gray-900">Editing & Placement</h4>
             <p>
-              Editors may shorten or edit submissions for clarity and fit. Not all content will appear in the same issue it is submitted; 
-              some items may be saved for a future month.
+              Editors may shorten or lightly edit submissions for clarity and fit. Not all content
+              will appear in the same issue it is submitted; some items may be saved for a future
+              month.
             </p>
-            
+
             <h4 className="mt-4 font-semibold text-gray-900">Not Sure Where It Fits?</h4>
             <p>
-              If you're unsure which category to choose, select "On My Mind."
+              If you're unsure which category to choose, select <strong>On My Mind</strong>.
             </p>
           </div>
         </div>

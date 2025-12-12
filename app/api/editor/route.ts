@@ -12,7 +12,7 @@ import {
 } from '@/lib/store';
 import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD, SUBMISSION_DEADLINE_DAY } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
-import { put } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -93,6 +93,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Reload data from blob to ensure fresh data
+    await reloadData();
+    
     const body = await request.json();
     const { action, ...data } = body;
 
@@ -141,6 +144,14 @@ export async function POST(request: NextRequest) {
         }
 
         try {
+          // Delete old deadline blob if it exists
+          const { blobs } = await list({ prefix: 'config/deadline.json' });
+          for (const blob of blobs) {
+            if (blob.pathname === 'config/deadline.json') {
+              await del(blob.url);
+            }
+          }
+          
           // Store the deadline in Vercel Blob
           const deadlineBlob = await put('config/deadline.json', JSON.stringify({ deadlineDay }), {
             access: 'public',

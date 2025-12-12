@@ -332,8 +332,7 @@ export default function Home() {
                 Avoid inflammatory language, personal attacks, or speculation presented as fact.
               </li>
               <li>
-                Please avoid obvious spam or excessive business promotion. For advertising or
-                promotional placements, contact{" "}
+                Please avoid business promotion. For advertising, contact{" "}
                 <a
                   href="mailto:office@sandiahomeowners.org"
                   className="text-blue-700 hover:text-blue-800 underline"

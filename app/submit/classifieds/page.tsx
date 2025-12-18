@@ -136,7 +136,7 @@ export default function ClassifiedsPage() {
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Published Info */}
-                <div>
+                <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50/30">
                   <h3 className="text-sm font-bold text-green-700 mb-3 uppercase">Will be Published</h3>
                   <div className="mb-4">
                     <label className="mb-2 block font-semibold text-orange-900 text-sm">
@@ -154,7 +154,7 @@ export default function ClassifiedsPage() {
                 </div>
 
                 {/* Private Info */}
-                <div>
+                <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50/30">
                   <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase">Will Not be Published</h3>
                   <div className="mb-4">
                     <label className="mb-2 block font-semibold text-orange-900 text-sm">

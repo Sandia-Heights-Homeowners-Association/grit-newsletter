@@ -189,51 +189,68 @@ export default function EditorPage() {
     }
   };
 
-  const updateDisposition = (submissionId: string, disposition: string) => {
-    // Update in memory only
+  const updateDisposition = async (submissionId: string, disposition: string) => {
+    // Optimistically update UI immediately
+    const sub = submissions.find(s => s.id === submissionId);
+    if (!sub) return;
+
     setSubmissions(prev => prev.map(s => 
       s.id === submissionId ? { ...s, disposition } : s
     ));
     
-    // Track the change
-    const sub = submissions.find(s => s.id === submissionId);
-    if (sub) {
-      const actionText = disposition === 'backlog' ? 'Moved to backlog' :
-                        disposition === 'archived' ? 'Archived' :
-                        disposition === selectedMonth ? `Accepted for ${selectedMonth}` :
-                        'Updated';
-      setPendingChanges(prev => {
-        // Remove existing change for this submission
-        const filtered = prev.filter(c => c.id !== submissionId);
-        // Add new change
-        return [...filtered, { id: submissionId, category: sub.category, action: actionText }];
-      });
-    }
-    
     // Update backlog array if needed
     if (disposition === 'backlog') {
-      const sub = submissions.find(s => s.id === submissionId);
-      if (sub && !backlog.find(b => b.id === submissionId)) {
+      if (!backlog.find(b => b.id === submissionId)) {
         setBacklog(prev => [...prev, { ...sub, disposition }]);
       }
     } else {
-      // Remove from backlog if moved to another disposition
       setBacklog(prev => prev.filter(b => b.id !== submissionId));
     }
     
     // Update archived array if needed
     if (disposition === 'archived') {
-      const sub = submissions.find(s => s.id === submissionId);
-      if (sub && !archived.find(a => a.id === submissionId)) {
+      if (!archived.find(a => a.id === submissionId)) {
         setArchived(prev => [...prev, { ...sub, disposition }]);
-        showToastNotification('Item moved to archive');
       }
     } else {
-      // Remove from archived if moved to another disposition
       setArchived(prev => prev.filter(a => a.id !== submissionId));
     }
-    
-    setHasUnsavedChanges(true);
+
+    // Save immediately to server
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'updateDisposition',
+          submissionId,
+          disposition
+        }),
+      });
+
+      if (response.ok) {
+        const actionText = disposition === 'backlog' ? 'Moved to backlog' :
+                          disposition === 'archived' ? 'Archived' :
+                          `Accepted for ${selectedMonth}`;
+        showToastNotification(actionText);
+      } else {
+        // Revert on failure
+        setSubmissions(prev => prev.map(s => 
+          s.id === submissionId ? { ...s, disposition: sub.disposition } : s
+        ));
+        showToastNotification('Failed to update status');
+      }
+    } catch (err) {
+      console.error('Failed to update disposition:', err);
+      // Revert on failure
+      setSubmissions(prev => prev.map(s => 
+        s.id === submissionId ? { ...s, disposition: sub.disposition } : s
+      ));
+      showToastNotification('Failed to update status');
+    }
   };
 
   const saveChanges = async () => {

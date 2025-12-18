@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
       case 'updateDisposition':
         const { submissionId, disposition } = data;
         const updated = await updateSubmissionDisposition(submissionId, disposition);
-        // Invalidate cache to ensure fresh data on next read
-        await reloadData();
+        // Don't reload - in-memory cache is already correctly updated
+        // Reloading creates race condition with blob propagation
         return NextResponse.json({ success: true, submission: updated });
 
       case 'getBacklog':

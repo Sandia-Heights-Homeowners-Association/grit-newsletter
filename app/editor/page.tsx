@@ -272,9 +272,8 @@ export default function EditorPage() {
         setHasUnsavedChanges(false);
         setPendingChanges([]);
         showToastNotification('Changes saved successfully!');
-        
-        // Reload data from server to ensure UI reflects what's in storage
-        await loadEditorData();
+        // Don't reload - UI already has correct state and server cache is correct
+        // Reloading immediately creates race condition with blob propagation
       } else {
         showToastNotification('Failed to save changes');
       }

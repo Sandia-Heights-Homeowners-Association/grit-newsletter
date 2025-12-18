@@ -99,8 +99,10 @@ export default function Home() {
                 submitted by <strong className="text-red-700">{deadlineInfo.deadline || 'TBD'}</strong>.
               </p>
               <p>
-                <strong className="text-orange-900">Content Guidelines</strong> are <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline font-medium">below</a>. 
-                By submitting, you agree to our <a href="#terms" className="text-green-700 hover:text-green-800 underline font-medium">submission terms</a>.
+                Review our <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline font-medium">Content Guidelines</a> and <a href="#terms" className="text-green-700 hover:text-green-800 underline font-medium">submission terms</a> below.
+              </p>
+              <p>
+                <strong className="text-orange-900">Contact the editor:</strong> <a href="mailto:griteditor@sandiahomeowners.org" className="text-teal-700 hover:text-teal-800 underline">griteditor@sandiahomeowners.org</a>
               </p>
             </div>
           </div>

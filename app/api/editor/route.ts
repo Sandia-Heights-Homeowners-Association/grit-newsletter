@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
       case 'saveAllSubmissions':
         const { submissions: allSubmissions } = data;
         const saved = await saveAllSubmissions(allSubmissions);
-        // Invalidate cache to ensure fresh data on next read
-        await reloadData();
+        // Don't reload - in-memory cache is already correct
+        // Reloading immediately after save creates race condition with blob propagation
         return NextResponse.json({ success: saved });
 
       case 'updateDisposition':

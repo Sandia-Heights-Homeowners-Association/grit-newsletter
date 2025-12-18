@@ -223,15 +223,24 @@ export async function updateSubmissionDisposition(
   id: string,
   disposition: string
 ): Promise<Submission | null> {
-  await ensureInitialized();
-  
-  const submission = submissions.find(s => s.id === id);
-  if (submission) {
+  try {
+    await ensureInitialized();
+    
+    const submission = submissions.find(s => s.id === id);
+    if (!submission) {
+      console.error('Submission not found:', id);
+      return null;
+    }
+    
+    console.log('Updating disposition:', { id, oldDisposition: submission.disposition, newDisposition: disposition });
     submission.disposition = disposition;
     await saveSubmissions(submissions);
+    console.log('Disposition updated successfully');
     return submission;
+  } catch (error) {
+    console.error('Error updating disposition:', error);
+    throw error;
   }
-  return null;
 }
 
 // Save all submissions (batch update)

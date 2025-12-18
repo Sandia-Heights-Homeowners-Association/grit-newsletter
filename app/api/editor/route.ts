@@ -118,6 +118,12 @@ export async function POST(request: NextRequest) {
       case 'updateDisposition':
         const { submissionId, disposition } = data;
         const updated = await updateSubmissionDisposition(submissionId, disposition);
+        if (!updated) {
+          return NextResponse.json(
+            { error: 'Submission not found' },
+            { status: 404 }
+          );
+        }
         // Don't reload - in-memory cache is already correctly updated
         // Reloading creates race condition with blob propagation
         return NextResponse.json({ success: true, submission: updated });

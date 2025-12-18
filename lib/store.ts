@@ -108,11 +108,12 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
     const jsonData = JSON.stringify(submissions, null, 2);
     console.log('JSON data size:', jsonData.length, 'bytes');
     
-    // Use addRandomSuffix: false to overwrite the same blob atomically
+    // Use addRandomSuffix: false and allowOverwrite: true to atomically replace the same blob
     const result = await put(SUBMISSIONS_BLOB, jsonData, {
       access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     
     console.log('Successfully saved submissions to blob:', result.url);

@@ -377,15 +377,16 @@ export async function getCategorySubmissionCounts(
 export async function exportNewsletterText(month: string): Promise<string> {
   await ensureInitialized();
   
-  const allCategories: SubmissionCategory[] = [
-    ...COMMUNITY_CATEGORIES,
+  // Define category order: Routine, Community, Committee
+  const orderedCategories: SubmissionCategory[] = [
     ...ROUTINE_CATEGORIES,
+    ...COMMUNITY_CATEGORIES,
     ...COMMITTEE_CATEGORIES,
   ];
   
   let output = '';
   
-  for (const category of allCategories) {
+  for (const category of orderedCategories) {
     const subs = await getSubmissionsByCategory(category, month);
     const accepted = subs.filter(s => s.disposition === month);
     

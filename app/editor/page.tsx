@@ -92,14 +92,14 @@ export default function EditorPage() {
       }
     };
 
-    // Message from the President
+    // Routine Content
     addSection('President\'s Note', '## Message from the President');
-    
-    // Board Notes
     addSection('Board Notes', '## Board Notes');
-    
-    // Office Notes
     addSection('Office Notes', '## Office Notes');
+    addSection('ACC Activity Log', '## ACC Logs');
+    addSection('CSC Table', '## CSC Logs');
+    addSection('Security Report', '## Security Logs');
+    addSection('Association Events', '## Association Events');
     
     // Community Contributions header
     const communityHasContent = COMMUNITY_CATEGORIES.some(cat => {
@@ -114,14 +114,18 @@ export default function EditorPage() {
     // Community categories as H4
     COMMUNITY_CATEGORIES.forEach(cat => addSection(cat, `#### ${cat}`));
     
-    // ACC Logs
-    addSection('ACC Activity Log', '## ACC Logs');
+    // Committee Content header
+    const committeeHasContent = COMMITTEE_CATEGORIES.some(cat => {
+      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === selectedMonth);
+      return categorySubs.length > 0;
+    });
     
-    // CSC Logs
-    addSection('CSC Table', '## CSC Logs');
+    if (committeeHasContent) {
+      sections.push('\n## Committee Content\n');
+    }
     
-    // Security Logs
-    addSection('Security Report', '## Security Logs');
+    // Committee categories as H4
+    COMMITTEE_CATEGORIES.forEach(cat => addSection(cat, `#### ${cat}`));
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 
@@ -136,6 +140,16 @@ export default function EditorPage() {
     }
 
     return result || 'No published content yet. Submissions will appear here once marked as published.';
+  };
+
+  const copyFullTextToClipboard = () => {
+    const fullText = generateFullNewsletterPreview();
+    navigator.clipboard.writeText(fullText).then(() => {
+      showToastNotification('Full text copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      showToastNotification('Failed to copy text');
+    });
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -1354,9 +1368,23 @@ export default function EditorPage() {
               </div>
             ) : (
               <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-                <h2 className="mb-4 text-2xl font-bold text-orange-900">
-                  Full Newsletter Preview
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-orange-900">
+                    Full Newsletter Preview
+                  </h2>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">
+                      {getWordCount(generateFullNewsletterPreview()).toLocaleString()} words
+                    </span>
+                    <button
+                      onClick={copyFullTextToClipboard}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
+                      title="Copy full text to clipboard"
+                    >
+                      📋 Copy Text
+                    </button>
+                  </div>
+                </div>
                 <p className="mb-4 text-gray-700">
                   This is a read-only preview of all content accepted for {selectedMonth}. To view individual sections, select a category from the left sidebar.
                 </p>

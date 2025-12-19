@@ -55,38 +55,54 @@ export async function getDeadlineDay(): Promise<number> {
 // Load data from Vercel Blob
 async function loadSubmissions(): Promise<Submission[]> {
   try {
+    console.log('[LOAD] Starting load from blob');
     // Use list to find the exact blob
     const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
-    console.log('Loading submissions, found blobs:', blobs.length, blobs.map(b => b.pathname));
+    console.log('[LOAD] Found blobs:', blobs.length, blobs.map(b => b.pathname));
     
     // Find the exact match (not just prefix match)
     const exactBlob = blobs.find(b => b.pathname === SUBMISSIONS_BLOB);
     if (exactBlob) {
-      console.log('Fetching blob from:', exactBlob.url);
+      console.log('[LOAD] Fetching blob from:', exactBlob.url);
       
       // Simple fetch - the blob is public
-      const response = await fetch(exactBlob.url);
+      const response = await fetch(exactBlob.url, {
+        cache: 'no-store', // Disable caching
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       
       if (!response.ok) {
-        console.error('Fetch failed:', response.status, response.statusText);
+        console.error('[LOAD] Fetch failed:', response.status, response.statusText);
         return [];
       }
       
       const data = await response.json();
-      console.log('Loaded submissions:', data.length);
       
-      if (!Array.isArray(data)) {
-        console.error('Data is not an array:', typeof data);
+      // Check if data has new metadata format
+      let actualSubmissions: any[];
+      if (data.submissions && Array.isArray(data.submissions)) {
+        console.log('[LOAD] Blob saved at:', data.lastSaved, 'Count:', data.count);
+        actualSubmissions = data.submissions;
+      } else if (Array.isArray(data)) {
+        console.log('[LOAD] Old format (no metadata), Count:', data.length);
+        actualSubmissions = data;
+      } else {
+        console.error('[LOAD] Data is not in expected format:', typeof data);
         return [];
       }
       
+      console.log('[LOAD] Loaded submissions:', actualSubmissions.length);
+      
       // Convert date strings back to Date objects
-      return data.map((s: any) => ({
+      return actualSubmissions.map((s: any) => ({
         ...s,
         submittedAt: new Date(s.submittedAt),
       }));
     }
-    console.log('No submission blob found with exact name:', SUBMISSIONS_BLOB);
+    console.log('[LOAD] No submission blob found with exact name:', SUBMISSIONS_BLOB);
   } catch (error) {
     console.error('Error loading submissions from blob:', error);
   }
@@ -97,7 +113,8 @@ async function loadSubmissions(): Promise<Submission[]> {
 
 async function saveSubmissions(submissions: Submission[]): Promise<void> {
   try {
-    console.log('Saving submissions to blob. Count:', submissions.length);
+    const saveTimestamp = new Date().toISOString();
+    console.log('[SAVE] Starting save at:', saveTimestamp, 'Count:', submissions.length);
     
     // Check if blob token is available
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
@@ -105,8 +122,15 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
       throw new Error('Blob storage not configured');
     }
     
-    const jsonData = JSON.stringify(submissions, null, 2);
-    console.log('JSON data size:', jsonData.length, 'bytes');
+    // Add metadata to track saves
+    const dataToSave = {
+      lastSaved: saveTimestamp,
+      count: submissions.length,
+      submissions: submissions
+    };
+    
+    const jsonData = JSON.stringify(dataToSave, null, 2);
+    console.log('[SAVE] JSON data size:', jsonData.length, 'bytes');
     
     // Use addRandomSuffix: false and allowOverwrite: true to atomically replace the same blob
     const result = await put(SUBMISSIONS_BLOB, jsonData, {
@@ -116,7 +140,7 @@ async function saveSubmissions(submissions: Submission[]): Promise<void> {
       allowOverwrite: true,
     });
     
-    console.log('Successfully saved submissions to blob:', result.url);
+    console.log('[SAVE] Successfully saved to blob at:', saveTimestamp, 'URL:', result.url);
   } catch (error: any) {
     console.error('Error saving submissions to blob:', error);
     console.error('Error message:', error.message);
@@ -229,17 +253,30 @@ export async function updateSubmissionDisposition(
     
     const submission = submissions.find(s => s.id === id);
     if (!submission) {
-      console.error('Submission not found:', id);
+      console.error('[UPDATE] Submission not found:', id);
       return null;
     }
     
-    console.log('Updating disposition:', { id, oldDisposition: submission.disposition, newDisposition: disposition });
+    console.log('[UPDATE] Updating disposition:', { 
+      id, 
+      category: submission.category,
+      oldDisposition: submission.disposition, 
+      newDisposition: disposition,
+      totalSubmissions: submissions.length
+    });
+    
     submission.disposition = disposition;
     await saveSubmissions(submissions);
-    console.log('Disposition updated successfully');
+    
+    console.log('[UPDATE] Disposition updated successfully. Verifying in-memory:', {
+      id,
+      currentDisposition: submission.disposition,
+      found: !!submissions.find(s => s.id === id && s.disposition === disposition)
+    });
+    
     return submission;
   } catch (error) {
-    console.error('Error updating disposition:', error);
+    console.error('[UPDATE] Error updating disposition:', error);
     throw error;
   }
 }

@@ -55,22 +55,47 @@ export default function EditorPage() {
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
-  // Helper function to extract just the content (no metadata, no names)
+  // Helper function to extract just the content that will be published
   const extractContent = (rawContent: string): string => {
-    // Find the actual content after the metadata lines
     const lines = rawContent.split('\n');
-    let contentStart = 0;
     
-    // Skip metadata lines (Published Name, Full Name, Email, Location, Author)
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim() === '' && i > 0) {
+    // First line has: "PublishedName - Title" or just "PublishedName"
+    const firstLine = lines[0] || '';
+    const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
+    
+    let publishedName = '';
+    let title = '';
+    
+    if (titleMatch) {
+      publishedName = titleMatch[1].trim();
+      title = titleMatch[2].trim();
+    } else {
+      publishedName = firstLine.trim();
+    }
+    
+    // Skip blank line, then skip metadata block (Full Name, Email, Location)
+    let contentStart = 1;
+    for (let i = 1; i < lines.length; i++) {
+      // Look for the blank line after metadata
+      if (lines[i].trim() === '' && i > 1 && 
+          (lines[i-1].includes('Location:') || lines[i-1].includes('Email:'))) {
         contentStart = i + 1;
         break;
       }
     }
     
+    // Extract the actual content
     const actualContent = lines.slice(contentStart).join('\n').trim();
-    return actualContent;
+    
+    // Format for publication: Author name, optional title, then content
+    let result = '';
+    if (title) {
+      result = `${publishedName}\n\n${title}\n\n${actualContent}`;
+    } else {
+      result = `${publishedName}\n\n${actualContent}`;
+    }
+    
+    return result;
   };
 
   const generateFullNewsletterPreview = (): string => {
@@ -250,6 +275,11 @@ export default function EditorPage() {
                           disposition === 'archived' ? 'Archived' :
                           `Accepted for ${selectedMonth}`;
         showToastNotification(actionText);
+        
+        // Reload backlog/archived for this category to ensure consistency
+        if (selectedCategory) {
+          await loadCategoryContent(selectedCategory);
+        }
       } else {
         // Revert on failure
         setSubmissions(prev => prev.map(s => 

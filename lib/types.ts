@@ -18,9 +18,12 @@ export const ROUTINE_CATEGORIES = [
   'ACC Activity Log',
   'CSC Table',
   'Security Report',
+  'Association Events',
 ] as const;
 
 export const COMMITTEE_CATEGORIES = [
+  'The Board',
+  'General Announcements',
   'Architectural Control Committee (ACC)',
   'Covenant Support Committee (CSC)',
   'Communications & Publications Committee',

@@ -88,21 +88,17 @@ export default function Home() {
             <p className="mb-4 text-center text-xl font-semibold text-red-800">
               Local Events | Photos | Little Things Worth Sharing
             </p>
-            <div className="mx-auto max-w-3xl space-y-4 text-center text-gray-900">
+            <div className="mx-auto max-w-3xl space-y-2 text-center text-gray-900">
               <p className="text-lg">
                 <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
                 and we want to hear from you. We welcome any neighborhood-relevant content, 
                 from short thoughts to full articles.
               </p>
-              <p>
-                <strong className="text-orange-900">Deadline:</strong> All content for the {deadlineInfo.month || 'upcoming'} issue must be 
-                submitted by <strong className="text-red-700">{deadlineInfo.deadline || 'TBD'}</strong>.
-              </p>
-              <p>
-                Review our <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline font-medium">Content Guidelines</a> and <a href="#terms" className="text-green-700 hover:text-green-800 underline font-medium">submission terms</a> below.
-              </p>
-              <p>
-                <strong className="text-orange-900">Contact the editor:</strong> <a href="mailto:griteditor@sandiahomeowners.org" className="text-teal-700 hover:text-teal-800 underline">griteditor@sandiahomeowners.org</a>
+              <p className="text-sm">
+                <strong className="text-orange-900">Deadline:</strong> {deadlineInfo.deadline || 'TBD'} • 
+                <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline ml-1">Content Guidelines</a> • 
+                <a href="#terms" className="text-green-700 hover:text-green-800 underline">Terms</a> • 
+                <a href="mailto:griteditor@sandiahomeowners.org" className="text-teal-700 hover:text-teal-800 underline">Contact Editor</a>
               </p>
             </div>
           </div>

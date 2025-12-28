@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Header from '@/app/components/Header';
 
 export default function OnMyMindPage() {
   const [content, setContent] = useState('');

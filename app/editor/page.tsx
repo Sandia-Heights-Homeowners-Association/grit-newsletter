@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import Header from '@/app/components/Header';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 
@@ -589,16 +589,7 @@ export default function EditorPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
         <main className="mx-auto max-w-md px-4 py-20">
-          {/* Logo Header */}
-          <div className="mb-8 flex justify-center">
-            <Image 
-              src="/logo.png" 
-              alt="The GRIT Logo" 
-              width={400} 
-              height={100}
-              className="object-contain"
-            />
-          </div>
+          <Header />
           
           <Link 
             href="/"
@@ -652,16 +643,7 @@ export default function EditorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-7xl px-4 py-12">
-        {/* Logo Header */}
-        <div className="mb-8 flex justify-center">
-          <Image 
-            src="/logo.png" 
-            alt="The GRIT Logo" 
-            width={400} 
-            height={100}
-            className="object-contain"
-          />
-        </div>
+        <Header />
         
         <div className="mb-6 flex items-center justify-between">
           <Link 

@@ -44,13 +44,12 @@ export default function Home() {
             <Image 
               src="/logo.png" 
               alt="The GRIT Logo" 
-              width={400} 
-              height={100}
+              width={480} 
+              height={120}
               className="object-contain"
             />
           </div>
           
-          <p className="mb-2 text-2xl font-medium text-red-800">{APP_NAME}: {APP_SUBTITLE}</p>
           <p className="text-lg font-medium text-orange-800">
             Sandia Heights Homeowners Association Newsletter
           </p>

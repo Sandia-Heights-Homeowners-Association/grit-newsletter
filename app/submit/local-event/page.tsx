@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Header from '@/app/components/Header';
 
 export default function LocalEventPage() {
   const [title, setTitle] = useState('');
@@ -95,6 +96,7 @@ export default function LocalEventPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+      <Header />
       <main className="mx-auto max-w-3xl px-4 py-12">
         <Link 
           href="/"

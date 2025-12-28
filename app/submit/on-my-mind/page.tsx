@@ -88,6 +88,7 @@ export default function OnMyMindPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
+        <Header />
         <Link 
           href="/"
           className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"

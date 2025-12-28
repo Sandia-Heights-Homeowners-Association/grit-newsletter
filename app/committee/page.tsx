@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import Header from '@/app/components/Header';
 import { COMMITTEE_CATEGORIES } from '@/lib/types';
 
 export default function CommitteePage() {
@@ -86,16 +86,7 @@ export default function CommitteePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       <main className="mx-auto max-w-3xl px-4 py-12">
-        {/* Logo Header */}
-        <div className="mb-8 flex justify-center">
-          <Image 
-            src="/logo.png" 
-            alt="The GRIT Logo" 
-            width={400} 
-            height={100}
-            className="object-contain"
-          />
-        </div>
+        <Header />
         
         <Link 
           href="/"

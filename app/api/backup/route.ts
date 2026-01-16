@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
       case 'restore':
         const { backupName } = data;
-        const restored = restoreBackup(backupName);
+        const restored = await restoreBackup(backupName);
         if (restored) {
           return NextResponse.json({ 
             success: true,
@@ -77,14 +77,14 @@ export async function POST(request: NextRequest) {
           });
         } else {
           return NextResponse.json(
-            { error: 'Failed to restore backup (not implemented for Vercel Blob)' },
+            { error: 'Failed to restore backup' },
             { status: 400 }
           );
         }
 
       case 'import':
         const { importData } = data;
-        const imported = importAllData(importData);
+        const imported = await importAllData(importData);
         if (imported) {
           return NextResponse.json({ 
             success: true,

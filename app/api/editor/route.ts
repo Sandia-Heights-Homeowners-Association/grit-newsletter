@@ -14,7 +14,7 @@ import {
 } from '@/lib/store';
 import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
-import { put, list, del } from '@vercel/blob';
+import { setDeadlineDay } from '@/lib/store';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -169,19 +169,8 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          // Delete old deadline blob if it exists
-          const { blobs } = await list({ prefix: 'config/deadline.json' });
-          for (const blob of blobs) {
-            if (blob.pathname === 'config/deadline.json') {
-              await del(blob.url);
-            }
-          }
-          
-          // Store the deadline in Vercel Blob
-          const deadlineBlob = await put('config/deadline.json', JSON.stringify({ deadlineDay: newDeadlineDay }), {
-            access: 'public',
-            addRandomSuffix: false,
-          });
+          // Store the deadline in database
+          await setDeadlineDay(newDeadlineDay);
 
           const updatedDeadlineInfo = getNextPublicationInfo(newDeadlineDay);
           
@@ -189,7 +178,7 @@ export async function POST(request: NextRequest) {
             success: true, 
             deadlineDay: newDeadlineDay,
             deadlineInfo: updatedDeadlineInfo,
-            message: 'Deadline updated successfully. Note: You may need to reload pages to see the updated deadline.'
+            message: 'Deadline updated successfully.'
           });
         } catch (err) {
           console.error('Failed to update deadline:', err);

@@ -1,23 +1,27 @@
 import { Submission, SubmissionCategory } from './types';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from './types';
 import { getCurrentMonthKey } from './constants';
-import { put, list, del, head } from '@vercel/blob';
+import { db, initializeDatabase } from './db';
 
-// Blob storage keys
-const SUBMISSIONS_BLOB = 'submissions.json';
-const DEADLINE_BLOB = 'config/deadline.json';
-
-// In-memory cache
-let submissions: Submission[] = [];
-let isInitialized = false;
-
-// Deadline caching to reduce blob reads
+// Deadline caching to reduce database reads
 let cachedDeadlineDay: number | null = null;
 let deadlineCacheTime: number = 0;
 const DEADLINE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Load deadline from blob storage with caching
+// Initialize database on first use
+let isDbInitialized = false;
+
+async function ensureDbInitialized() {
+  if (!isDbInitialized) {
+    await initializeDatabase();
+    isDbInitialized = true;
+  }
+}
+
+// Load deadline from database with caching
 export async function getDeadlineDay(): Promise<number> {
+  await ensureDbInitialized();
+  
   // Return cached value if still fresh
   const now = Date.now();
   if (cachedDeadlineDay !== null && (now - deadlineCacheTime) < DEADLINE_CACHE_DURATION) {
@@ -25,151 +29,31 @@ export async function getDeadlineDay(): Promise<number> {
   }
 
   try {
-    const { blobs } = await list({ prefix: DEADLINE_BLOB });
-    const exactBlob = blobs.find(b => b.pathname === DEADLINE_BLOB);
+    const deadlineDay = await db.getDeadlineDay();
     
-    if (exactBlob) {
-      const response = await fetch(exactBlob.url);
-      if (response.ok) {
-        const data = await response.json();
-        const deadlineDay = data.deadlineDay || 20;
-        
-        // Update cache
-        cachedDeadlineDay = deadlineDay;
-        deadlineCacheTime = now;
-        
-        return deadlineDay;
-      }
-    }
+    // Update cache
+    cachedDeadlineDay = deadlineDay;
+    deadlineCacheTime = now;
+    
+    return deadlineDay;
   } catch (error) {
-    console.error('Error loading deadline from blob:', error);
+    console.error('Error loading deadline from database:', error);
+    // Default fallback
+    const defaultDeadline = 20;
+    cachedDeadlineDay = defaultDeadline;
+    deadlineCacheTime = now;
+    return defaultDeadline;
   }
+}
+
+// Set deadline day
+export async function setDeadlineDay(day: number): Promise<void> {
+  await ensureDbInitialized();
+  await db.setDeadlineDay(day);
   
-  // Default fallback
-  const defaultDeadline = 20;
-  cachedDeadlineDay = defaultDeadline;
-  deadlineCacheTime = now;
-  return defaultDeadline;
-}
-
-// Load data from Vercel Blob
-async function loadSubmissions(): Promise<Submission[]> {
-  try {
-    console.log('[LOAD] Starting load from blob');
-    // Use list to find the exact blob
-    const { blobs } = await list({ prefix: SUBMISSIONS_BLOB });
-    console.log('[LOAD] Found blobs:', blobs.length, blobs.map(b => b.pathname));
-    
-    // Find the exact match (not just prefix match)
-    const exactBlob = blobs.find(b => b.pathname === SUBMISSIONS_BLOB);
-    if (exactBlob) {
-      console.log('[LOAD] Fetching blob from:', exactBlob.url);
-      
-      // Simple fetch - the blob is public
-      const response = await fetch(exactBlob.url, {
-        cache: 'no-store', // Disable caching
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (!response.ok) {
-        console.error('[LOAD] Fetch failed:', response.status, response.statusText);
-        return [];
-      }
-      
-      const data = await response.json();
-      
-      // Check if data has new metadata format
-      let actualSubmissions: any[];
-      if (data.submissions && Array.isArray(data.submissions)) {
-        console.log('[LOAD] Blob saved at:', data.lastSaved, 'Count:', data.count);
-        actualSubmissions = data.submissions;
-      } else if (Array.isArray(data)) {
-        console.log('[LOAD] Old format (no metadata), Count:', data.length);
-        actualSubmissions = data;
-      } else {
-        console.error('[LOAD] Data is not in expected format:', typeof data);
-        return [];
-      }
-      
-      console.log('[LOAD] Loaded submissions:', actualSubmissions.length);
-      
-      // Convert date strings back to Date objects
-      return actualSubmissions.map((s: any) => ({
-        ...s,
-        submittedAt: new Date(s.submittedAt),
-      }));
-    }
-    console.log('[LOAD] No submission blob found with exact name:', SUBMISSIONS_BLOB);
-  } catch (error) {
-    console.error('Error loading submissions from blob:', error);
-  }
-  return [];
-}
-
-
-
-async function saveSubmissions(submissions: Submission[]): Promise<void> {
-  try {
-    const saveTimestamp = new Date().toISOString();
-    console.log('[SAVE] Starting save at:', saveTimestamp, 'Count:', submissions.length);
-    
-    // Check if blob token is available
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('BLOB_READ_WRITE_TOKEN is not set!');
-      throw new Error('Blob storage not configured');
-    }
-    
-    // Add metadata to track saves
-    const dataToSave = {
-      lastSaved: saveTimestamp,
-      count: submissions.length,
-      submissions: submissions
-    };
-    
-    const jsonData = JSON.stringify(dataToSave, null, 2);
-    console.log('[SAVE] JSON data size:', jsonData.length, 'bytes');
-    
-    // Use addRandomSuffix: false and allowOverwrite: true to atomically replace the same blob
-    const result = await put(SUBMISSIONS_BLOB, jsonData, {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
-    
-    console.log('[SAVE] Successfully saved to blob at:', saveTimestamp, 'URL:', result.url);
-  } catch (error: any) {
-    console.error('Error saving submissions to blob:', error);
-    console.error('Error message:', error.message);
-    throw error; // Re-throw to alert calling code
-  }
-}
-
-
-
-// Initialize data
-async function initializeData(): Promise<void> {
-  if (!isInitialized) {
-    submissions = await loadSubmissions();
-    isInitialized = true;
-    console.log('Data initialized:', { submissions: submissions.length });
-  }
-}
-
-// Ensure data is loaded before any operation
-async function ensureInitialized(): Promise<void> {
-  if (!isInitialized) {
-    await initializeData();
-  }
-}
-
-// Reload data from blob (useful for refreshing in-memory cache)
-export async function reloadData(): Promise<void> {
-  submissions = await loadSubmissions();
-  isInitialized = true;
+  // Clear cache
+  cachedDeadlineDay = null;
+  deadlineCacheTime = 0;
 }
 
 // Generate unique ID
@@ -183,7 +67,7 @@ export async function addSubmission(
   content: string,
   publishedName?: string
 ): Promise<Submission> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   // Load deadline to calculate correct month
   const deadlineDay = await getDeadlineDay();
@@ -201,34 +85,27 @@ export async function addSubmission(
     publishedName,
   };
   
-  submissions.push(submission);
-  console.log('Submission added to array. Total submissions:', submissions.length);
-  
-  try {
-    await saveSubmissions(submissions);
-    console.log('Submission saved successfully');
-  } catch (error) {
-    // Remove the submission if save failed
-    submissions.pop();
-    console.error('Failed to save submission, rolled back');
-    throw error;
-  }
+  await db.insertSubmission(submission);
+  console.log('Submission saved successfully');
   
   return submission;
 }
 
 // Get all submissions for a specific month
 export async function getSubmissionsByMonth(month: string): Promise<Submission[]> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   const routineAndCommitteeCategories: SubmissionCategory[] = [
     ...ROUTINE_CATEGORIES,
     ...COMMITTEE_CATEGORIES,
   ];
   
+  // Get all submissions from database
+  const allSubmissions = await db.getAllSubmissions();
+  
   // Include all submissions for the specified month
   // PLUS all routine/committee submissions regardless of month (since they're evergreen content)
-  return submissions.filter(s => 
+  return allSubmissions.filter(s => 
     s.month === month || 
     routineAndCommitteeCategories.includes(s.category)
   );
@@ -239,60 +116,53 @@ export async function getSubmissionsByCategory(
   category: SubmissionCategory,
   month: string
 ): Promise<Submission[]> {
-  await ensureInitialized();
-  return submissions.filter(s => s.category === category && s.month === month);
+  await ensureDbInitialized();
+  return await db.getSubmissionsByCategory(category, month);
 }
 
-// Update submission disposition
+// Update submission disposition - ATOMIC
 export async function updateSubmissionDisposition(
   id: string,
   disposition: string
 ): Promise<Submission | null> {
+  await ensureDbInitialized();
+  
   try {
-    await ensureInitialized();
+    console.log('[UPDATE] Updating disposition:', { id, disposition });
     
-    const submission = submissions.find(s => s.id === id);
-    if (!submission) {
+    const updated = await db.updateSubmissionDisposition(id, disposition);
+    
+    if (!updated) {
       console.error('[UPDATE] Submission not found:', id);
       return null;
     }
     
-    console.log('[UPDATE] Updating disposition:', { 
-      id, 
-      category: submission.category,
-      oldDisposition: submission.disposition, 
-      newDisposition: disposition,
-      totalSubmissions: submissions.length
-    });
-    
-    submission.disposition = disposition;
-    await saveSubmissions(submissions);
-    
-    console.log('[UPDATE] Disposition updated successfully. Verifying in-memory:', {
+    console.log('[UPDATE] Disposition updated successfully:', {
       id,
-      currentDisposition: submission.disposition,
-      found: !!submissions.find(s => s.id === id && s.disposition === disposition)
+      newDisposition: updated.disposition
     });
     
-    return submission;
+    return updated;
   } catch (error) {
     console.error('[UPDATE] Error updating disposition:', error);
     throw error;
   }
 }
 
-// Save all submissions (batch update)
+// Save all submissions (batch update) - useful for bulk operations
 export async function saveAllSubmissions(updatedSubmissions: Submission[]): Promise<boolean> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   try {
-    // Replace the entire submissions array
-    submissions = updatedSubmissions.map(s => ({
-      ...s,
-      submittedAt: new Date(s.submittedAt), // Ensure Date objects
-    }));
+    // Extract disposition updates
+    const updates = updatedSubmissions
+      .filter(s => s.disposition)
+      .map(s => ({ id: s.id, disposition: s.disposition! }));
     
-    await saveSubmissions(submissions);
+    if (updates.length > 0) {
+      await db.batchUpdateDispositions(updates);
+    }
+    
     return true;
   } catch (error) {
     console.error('Failed to save all submissions:', error);
@@ -302,18 +172,20 @@ export async function saveAllSubmissions(updatedSubmissions: Submission[]): Prom
 
 // Get category statistics
 export async function getCategoryStats(month: string): Promise<Record<string, number>> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   const stats: Record<string, number> = {};
-  
   const allCategories = [
     ...COMMUNITY_CATEGORIES,
     ...ROUTINE_CATEGORIES,
     ...COMMITTEE_CATEGORIES,
   ];
   
+  // Get all submissions to calculate stats
+  const allSubmissions = await db.getAllSubmissions();
+  
   allCategories.forEach(category => {
-    stats[category] = submissions.filter(
+    stats[category] = allSubmissions.filter(
       s => s.category === category && (
         // Explicitly assigned to this month
         s.disposition === month ||
@@ -330,14 +202,16 @@ export async function getCategoryStats(month: string): Promise<Record<string, nu
 
 // Get total count of routine and committee submissions
 export async function getRoutineAndCommitteeCount(month: string): Promise<number> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   const routineAndCommitteeCategories: SubmissionCategory[] = [
     ...ROUTINE_CATEGORIES,
     ...COMMITTEE_CATEGORIES,
   ];
   
-  return submissions.filter(
+  const allSubmissions = await db.getAllSubmissions();
+  
+  return allSubmissions.filter(
     s => routineAndCommitteeCategories.includes(s.category) && (
       // Explicitly assigned to this month
       s.disposition === month ||
@@ -349,16 +223,16 @@ export async function getRoutineAndCommitteeCount(month: string): Promise<number
   ).length;
 }
 
-
-
 // Get backlogged submissions
 export async function getBackloggedSubmissions(
   category: SubmissionCategory,
   currentMonth: string
 ): Promise<Submission[]> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
-  return submissions.filter(
+  const allSubmissions = await db.getAllSubmissions();
+  
+  return allSubmissions.filter(
     s => s.category === category && 
         s.disposition === 'backlog'
   );
@@ -368,30 +242,30 @@ export async function getBackloggedSubmissions(
 export async function getArchivedSubmissions(
   category: SubmissionCategory
 ): Promise<Submission[]> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
-  return submissions.filter(
+  const allSubmissions = await db.getAllSubmissions();
+  
+  return allSubmissions.filter(
     s => s.category === category && s.disposition === 'archived'
   );
 }
 
 // Delete a submission permanently
 export async function deleteSubmission(id: string): Promise<boolean> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   console.log('Attempting to delete submission:', id);
-  console.log('Current submissions count:', submissions.length);
   
-  const index = submissions.findIndex(s => s.id === id);
-  if (index !== -1) {
-    console.log('Found submission at index:', index);
-    submissions.splice(index, 1);
-    await saveSubmissions(submissions);
-    console.log('Deleted submission. New count:', submissions.length);
-    return true;
+  const deleted = await db.deleteSubmission(id);
+  
+  if (deleted) {
+    console.log('Successfully deleted submission:', id);
+  } else {
+    console.log('Submission not found with id:', id);
   }
-  console.log('Submission not found with id:', id);
-  return false;
+  
+  return deleted;
 }
 
 // Get submission counts for a category (accepted for month, backlogged, archived)
@@ -399,9 +273,10 @@ export async function getCategorySubmissionCounts(
   category: SubmissionCategory,
   currentMonth: string
 ): Promise<{ accepted: number; backlog: number; archived: number }> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
-  const categorySubs = submissions.filter(s => s.category === category);
+  const allSubmissions = await db.getAllSubmissions();
+  const categorySubs = allSubmissions.filter(s => s.category === category);
   
   return {
     accepted: categorySubs.filter(s => s.disposition === currentMonth).length,
@@ -412,7 +287,7 @@ export async function getCategorySubmissionCounts(
 
 // Export all submissions for a month as text
 export async function exportNewsletterText(month: string): Promise<string> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
   // Define category order: Routine, Community, Committee
   const orderedCategories: SubmissionCategory[] = [
@@ -446,17 +321,17 @@ export async function exportNewsletterText(month: string): Promise<string> {
 
 // Get all data (for API endpoints)
 export async function getAllSubmissions(): Promise<Submission[]> {
-  await ensureInitialized();
-  return [...submissions];
+  await ensureDbInitialized();
+  return await db.getAllSubmissions();
 }
-
-
 
 // Get list of contributor names for current month
 export async function getContributorNames(month: string): Promise<string[]> {
-  await ensureInitialized();
+  await ensureDbInitialized();
   
-  const contributors = submissions
+  const allSubmissions = await db.getAllSubmissions();
+  
+  const contributors = allSubmissions
     .filter(s => (
       // Explicitly assigned to this month
       s.disposition === month ||
@@ -470,4 +345,11 @@ export async function getContributorNames(month: string): Promise<string[]> {
     .sort();
   
   return contributors;
+}
+
+// Reload data - now a no-op since we always read from DB
+export async function reloadData(): Promise<void> {
+  await ensureDbInitialized();
+  // No-op - database is always fresh
+  console.log('reloadData called - database is always current');
 }

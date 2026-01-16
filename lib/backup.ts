@@ -1,24 +1,31 @@
-import { put, list } from '@vercel/blob';
+import fs from 'fs';
+import path from 'path';
 import { getAllSubmissions } from './store';
+import { db } from './db';
+import { Submission } from './types';
 
 /**
- * Create a timestamped backup in Vercel Blob
+ * Create a timestamped backup as a JSON file in data/backups
  */
 export async function createBackup(): Promise<string> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupPrefix = `backups/${timestamp}/`;
+  const backupDir = path.join(process.cwd(), 'data', 'backups', timestamp);
   
   try {
+    // Ensure backup directory exists
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    
     const submissions = await getAllSubmissions();
     
     // Save submissions backup
-    await put(`${backupPrefix}submissions.json`, JSON.stringify(submissions, null, 2), {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-    });
+    fs.writeFileSync(
+      path.join(backupDir, 'submissions.json'),
+      JSON.stringify(submissions, null, 2)
+    );
     
-    return backupPrefix;
+    return timestamp;
   } catch (error) {
     console.error('Error creating backup:', error);
     throw error;
@@ -30,18 +37,21 @@ export async function createBackup(): Promise<string> {
  */
 export async function listBackups(): Promise<string[]> {
   try {
-    const { blobs } = await list({ prefix: 'backups/' });
+    const backupsDir = path.join(process.cwd(), 'data', 'backups');
     
-    // Extract unique backup timestamps
-    const backupDirs = new Set<string>();
-    blobs.forEach(blob => {
-      const match = blob.pathname.match(/^backups\/([^/]+)\//);
-      if (match) {
-        backupDirs.add(match[1]);
-      }
-    });
+    if (!fs.existsSync(backupsDir)) {
+      return [];
+    }
     
-    return Array.from(backupDirs).sort().reverse();
+    const backupDirs = fs.readdirSync(backupsDir)
+      .filter(name => {
+        const fullPath = path.join(backupsDir, name);
+        return fs.statSync(fullPath).isDirectory();
+      })
+      .sort()
+      .reverse();
+    
+    return backupDirs;
   } catch (error) {
     console.error('Error listing backups:', error);
     return [];
@@ -61,16 +71,53 @@ export async function exportAllData(): Promise<any> {
 }
 
 /**
- * Note: Restore and import functions would require updating the main blob files
- * For simplicity, these are not implemented in the blob version
- * You can manually re-upload data via the Vercel dashboard if needed
+ * Restore a backup from a timestamped directory
  */
-export function restoreBackup(backupName: string): boolean {
-  console.warn('Restore functionality not implemented for Vercel Blob storage');
-  return false;
+export async function restoreBackup(backupName: string): Promise<boolean> {
+  try {
+    const backupDir = path.join(process.cwd(), 'data', 'backups', backupName);
+    
+    if (!fs.existsSync(backupDir)) {
+      console.error('Backup directory not found:', backupDir);
+      return false;
+    }
+    
+    const submissionsFile = path.join(backupDir, 'submissions.json');
+    
+    if (!fs.existsSync(submissionsFile)) {
+      console.error('Submissions backup file not found:', submissionsFile);
+      return false;
+    }
+    
+    const submissions = JSON.parse(fs.readFileSync(submissionsFile, 'utf-8')) as Submission[];
+    
+    // Replace all data in database
+    await db.replaceAllSubmissions(submissions);
+    
+    console.log(`Restored ${submissions.length} submissions from backup ${backupName}`);
+    return true;
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    return false;
+  }
 }
 
-export function importAllData(data: any): boolean {
-  console.warn('Import functionality not implemented for Vercel Blob storage');
-  return false;
+/**
+ * Import data from an exported JSON file
+ */
+export async function importAllData(data: any): Promise<boolean> {
+  try {
+    if (!data.submissions || !Array.isArray(data.submissions)) {
+      console.error('Invalid data format');
+      return false;
+    }
+    
+    await db.replaceAllSubmissions(data.submissions);
+    
+    console.log(`Imported ${data.submissions.length} submissions`);
+    return true;
+  } catch (error) {
+    console.error('Error importing data:', error);
+    return false;
+  }
 }

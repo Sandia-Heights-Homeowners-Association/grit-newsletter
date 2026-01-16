@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Captcha from '@/app/components/Captcha';
 
 export default function SubmitPage() {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function SubmitPage() {
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
   const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +62,12 @@ export default function SubmitPage() {
     setSubmitting(true);
     setError('');
 
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const metadata = `Full Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
       const fullContent = `${publishedName}\n\n${metadata}\n\n${content}`;
@@ -67,7 +75,12 @@ export default function SubmitPage() {
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, content: fullContent, publishedName }),
+        body: JSON.stringify({ 
+          category, 
+          content: fullContent, 
+          publishedName,
+          captchaToken 
+        }),
       });
 
       if (response.ok) {
@@ -78,8 +91,10 @@ export default function SubmitPage() {
         setFullName('');
         setLocation('');
         setEmail('');
+        setCaptchaToken('');
       } else {
-        setError('Failed to submit. Please try again.');
+        const data = await response.json();
+        setError(data.error || 'Failed to submit. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -223,6 +238,17 @@ export default function SubmitPage() {
                 />
               </div>
 
+              <Captcha 
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={() => {
+                  setError('CAPTCHA verification failed. Please try again.');
+                  setCaptchaToken('');
+                }}
+                onExpire={() => {
+                  setCaptchaToken('');
+                }}
+              />
+
               {error && (
                 <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-900 border-2 border-red-300">
                   {error}
@@ -231,8 +257,8 @@ export default function SubmitPage() {
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400"
+                disabled={submitting || !captchaToken}
+                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting...' : 'Submit'}
               </button>

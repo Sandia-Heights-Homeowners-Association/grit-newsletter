@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
+import Captcha from '@/app/components/Captcha';
 
 export default function LocalEventPage() {
   const [title, setTitle] = useState('');
@@ -18,6 +19,7 @@ export default function LocalEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const createConfetti = () => {
     const colors = ['#f97316', '#ea580c', '#dc2626', '#fb923c', '#fdba74'];
@@ -58,6 +60,12 @@ export default function LocalEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification.');
+      return;
+    }
+    
     setSubmitting(true);
     setError('');
 
@@ -68,7 +76,7 @@ export default function LocalEventPage() {
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'Local Event Announcement', content: fullContent, publishedName }),
+        body: JSON.stringify({ category: 'Local Event Announcement', content: fullContent, publishedName, captchaToken }),
       });
 
       if (response.ok) {
@@ -84,8 +92,10 @@ export default function LocalEventPage() {
         setEventTime('');
         setEventEndTime('');
         setEventLocation('');
+        setCaptchaToken('');
       } else {
-        setError('Failed to submit. Please try again.');
+        const data = await response.json();
+        setError(data.error || 'Failed to submit. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -278,6 +288,17 @@ export default function LocalEventPage() {
                 />
               </div>
 
+              <Captcha 
+                onVerify={(token) => setCaptchaToken(token)}
+                onError={() => {
+                  setError('CAPTCHA verification failed. Please try again.');
+                  setCaptchaToken('');
+                }}
+                onExpire={() => {
+                  setCaptchaToken('');
+                }}
+              />
+
               {error && (
                 <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-900 border-2 border-red-300">
                   {error}
@@ -286,8 +307,8 @@ export default function LocalEventPage() {
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400"
+                disabled={submitting || !captchaToken}
+                className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting...' : 'Submit'}
               </button>

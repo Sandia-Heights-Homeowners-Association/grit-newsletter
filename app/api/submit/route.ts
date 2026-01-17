@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addSubmission } from '@/lib/store';
 import type { SubmissionCategory } from '@/lib/types';
+import { sendSubmissionNotification } from '@/lib/email';
 
 // Verify Cloudflare Turnstile token
 async function verifyTurnstileToken(token: string): Promise<boolean> {
@@ -73,6 +74,29 @@ export async function POST(request: NextRequest) {
     const submission = await addSubmission(category as SubmissionCategory, content, publishedName);
     
     console.log('Submission created successfully:', submission.id);
+    
+    // Parse metadata from content for email notification
+    const lines = content.split('\n');
+    const fullNameLine = lines.find((l: string) => l.startsWith('Full Name:'));
+    const emailLine = lines.find((l: string) => l.startsWith('Email:'));
+    const locationLine = lines.find((l: string) => l.startsWith('Location:'));
+    
+    const fullName = fullNameLine?.replace('Full Name:', '').trim() || 'Unknown';
+    const email = emailLine?.replace('Email:', '').trim() || '';
+    const location = locationLine?.replace('Location:', '').trim() || '';
+    
+    // Send email notification (non-blocking)
+    sendSubmissionNotification({
+      category,
+      publishedName: publishedName || 'Anonymous',
+      content,
+      fullName,
+      email,
+      location,
+    }).catch(err => {
+      // Log error but don't fail the submission
+      console.error('Email notification failed:', err);
+    });
     
     return NextResponse.json({ 
       success: true, 

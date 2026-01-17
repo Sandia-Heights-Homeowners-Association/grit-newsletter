@@ -64,8 +64,13 @@ export async function sendSubmissionNotification({
           <div class="container">
             <div class="header">
               <h1 style="margin: 0;">📬 New Submission</h1>
+              <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.95;">Sandia Heights Homeowners Association Newsletter, the GRIT</p>
             </div>
             <div class="content">
+              <p style="font-size: 16px; color: #059669; font-weight: 500; margin: 0 0 15px 0;">
+                Thank you for your contribution!
+              </p>
+              
               <div class="info-row">
                 <span class="label">Category:</span> ${category}
               </div>
@@ -90,6 +95,10 @@ export async function sendSubmissionNotification({
               <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/editor" class="button">
                 Review in Editor Dashboard
               </a>
+              
+              <p style="font-size: 11px; color: #9ca3af; margin-top: 20px; line-height: 1.5;">
+                Submissions are subject to editing and publication is not guaranteed.
+              </p>
             </div>
             <div class="footer">
               <p>GRIT Newsletter Submission System</p>

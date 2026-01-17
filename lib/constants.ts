@@ -4,8 +4,6 @@ export const APP_SUBTITLE = 'Guiding Residents, Inspiring Togetherness';
 
 // Passwords from environment variables (server-side only)
 export const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
-export const ROUTINE_PASSWORD = process.env.ROUTINE_PASSWORD || '';
-export const COMMITTEE_PASSWORD = process.env.COMMITTEE_PASSWORD || '';
 
 // Helper to get next month's publication details
 export function getNextPublicationInfo(deadlineDay: number = 20): { month: string; deadline: string } {

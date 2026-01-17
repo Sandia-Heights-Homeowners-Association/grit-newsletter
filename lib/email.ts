@@ -34,8 +34,9 @@ export async function sendSubmissionNotification({
     : content;
 
   try {
-    await resend.emails.send({
-      from: 'GRIT Newsletter <notifications@resend.dev>', // Use your verified domain later
+    const emailPayload: any = {
+      from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
+      replyTo: 'griteditor@sandiahomeowners.org',
       to: [process.env.EDITOR_EMAIL],
       subject: `New ${category} Submission - ${publishedName}`,
       html: `
@@ -98,7 +99,14 @@ export async function sendSubmissionNotification({
         </body>
         </html>
       `,
-    });
+    };
+
+    // Add BCC if configured
+    if (process.env.EDITOR_EMAIL_BCC) {
+      emailPayload.bcc = [process.env.EDITOR_EMAIL_BCC];
+    }
+
+    await resend.emails.send(emailPayload);
 
     console.log('Email notification sent successfully');
     return { success: true };

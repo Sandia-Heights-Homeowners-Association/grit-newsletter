@@ -117,7 +117,7 @@ export default function LostFoundPage() {
               Help reunite neighbors with their lost items or report found property. Please include a description, approximate location, and date. Please keep it reasonably short.
             </p>
             <p className="text-sm text-gray-600">
-              We cannot accommodate photos at this time. You will not receive an email confirmation. Entries may be edited for brevity and clarity. The editor will reach out if clarification is needed. 
+              If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description. Entries may be edited for brevity and clarity.
             </p>
           </div>
 
@@ -257,6 +257,10 @@ export default function LostFoundPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Brief description: what item, where/when, how to contact you..."
                 />
+              </div>
+
+              <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">
+                <p className="text-sm text-blue-900">📧 Email Confirmation: You will receive an email confirmation of your submission. If you don't receive it, please check your spam folder.</p>
               </div>
 
               <Captcha 

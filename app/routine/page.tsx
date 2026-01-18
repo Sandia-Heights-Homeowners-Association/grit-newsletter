@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
+import Captcha from '@/app/components/Captcha';
 import { ROUTINE_CATEGORIES } from '@/lib/types';
 
 export default function RoutinePage() {
@@ -11,9 +12,11 @@ export default function RoutinePage() {
   const [category, setCategory] = useState<typeof ROUTINE_CATEGORIES[number]>(ROUTINE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   useEffect(() => {
     // Load confetti script
@@ -54,13 +57,26 @@ export default function RoutinePage() {
     setSubmitting(true);
     setError('');
 
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification');
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      const fullContent = `Author: ${authorName}\n\n${content}`;
+      const fullContent = email 
+        ? `Author: ${authorName}\nEmail: ${email}\n\n${content}`
+        : `Author: ${authorName}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, content: fullContent, publishedName: authorName }),
+        body: JSON.stringify({ 
+          category, 
+          content: fullContent, 
+          publishedName: authorName,
+          captchaToken 
+        }),
       });
 
       const data = await response.json();
@@ -69,6 +85,8 @@ export default function RoutinePage() {
         setSuccess(true);
         setContent('');
         setAuthorName('');
+        setEmail('');
+        setCaptchaToken('');
         createConfetti();
       } else {
         setError(data.details || data.error || 'Failed to submit. Please try again.');
@@ -122,6 +140,20 @@ export default function RoutinePage() {
 
             <div className="mb-6">
               <label className="mb-2 block font-semibold text-orange-900">
+                Email (optional)
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                placeholder="your.email@example.com"
+              />
+              <p className="mt-1 text-sm text-gray-800">If provided, you'll receive an email confirmation of your submission.</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block font-semibold text-orange-900">
                 Content Category *
               </label>
               <select
@@ -161,6 +193,24 @@ export default function RoutinePage() {
               </p>
             </div>
 
+            <div className="mb-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-800">
+                <strong>📧 Email Confirmation:</strong> If you provide an email address, you will receive a confirmation of your submission. 
+                If you don't receive it, please check your spam folder.
+              </p>
+            </div>
+
+            <Captcha 
+              onVerify={(token) => setCaptchaToken(token)}
+              onError={() => {
+                setError('CAPTCHA verification failed. Please try again.');
+                setCaptchaToken('');
+              }}
+              onExpire={() => {
+                setCaptchaToken('');
+              }}
+            />
+
             {success && (
               <div className="mb-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 p-6 text-center border-2 border-green-300">
                 <div className="text-2xl mb-1">✓</div>
@@ -183,7 +233,7 @@ export default function RoutinePage() {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !captchaToken}
               className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400"
             >
               {submitting ? 'Submitting...' : 'Submit'}

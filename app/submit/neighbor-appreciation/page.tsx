@@ -119,7 +119,7 @@ export default function NeighborAppreciationPage() {
             Recognize, thank, or celebrate a neighbor who has made a positive impact. Share what they did and why it matters to you. Please make sure your neighbor is comfortable being mentioned before submitting.
             </p>
             <p className="text-sm text-gray-600">
-              You will not receive an email confirmation, but the editor will reach out if clarification is needed.
+              If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
             </p>
           </div>
 
@@ -242,6 +242,10 @@ export default function NeighborAppreciationPage() {
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Include the neighbor's name and describe what they did. How did it help you or the community? Why are you grateful?"
                 />
+              </div>
+
+              <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">
+                <p className="text-sm text-blue-900">📧 Email Confirmation: You will receive an email confirmation of your submission. If you don't receive it, please check your spam folder.</p>
               </div>
 
               <Captcha 

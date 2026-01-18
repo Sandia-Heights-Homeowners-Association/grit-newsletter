@@ -247,8 +247,18 @@ export default function OnMyMindPage() {
                   Photo (optional)
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to griteditor@sandiahomeowners.org or include a link in your description</p>
+                  <p className="text-sm text-gray-600">
+                    If you have photos, please mention in your text where they should appear (e.g., "photo here"), 
+                    then email photos to griteditor@sandiahomeowners.org or include a link in your description.
+                  </p>
                 </div>
+              </div>
+
+              <div className="mb-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>📧 Email Confirmation:</strong> You will receive an email confirmation of your submission. 
+                  If you don't receive it, please check your spam folder.
+                </p>
               </div>
 
               <Captcha 

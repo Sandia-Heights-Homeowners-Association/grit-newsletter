@@ -122,7 +122,7 @@ export default function NatureWildlifePage() {
               Share your favorite glimpses of the natural world in and around Sandia Heights, whether it is wildlife, scenery, plants, or any outdoor moment that made you pause. From peaceful foothills mornings to surprise animal visitors, we welcome the scenes that capture the beauty of living here. If you are submitting a playful or funny animal photo, feel free to include a humorous caption.
             </p>
             <p className="text-sm text-gray-600">
-              You will not receive an email confirmation, but the editor will reach out if clarification is needed. You can email photos to griteditor@sandiahomeowners.org, or upload them to a 3rd party service and share a link within your submission.
+              If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
             </p>
           </div>
 
@@ -265,8 +265,12 @@ export default function NatureWildlifePage() {
                   Photo (optional)
                 </label>
                 <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">Email photos to griteditor@sandiahomeowners.org or include a link in your description</p>
+                  <p className="text-sm text-gray-600">If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.</p>
                 </div>
+              </div>
+
+              <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">
+                <p className="text-sm text-blue-900">📧 Email Confirmation: You will receive an email confirmation of your submission. If you don't receive it, please check your spam folder.</p>
               </div>
 
               <Captcha 

@@ -494,29 +494,6 @@ export default function EditorPage() {
     }
   };
 
-  const createBackup = async () => {
-    try {
-      const response = await fetch('/api/backup', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${password}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'create' }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Backup created successfully!\n${data.backupPath}`);
-      } else {
-        alert('Failed to create backup');
-      }
-    } catch (err) {
-      console.error('Failed to create backup:', err);
-      alert('Failed to create backup');
-    }
-  };
-
   const handleMonthChange = async (monthKey: string) => {
     setSelectedMonth(monthKey);
     setSelectedCategory(null); // Clear selected category when changing months
@@ -668,20 +645,6 @@ export default function EditorPage() {
               {showJsonViewer ? 'Hide Data' : 'View Data'}
             </button>
             <button
-              onClick={createBackup}
-              className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-700 hover:to-cyan-700"
-              title="Create a timestamped backup of all data"
-            >
-              Create Backup
-            </button>
-            <button
-              onClick={exportAllData}
-              className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700"
-              title="Download all data as JSON"
-            >
-              Export All Data
-            </button>
-            <button
               onClick={exportNewsletter}
               className="rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-green-700 hover:to-emerald-700"
               title="Export completed newsletter as text file"
@@ -727,7 +690,7 @@ export default function EditorPage() {
           <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
             <h2 className="mb-3 text-xl font-bold text-gray-900">Settings</h2>
             
-            <div>
+            <div className="mb-6">
               <h3 className="mb-2 text-base font-semibold text-gray-800">Submission Deadline</h3>
               <p className="mb-3 text-sm text-gray-700">
                 Current deadline: <strong>{currentDeadlineInfo.deadline}</strong> for the <strong>{currentDeadlineInfo.month}</strong> issue.
@@ -751,17 +714,34 @@ export default function EditorPage() {
                 >
                   Update
                 </button>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="rounded bg-gray-400 px-3 py-1 text-sm font-semibold text-white transition hover:bg-gray-500"
-                >
-                  Close
-                </button>
               </div>
               
               <p className="mt-2 text-xs text-gray-600">
                 <span className="text-orange-700 font-semibold">Note:</span> Changes may take up to 5 minutes to appear due to caching.
               </p>
+            </div>
+
+            <div className="mb-6 border-t border-gray-200 pt-4">
+              <h3 className="mb-2 text-base font-semibold text-gray-800">Database Export</h3>
+              <p className="mb-3 text-sm text-gray-700">
+                Download all submissions data from the database as a JSON file for backup purposes.
+              </p>
+              <button
+                onClick={exportAllData}
+                className="rounded bg-purple-600 hover:bg-purple-700 px-4 py-2 text-sm font-semibold text-white transition"
+                title="Download all data from database as JSON"
+              >
+                📥 Export All Data
+              </button>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-500"
+              >
+                Close Settings
+              </button>
             </div>
           </div>
         )}

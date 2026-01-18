@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addSubmission } from '@/lib/store';
 import type { SubmissionCategory } from '@/lib/types';
-import { sendSubmissionNotification } from '@/lib/email';
+import { sendSubmitterConfirmation } from '@/lib/email';
 
 // Verify Cloudflare Turnstile token
 async function verifyTurnstileToken(token: string): Promise<boolean> {
@@ -85,17 +85,15 @@ export async function POST(request: NextRequest) {
     const email = emailLine?.replace('Email:', '').trim() || '';
     const location = locationLine?.replace('Location:', '').trim() || '';
     
-    // Send email notification (non-blocking)
-    sendSubmissionNotification({
+    // Send confirmation to submitter with editor BCC'd (non-blocking)
+    sendSubmitterConfirmation({
       category,
       publishedName: publishedName || 'Anonymous',
       content,
       fullName,
       email,
-      location,
     }).catch(err => {
-      // Log error but don't fail the submission
-      console.error('Email notification failed:', err);
+      console.error('Confirmation email failed:', err);
     });
     
     return NextResponse.json({ 

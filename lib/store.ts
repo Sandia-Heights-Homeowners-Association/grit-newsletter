@@ -289,11 +289,37 @@ export async function getCategorySubmissionCounts(
 export async function exportNewsletterText(month: string): Promise<string> {
   await ensureDbInitialized();
   
-  // Define category order: Routine, Community, Committee
+  // Define category order matching the newsletter structure:
+  // 1. President's note
+  // 2. Board Notes
+  // 3. Office Notes
+  // 4. Association Events
+  // 5-6. Committee: The Board, General Announcements
+  // 7. Other Committee Content
+  // 8. Community Contributions (Classifieds, Lost & Found last)
+  // 9. End material: ACC Activity Log, CSC Table, Security Report
+  
   const orderedCategories: SubmissionCategory[] = [
-    ...ROUTINE_CATEGORIES,
-    ...COMMUNITY_CATEGORIES,
-    ...COMMITTEE_CATEGORIES,
+    // 1-4: Main routine content
+    'President\'s Note',
+    'Board Notes',
+    'Office Notes',
+    'Association Events',
+    
+    // 5-7: Committee content (special ones first)
+    'The Board',
+    'General Announcements',
+    ...COMMITTEE_CATEGORIES.filter(cat => cat !== 'The Board' && cat !== 'General Announcements'),
+    
+    // 8: Community contributions (Classifieds and Lost & Found last)
+    ...COMMUNITY_CATEGORIES.filter(cat => cat !== 'Classifieds' && cat !== 'Lost & Found'),
+    'Classifieds',
+    'Lost & Found',
+    
+    // 9: End material
+    'ACC Activity Log',
+    'CSC Table',
+    'Security Report',
   ];
   
   let output = '';

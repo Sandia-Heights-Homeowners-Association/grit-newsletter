@@ -85,16 +85,26 @@ export async function POST(request: NextRequest) {
     const email = emailLine?.replace('Email:', '').trim() || '';
     const location = locationLine?.replace('Location:', '').trim() || '';
     
+    console.log('Email extraction:', { fullName, email, location, category });
+    console.log('Content lines:', lines.slice(0, 10)); // Log first 10 lines for debugging
+    
     // Send confirmation to submitter with editor BCC'd (non-blocking)
-    sendSubmitterConfirmation({
-      category,
-      publishedName: publishedName || 'Anonymous',
-      content,
-      fullName,
-      email,
-    }).catch(err => {
-      console.error('Confirmation email failed:', err);
-    });
+    if (email) {
+      console.log('Attempting to send confirmation email to:', email);
+      sendSubmitterConfirmation({
+        category,
+        publishedName: publishedName || 'Anonymous',
+        content,
+        fullName,
+        email,
+      }).then(result => {
+        console.log('Email send result:', result);
+      }).catch(err => {
+        console.error('Confirmation email failed:', err);
+      });
+    } else {
+      console.warn('No email found in submission content - skipping confirmation email');
+    }
     
     return NextResponse.json({ 
       success: true, 

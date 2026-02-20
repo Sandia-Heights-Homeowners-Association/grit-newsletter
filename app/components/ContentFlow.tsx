@@ -22,33 +22,51 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { Submission } from '@/lib/types';
 
-// Define the 9 major newsletter sections in order
+// Define the 9 major newsletter sections in order with color coding
 const NEWSLETTER_SECTIONS = [
   {
     id: 'routine-main',
     name: 'Main Routine Content',
     categories: ['President\'s Note', 'Board Notes', 'Office Notes', 'Association Events'],
+    colors: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-300',
+      hoverBorder: 'hover:border-blue-400',
+      text: 'text-blue-700',
+    },
   },
   {
     id: 'committee-special',
     name: 'Special Committee Sections',
     categories: ['The Board', 'General Announcements'],
+    colors: {
+      bg: 'bg-purple-50',
+      border: 'border-purple-300',
+      hoverBorder: 'hover:border-purple-400',
+      text: 'text-purple-700',
+    },
   },
   {
     id: 'committee-other',
     name: 'Other Committee Content',
     categories: [
-      'Architectural Committee',
-      'Club Representatives',
-      'Communications & Social Media',
-      'Greenbelt & Nature Preserve',
-      'Landscape',
-      'Sandia Sharks',
-      'Security & Neighborhood Watch',
-      'Volunteer',
-      'Website & Technology',
+      'Architectural Control Committee (ACC)',
+      'Covenant Support Committee (CSC)',
+      'Communications & Publications Committee',
+      'Community Service & Membership Committee',
+      'Environment & Safety Committee',
+      'Executive Committee',
+      'Finance Committee',
+      'Governance Committee',
+      'Nominating Committee',
       'Other', // Committee Other
     ],
+    colors: {
+      bg: 'bg-indigo-50',
+      border: 'border-indigo-300',
+      hoverBorder: 'hover:border-indigo-400',
+      text: 'text-indigo-700',
+    },
   },
   {
     id: 'community-main',
@@ -57,10 +75,16 @@ const NEWSLETTER_SECTIONS = [
       'On My Mind',
       'Neighbor Appreciation',
       'Nature & Wildlife',
-      'Response',
-      'Local Event',
+      'Response to Prior Content',
+      'Local Event Announcement',
       'History & Memories',
     ],
+    colors: {
+      bg: 'bg-orange-50',
+      border: 'border-orange-300',
+      hoverBorder: 'hover:border-orange-400',
+      text: 'text-orange-700',
+    },
   },
   {
     id: 'community-lifestyle',
@@ -70,6 +94,12 @@ const NEWSLETTER_SECTIONS = [
       'Kids\' Corner',
       'Pets & Critters',
     ],
+    colors: {
+      bg: 'bg-red-50',
+      border: 'border-red-300',
+      hoverBorder: 'hover:border-red-400',
+      text: 'text-red-700',
+    },
   },
   {
     id: 'community-board',
@@ -77,18 +107,71 @@ const NEWSLETTER_SECTIONS = [
     categories: [
       'General Submission / Other',
     ],
+    colors: {
+      bg: 'bg-amber-50',
+      border: 'border-amber-300',
+      hoverBorder: 'hover:border-amber-400',
+      text: 'text-amber-700',
+    },
   },
   {
     id: 'community-classifieds',
     name: 'Classifieds & Lost Items',
     categories: ['Classifieds', 'Lost & Found'],
+    colors: {
+      bg: 'bg-yellow-50',
+      border: 'border-yellow-300',
+      hoverBorder: 'hover:border-yellow-400',
+      text: 'text-yellow-700',
+    },
   },
   {
     id: 'end-material',
     name: 'End Material',
     categories: ['ACC Activity Log', 'CSC Table', 'Security Report'],
+    colors: {
+      bg: 'bg-gray-50',
+      border: 'border-gray-300',
+      hoverBorder: 'hover:border-gray-400',
+      text: 'text-gray-700',
+    },
   },
 ];
+
+// Helper to get section colors for a category
+function getSectionColors(category: string) {
+  for (const section of NEWSLETTER_SECTIONS) {
+    if (section.categories.includes(category)) {
+      return section.colors;
+    }
+  }
+  // Default colors if category not found
+  return {
+    bg: 'bg-gray-50',
+    border: 'border-gray-300',
+    hoverBorder: 'hover:border-gray-400',
+    text: 'text-gray-700',
+  };
+}
+
+// Helper to count words in content
+function getWordCount(content: string): number {
+  // Remove metadata and get only the actual content
+  const lines = content.split('\n');
+  let contentStart = 0;
+  
+  // Find where actual content starts (after metadata block)
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '' && i > 1 && 
+        (lines[i-1].includes('Location:') || lines[i-1].includes('Email:') || lines[i-1].includes('Sighting Location:'))) {
+      contentStart = i + 1;
+      break;
+    }
+  }
+  
+  const actualContent = lines.slice(contentStart).join(' ');
+  return actualContent.trim().split(/\s+/).filter(word => word.length > 0).length;
+}
 
 interface ContentFlowProps {
   submissions: Submission[];
@@ -161,6 +244,8 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
 
   const title = extractTitle(submission.content);
   const author = extractAuthor(submission.content);
+  const wordCount = getWordCount(submission.content);
+  const colors = getSectionColors(submission.category);
 
   return (
     <div
@@ -169,26 +254,28 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
       {...attributes}
       {...listeners}
       className={`
-        bg-white rounded-lg border-2 p-4 cursor-move
+        ${colors.bg} rounded-md border-2 p-2 cursor-move
         transition-all duration-200
-        ${isDragging ? 'border-orange-400 shadow-lg' : 'border-orange-200 hover:border-orange-300 hover:shadow-md'}
+        ${isDragging ? 'border-orange-400 shadow-lg' : `${colors.border} ${colors.hoverBorder} hover:shadow-md`}
       `}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2">
         {/* Drag Handle */}
-        <div className="text-gray-400 text-xl mt-0.5">⋮⋮</div>
+        <div className="text-gray-400 text-base flex-shrink-0">⋮⋮</div>
         
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate mb-1">
+          <h3 className="font-semibold text-gray-900 text-sm truncate">
             {title}
           </h3>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
             <span className="truncate">{author}</span>
             <span className="text-gray-400">•</span>
-            <span className="text-orange-600 text-xs font-medium truncate">
+            <span className={`${colors.text} font-medium truncate`}>
               {submission.category}
             </span>
+            <span className="text-gray-400">•</span>
+            <span className="text-gray-500 flex-shrink-0">{wordCount} words</span>
           </div>
         </div>
       </div>
@@ -254,17 +341,6 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
     }
   }
 
-  // Group submissions by section for display
-  const groupedBySection = NEWSLETTER_SECTIONS.map(section => {
-    const sectionSubs = orderedSubmissions.filter(s => 
-      section.categories.includes(s.category)
-    );
-    return {
-      ...section,
-      submissions: sectionSubs,
-    };
-  }).filter(section => section.submissions.length > 0);
-
   if (orderedSubmissions.length === 0) {
     return (
       <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200 text-center">
@@ -279,12 +355,12 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
 
   return (
     <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-2xl font-bold text-orange-900 mb-2">
           Content Flow
         </h2>
         <p className="text-gray-700 text-sm">
-          Drag articles to reorder them. The Full Newsletter Preview below will reflect your custom order.
+          Drag articles to reorder them. Colors indicate newsletter sections. The Full Newsletter Preview below will reflect your custom order.
         </p>
       </div>
 
@@ -298,52 +374,42 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
           items={orderedSubmissions.map(s => s.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-8">
-            {groupedBySection.map(section => (
-              <div key={section.id} className="space-y-3">
-                {/* Section Header */}
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-amber-800">
-                    {section.name}
-                  </h3>
-                  <span className="text-xs text-gray-500 font-medium">
-                    ({section.submissions.length})
-                  </span>
-                </div>
-
-                {/* Section Submissions */}
-                <div className="space-y-2 pl-4">
-                  {section.submissions.map(submission => (
-                    <SortableSubmissionTile
-                      key={submission.id}
-                      submission={submission}
-                    />
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-1.5">
+            {orderedSubmissions.map(submission => (
+              <SortableSubmissionTile
+                key={submission.id}
+                submission={submission}
+              />
             ))}
           </div>
         </SortableContext>
 
         <DragOverlay>
           {activeSubmission ? (
-            <div className="bg-white rounded-lg border-2 border-orange-400 p-4 shadow-2xl opacity-90">
-              <div className="flex items-start gap-3">
-                <div className="text-gray-400 text-xl mt-0.5">⋮⋮</div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate mb-1">
-                    {extractTitle(activeSubmission.content)}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="truncate">{extractAuthor(activeSubmission.content)}</span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-orange-600 text-xs font-medium truncate">
-                      {activeSubmission.category}
-                    </span>
+            (() => {
+              const colors = getSectionColors(activeSubmission.category);
+              return (
+                <div className={`${colors.bg} rounded-md border-2 border-orange-400 p-2 shadow-2xl opacity-95`}>
+                  <div className="flex items-center gap-2">
+                    <div className="text-gray-400 text-base flex-shrink-0">⋮⋮</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-sm truncate">
+                        {extractTitle(activeSubmission.content)}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
+                        <span className="truncate">{extractAuthor(activeSubmission.content)}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className={`${colors.text} font-medium truncate`}>
+                          {activeSubmission.category}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-500 flex-shrink-0">{getWordCount(activeSubmission.content)} words</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()
           ) : null}
         </DragOverlay>
       </DndContext>

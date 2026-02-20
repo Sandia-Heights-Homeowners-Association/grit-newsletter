@@ -36,6 +36,9 @@ export default function EditorPage() {
   const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
+  const [previewTab, setPreviewTab] = useState<'flow' | 'preview'>('flow');
+  const [editingSubmission, setEditingSubmission] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>('');
 
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -414,6 +417,59 @@ export default function EditorPage() {
     } catch (err) {
       console.error('Failed to delete submission:', err);
       showToastNotification('Error deleting submission');
+    }
+  };
+
+  const startEditingSubmission = (submissionId: string, content: string) => {
+    setEditingSubmission(submissionId);
+    setEditContent(content);
+  };
+
+  const cancelEditingSubmission = () => {
+    setEditingSubmission(null);
+    setEditContent('');
+  };
+
+  const saveEditedSubmission = async (submissionId: string) => {
+    try {
+      // Find the submission to update
+      const submission = submissions.find(s => s.id === submissionId);
+      if (!submission) {
+        showToastNotification('Submission not found');
+        return;
+      }
+
+      // Update the submission with new content
+      const updatedSubmission = {
+        ...submission,
+        content: editContent,
+      };
+
+      // Save to database
+      const allSubs = submissions.map(s => 
+        s.id === submissionId ? updatedSubmission : s
+      );
+
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'saveAllSubmissions', submissions: allSubs }),
+      });
+
+      if (response.ok) {
+        setSubmissions(allSubs);
+        setEditingSubmission(null);
+        setEditContent('');
+        showToastNotification('Submission updated');
+      } else {
+        showToastNotification('Failed to save changes');
+      }
+    } catch (err) {
+      console.error('Failed to save edited submission:', err);
+      showToastNotification('Error saving changes');
     }
   };
 
@@ -969,6 +1025,8 @@ export default function EditorPage() {
                         className={`rounded-lg p-3 border transition ${
                           selectedSubmissions.has(sub.id)
                             ? 'bg-red-50 border-red-300'
+                            : editingSubmission === sub.id
+                            ? 'bg-blue-50 border-blue-300'
                             : 'bg-white border-orange-200'
                         }`}
                       >
@@ -1012,15 +1070,53 @@ export default function EditorPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
-                            <div className="mt-2 text-xs text-gray-600">
-                              Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                            <div className="mt-1 text-xs text-gray-600">
-                              ID: {sub.id}
-                              {sub.publishedName && ` | By: ${sub.publishedName}`}
-                            </div>
-                            {!bulkDeleteMode && sub.disposition === 'archived' && (
+                            
+                            {editingSubmission === sub.id ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  className="w-full h-48 p-3 border border-blue-300 rounded-lg text-sm font-mono text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Edit submission content..."
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => saveEditedSubmission(sub.id)}
+                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition"
+                                  >
+                                    Save Changes
+                                  </button>
+                                  <button
+                                    onClick={cancelEditingSubmission}
+                                    className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-semibold rounded transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="text-sm text-gray-800 line-clamp-2">{sub.content}</div>
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  <button
+                                    onClick={() => startEditingSubmission(sub.id, sub.content)}
+                                    className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                                  >
+                                    ✏️ Edit
+                                  </button>
+                                  <span className="text-gray-300">|</span>
+                                  <span className="text-xs text-gray-600">
+                                    Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  ID: {sub.id}
+                                  {sub.publishedName && ` | By: ${sub.publishedName}`}
+                                </div>
+                              </>
+                            )}
+                            
+                            {!bulkDeleteMode && !editingSubmission && sub.disposition === 'archived' && (
                               <button
                                 onClick={() => deleteSubmission(sub.id, sub.content)}
                                 className="mt-2 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
@@ -1413,41 +1509,69 @@ export default function EditorPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Content Flow Component */}
-                <ContentFlow
-                  submissions={submissions}
-                  selectedMonth={selectedMonth}
-                  onOrderChange={(orderedIds) => setCustomOrder(orderedIds)}
-                />
+                {/* Tab Navigation */}
+                <div className="flex gap-2 border-b-2 border-orange-200">
+                  <button
+                    onClick={() => setPreviewTab('flow')}
+                    className={`px-4 py-2 font-semibold transition border-b-2 ${
+                      previewTab === 'flow'
+                        ? 'border-orange-600 text-orange-900'
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Content Flow
+                  </button>
+                  <button
+                    onClick={() => setPreviewTab('preview')}
+                    className={`px-4 py-2 font-semibold transition border-b-2 ${
+                      previewTab === 'preview'
+                        ? 'border-orange-600 text-orange-900'
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Newsletter Preview
+                  </button>
+                </div>
 
-                {/* Full Newsletter Preview (Markdown Output) */}
-                <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-orange-900">
-                      Full Newsletter Preview
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600">
-                        {getWordCount(generateFullNewsletterPreview()).toLocaleString()} words
-                      </span>
-                      <button
-                        onClick={copyFullTextToClipboard}
-                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
-                        title="Copy full text to clipboard"
-                      >
-                        📋 Copy Text
-                      </button>
+                {/* Content Flow Tab */}
+                {previewTab === 'flow' && (
+                  <ContentFlow
+                    submissions={submissions}
+                    selectedMonth={selectedMonth}
+                    onOrderChange={(orderedIds) => setCustomOrder(orderedIds)}
+                  />
+                )}
+
+                {/* Newsletter Preview Tab */}
+                {previewTab === 'preview' && (
+                  <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold text-orange-900">
+                        Full Newsletter Preview
+                      </h2>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600">
+                          {getWordCount(generateFullNewsletterPreview()).toLocaleString()} words
+                        </span>
+                        <button
+                          onClick={copyFullTextToClipboard}
+                          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
+                          title="Copy full text to clipboard"
+                        >
+                          📋 Copy Text
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mb-4 text-gray-700">
+                      This preview reflects the order from the Content Flow. Copy this text for InDesign.
+                    </p>
+                    <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
+                      <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
+                        {generateFullNewsletterPreview()}
+                      </pre>
                     </div>
                   </div>
-                  <p className="mb-4 text-gray-700">
-                    This preview reflects the order from the Content Flow above. Copy this text for InDesign.
-                  </p>
-                  <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
-                      {generateFullNewsletterPreview()}
-                    </pre>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>

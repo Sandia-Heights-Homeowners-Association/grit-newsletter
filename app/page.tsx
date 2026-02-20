@@ -119,28 +119,28 @@ export default function Home() {
                     href="/submit/on-my-mind"
                     className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-orange-900">On My Mind</div>
+                    <div className="text-sm font-semibold text-orange-900">💭 On My Mind</div>
                     <div className="mt-0.5 text-xs text-orange-700">Reflections, opinions, ideas</div>
                   </Link>
                   <Link
                     href="/submit/response"
                     className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-orange-900">Responses</div>
+                    <div className="text-sm font-semibold text-orange-900">💬 Responses</div>
                     <div className="mt-0.5 text-xs text-orange-700">Reply to prior content</div>
                   </Link>
                   <Link
                     href="/submit/history-memories"
                     className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-orange-900">History & Memories</div>
+                    <div className="text-sm font-semibold text-orange-900">📸 History & Memories</div>
                     <div className="mt-0.5 text-xs text-orange-700">Past stories, photos</div>
                   </Link>
                   <Link
                     href="/submit/general-other"
                     className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-orange-900">General / Other</div>
+                    <div className="text-sm font-semibold text-orange-900">📝 General / Other</div>
                     <div className="mt-0.5 text-xs text-orange-700">Anything else</div>
                   </Link>
                 </div>
@@ -156,28 +156,28 @@ export default function Home() {
                     href="/submit/diy-crafts"
                     className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-red-900">Home, DIY & Crafts</div>
+                    <div className="text-sm font-semibold text-red-900">🔨 Home, DIY & Crafts</div>
                     <div className="mt-0.5 text-xs text-red-700">Projects, repairs, activities</div>
                   </Link>
                   <Link
                     href="/submit/nature-wildlife"
                     className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-red-900">Nature & Wildlife</div>
+                    <div className="text-sm font-semibold text-red-900">🌿 Nature & Wildlife</div>
                     <div className="mt-0.5 text-xs text-red-700">Animals, plants, outdoors</div>
                   </Link>
                   <Link
                     href="/submit/kids-corner"
                     className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-red-900">Kids' Corner</div>
+                    <div className="text-sm font-semibold text-red-900">🎨 Kids' Corner</div>
                     <div className="mt-0.5 text-xs text-red-700">Content for or by kids</div>
                   </Link>
                   <Link
                     href="/submit/pets-critters"
                     className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-red-900">Pets & Critters</div>
+                    <div className="text-sm font-semibold text-red-900">🐾 Pets & Critters</div>
                     <div className="mt-0.5 text-xs text-red-700">Pet stories, animal fun</div>
                   </Link>
                 </div>
@@ -193,28 +193,28 @@ export default function Home() {
                     href="/submit/classifieds"
                     className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-amber-900">Classifieds</div>
+                    <div className="text-sm font-semibold text-amber-900">🏷️ Classifieds</div>
                     <div className="mt-0.5 text-xs text-amber-700">Buy, sell, trade, services</div>
                   </Link>
                   <Link
                     href="/submit/lost-found"
                     className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-amber-900">Lost & Found</div>
+                    <div className="text-sm font-semibold text-amber-900">🔍 Lost & Found</div>
                     <div className="mt-0.5 text-xs text-amber-700">Missing or found items</div>
                   </Link>
                   <Link
                     href="/submit/local-event"
                     className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-amber-900">Local Events</div>
+                    <div className="text-sm font-semibold text-amber-900">📅 Local Events</div>
                     <div className="mt-0.5 text-xs text-amber-700">Meetings, gatherings</div>
                   </Link>
                   <Link
                     href="/submit/neighbor-appreciation"
                     className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
                   >
-                    <div className="text-sm font-semibold text-amber-900">Neighbor Thanks</div>
+                    <div className="text-sm font-semibold text-amber-900">🙏 Neighbor Thanks</div>
                     <div className="mt-0.5 text-xs text-amber-700">Recognition & appreciation</div>
                   </Link>
                 </div>

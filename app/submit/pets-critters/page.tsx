@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
 import Captcha from '@/app/components/Captcha';
+import MarkdownEditor from '@/app/components/MarkdownEditor';
 
 export default function PetsCrittersPage() {
   const [content, setContent] = useState('');
@@ -113,11 +114,8 @@ export default function PetsCrittersPage() {
           </h1>
           
           <div className="mb-6">
-            <p className="text-gray-800 leading-relaxed mb-2">
-              Share fun stories about your pets, cute photos, animal adventures, or encounters with local wildlife. We love hearing about our neighborhood's four-legged (or feathered, or scaled) friends!
-            </p>
             <p className="text-sm text-gray-600">
-              If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
+              Short-form submissions are welcome, and longer pieces are fine too. If you are writing an article, please try to keep it concise. If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
             </p>
           </div>
 
@@ -180,7 +178,7 @@ export default function PetsCrittersPage() {
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                      Location *
+                      Your Location *
                     </label>
                     <input
                       type="text"
@@ -209,12 +207,13 @@ export default function PetsCrittersPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
-                  Title (optional)
+                  Title *
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  required
                   className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                   placeholder="Optional title"
                 />
@@ -229,18 +228,11 @@ export default function PetsCrittersPage() {
                     {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
                   </span>
                 </div>
-                <textarea
+                <MarkdownEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  rows={10}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  onChange={setContent}
                   placeholder="Tell us about your pet, a wildlife encounter, or anything animal-related..."
                 />
-              </div>
-
-              <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">
-                <p className="text-sm text-blue-900">📧 Email Confirmation: You will receive an email confirmation of your submission. If you don't receive it, please check your spam folder.</p>
               </div>
 
               <Captcha 

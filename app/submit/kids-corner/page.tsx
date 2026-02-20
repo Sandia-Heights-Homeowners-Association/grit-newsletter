@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
 import Captcha from '@/app/components/Captcha';
+import MarkdownEditor from '@/app/components/MarkdownEditor';
 
 export default function KidsCornerPage() {
   const [content, setContent] = useState('');
@@ -116,11 +117,8 @@ export default function KidsCornerPage() {
           </h1>
           
           <div className="mb-6">
-            <p className="text-gray-800 leading-relaxed mb-2">
-              Submit jokes, drawings, stories, poems, or other creative work from young residents. Parents: please submit on behalf of your child.
-            </p>
             <p className="text-sm text-gray-600">
-              If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
+              Short-form submissions are welcome, and longer pieces are fine too. If you are writing an article, please try to keep it concise. If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
             </p>
           </div>
 
@@ -201,7 +199,7 @@ export default function KidsCornerPage() {
                   </div>
                   <div className="mb-4">
                     <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                      Location *
+                      Your Location *
                     </label>
                     <input
                       type="text"
@@ -230,12 +228,13 @@ export default function KidsCornerPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Title (optional)
+                  Title *
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  required
                   className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
                   placeholder="Give the submission a title"
                 />
@@ -250,27 +249,11 @@ export default function KidsCornerPage() {
                     {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
                   </span>
                 </div>
-                <textarea
+                <MarkdownEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  rows={10}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  onChange={setContent}
                   placeholder="Enter jokes, stories, poems, or describe the drawing/artwork. For images, include a link or note that you'll email them."
                 />
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
-                </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.</p>
-                </div>
-              </div>
-
-              <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">
-                <p className="text-sm text-blue-900">📧 Email Confirmation: You will receive an email confirmation of your submission. If you don't receive it, please check your spam folder.</p>
               </div>
 
               <Captcha 

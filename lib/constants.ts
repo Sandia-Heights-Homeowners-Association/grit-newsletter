@@ -10,8 +10,8 @@ export function getNextPublicationInfo(deadlineDay: number = 20): { month: strin
   const now = new Date();
   const dayOfMonth = now.getDate();
   
-  // If we're past the deadline, we're collecting for 2 months ahead
-  // If we're before/on the deadline, we're collecting for next month
+  // If we're after the deadline (day after), we're collecting for 2 months ahead
+  // If we're on or before the deadline, we're collecting for next month
   const monthsAhead = dayOfMonth > deadlineDay ? 2 : 1;
   
   const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthsAhead, 1);
@@ -37,8 +37,8 @@ export function getCurrentMonthKey(deadlineDay: number = 20): string {
   const now = new Date();
   const dayOfMonth = now.getDate();
   
-  // If we're past the deadline, we're collecting for 2 months ahead
-  // If we're before/on the deadline, we're collecting for next month
+  // If we're after the deadline (day after), we're collecting for 2 months ahead
+  // If we're on or before the deadline, we're collecting for next month
   const monthsAhead = dayOfMonth > deadlineDay ? 2 : 1;
   
   const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthsAhead, 1);

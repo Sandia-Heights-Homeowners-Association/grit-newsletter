@@ -87,12 +87,12 @@ export default function EditorPage() {
     // Extract the actual content
     const actualContent = lines.slice(contentStart).join('\n').trim();
     
-    // Format for publication: Author name, optional title, then content
+    // Format for publication: #### Author name, optional title, then content
     let result = '';
     if (title) {
-      result = `${publishedName}\n\n${title}\n\n${actualContent}`;
+      result = `#### ${publishedName}\n\n${title}\n\n${actualContent}`;
     } else {
-      result = `${publishedName}\n\n${actualContent}`;
+      result = `#### ${publishedName}\n\n${actualContent}`;
     }
     
     return result;
@@ -118,7 +118,7 @@ export default function EditorPage() {
     };
 
     // 1-4: Main Routine Content
-    addSection('President\'s Note', '## Message from the President');
+    addSection('President\'s Note', '## President\'s Note');
     addSection('Board Notes', '## Board Notes');
     addSection('Office Notes', '## Office Notes');
     addSection('Association Events', '## Association Events');
@@ -130,18 +130,18 @@ export default function EditorPage() {
     });
     
     if (committeeHasContent) {
-      sections.push('\n## Committee Content\n');
+      sections.push('\n# Committee Content\n');
     }
     
     // 5-6: Special committee sections first (The Board, General Announcements)
-    addSection('The Board', '#### The Board');
-    addSection('General Announcements', '#### General Announcements');
+    addSection('The Board', '## The Board');
+    addSection('General Announcements', '## General Announcements');
     
-    // 7: All other committee categories as H4
+    // 7: All other committee categories as H2
     const otherCommitteeCategories = COMMITTEE_CATEGORIES.filter(
       cat => cat !== 'The Board' && cat !== 'General Announcements'
     );
-    otherCommitteeCategories.forEach(cat => addSection(cat, `#### ${cat}`));
+    otherCommitteeCategories.forEach(cat => addSection(cat, `## ${cat}`));
     
     // 8: Community Contributions header
     const communityHasContent = COMMUNITY_CATEGORIES.some(cat => {
@@ -150,18 +150,18 @@ export default function EditorPage() {
     });
     
     if (communityHasContent) {
-      sections.push('\n## ★ Community Contributions ★\n');
+      sections.push('\n# Community Contributions\n');
     }
     
-    // Community categories as H4 (Classifieds and Lost & Found last)
+    // Community categories as H2 (Classifieds and Lost & Found last)
     const regularCommunityCategories = COMMUNITY_CATEGORIES.filter(
       cat => cat !== 'Classifieds' && cat !== 'Lost & Found'
     );
-    regularCommunityCategories.forEach(cat => addSection(cat, `#### ${cat}`));
+    regularCommunityCategories.forEach(cat => addSection(cat, `## ${cat}`));
     
     // Classifieds and Lost & Found at the very end of community content
-    addSection('Classifieds', '#### Classifieds');
-    addSection('Lost & Found', '#### Lost & Found');
+    addSection('Classifieds', '## Classifieds');
+    addSection('Lost & Found', '## Lost & Found');
     
     // 9: End material
     addSection('ACC Activity Log', '## ACC Activity Log');

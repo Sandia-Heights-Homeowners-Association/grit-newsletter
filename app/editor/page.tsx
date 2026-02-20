@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
 import ContentFlow from '@/app/components/ContentFlow';
@@ -38,7 +38,23 @@ export default function EditorPage() {
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [previewTab, setPreviewTab] = useState<'flow' | 'preview'>('flow');
   const [editingSubmission, setEditingSubmission] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState<string>('');
+  const [editForm, setEditForm] = useState<{
+    publishedName: string;
+    title: string;
+    fullName: string;
+    email: string;
+    location: string;
+    actualContent: string;
+    otherMetadata: string; // For special cases like "In Response To:", "Type:", etc.
+  }>({
+    publishedName: '',
+    title: '',
+    fullName: '',
+    email: '',
+    location: '',
+    actualContent: '',
+    otherMetadata: '',
+  });
 
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -60,8 +76,12 @@ export default function EditorPage() {
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
+  const handleOrderChange = useCallback((orderedIds: string[]) => {
+    setCustomOrder(orderedIds);
+  }, []);
+
   // Helper function to extract just the content that will be published
-  const extractContent = (rawContent: string): string => {
+  const extractContent = (rawContent: string, category: SubmissionCategory): string => {
     const lines = rawContent.split('\n');
     
     // First line has: "PublishedName - Title" or just "PublishedName"
@@ -78,6 +98,9 @@ export default function EditorPage() {
       publishedName = firstLine.trim();
     }
     
+    // Remove "Author:" prefix if present
+    publishedName = publishedName.replace(/^Author:\s*/i, '');
+    
     // Skip blank line, then skip metadata block (Full Name, Email, Location)
     let contentStart = 1;
     for (let i = 1; i < lines.length; i++) {
@@ -92,12 +115,29 @@ export default function EditorPage() {
     // Extract the actual content
     const actualContent = lines.slice(contentStart).join('\n').trim();
     
-    // Format for publication: #### Author name, optional title, then content
+    // Small entries get compact formatting
+    const smallEntryCategories: SubmissionCategory[] = [
+      'Classifieds',
+      'Lost & Found',
+      'Local Event Announcement'
+    ];
+    
+    if (smallEntryCategories.includes(category)) {
+      // For small entries: just show title/name and content
+      if (title) {
+        return `**${title}**\n\n${actualContent}`;
+      } else {
+        return actualContent;
+      }
+    }
+    
+    // Full articles: H1 Title (mandatory), H2 Author, then content
     let result = '';
     if (title) {
-      result = `#### ${publishedName}\n\n${title}\n\n${actualContent}`;
+      result = `# ${title}\n\n## ${publishedName}\n\n${actualContent}`;
     } else {
-      result = `#### ${publishedName}\n\n${actualContent}`;
+      // If no title, use publishedName as title
+      result = `# ${publishedName}\n\n${actualContent}`;
     }
     
     return result;
@@ -125,12 +165,12 @@ export default function EditorPage() {
         orderedSubs.forEach(sub => {
           // Add category heading when category changes
           if (sub.category !== currentCategory) {
-            sections.push(`\n## ${sub.category}\n`);
+            sections.push(`---\n# ${sub.category}\n---`);
             currentCategory = sub.category;
           }
           
           // Add submission content
-          sections.push(extractContent(sub.content));
+          sections.push(extractContent(sub.content, sub.category));
         });
         
         return sections.join('\n\n');
@@ -142,14 +182,14 @@ export default function EditorPage() {
     const emptySections: string[] = [];
     
     // Helper to add section content
-    const addSection = (category: SubmissionCategory, heading: string) => {
+    const addSection = (category: SubmissionCategory, sectionName: string) => {
       const categorySubs = submissions.filter(s => 
         s.category === category && s.disposition === selectedMonth
       );
       
       if (categorySubs.length > 0) {
-        sections.push(`\n${heading}\n`);
-        const formattedSubs = categorySubs.map(s => extractContent(s.content));
+        sections.push(`---\n# ${sectionName}\n---`);
+        const formattedSubs = categorySubs.map(s => extractContent(s.content, s.category));
         sections.push(formattedSubs.join('\n\n'));
       } else {
         emptySections.push(category);
@@ -157,56 +197,36 @@ export default function EditorPage() {
     };
 
     // 1-4: Main Routine Content
-    addSection('President\'s Note', '## President\'s Note');
-    addSection('Board Notes', '## Board Notes');
-    addSection('Office Notes', '## Office Notes');
-    addSection('Association Events', '## Association Events');
-    
-    // 5-7: Committee Content
-    const committeeHasContent = COMMITTEE_CATEGORIES.some(cat => {
-      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === selectedMonth);
-      return categorySubs.length > 0;
-    });
-    
-    if (committeeHasContent) {
-      sections.push('\n# Committee Content\n');
-    }
+    addSection('President\'s Note', 'President\'s Note');
+    addSection('Board Notes', 'Board Notes');
+    addSection('Office Notes', 'Office Notes');
+    addSection('Association Events', 'Association Events');
     
     // 5-6: Special committee sections first (The Board, General Announcements)
-    addSection('The Board', '## The Board');
-    addSection('General Announcements', '## General Announcements');
+    addSection('The Board', 'The Board');
+    addSection('General Announcements', 'General Announcements');
     
-    // 7: All other committee categories as H2
+    // 7: All other committee categories
     const otherCommitteeCategories = COMMITTEE_CATEGORIES.filter(
       cat => cat !== 'The Board' && cat !== 'General Announcements'
     );
-    otherCommitteeCategories.forEach(cat => addSection(cat, `## ${cat}`));
+    otherCommitteeCategories.forEach(cat => addSection(cat, cat));
     
-    // 8: Community Contributions header
-    const communityHasContent = COMMUNITY_CATEGORIES.some(cat => {
-      const categorySubs = submissions.filter(s => s.category === cat && s.disposition === selectedMonth);
-      return categorySubs.length > 0;
-    });
-    
-    if (communityHasContent) {
-      sections.push('\n# Community Contributions\n');
-    }
-    
-    // Community categories as H2 (Classifieds and Lost & Found last)
+    // 8: Community categories (Classifieds and Lost & Found last)
     const regularCommunityCategories = COMMUNITY_CATEGORIES.filter(
       cat => cat !== 'Classifieds' && cat !== 'Lost & Found'
     );
-    regularCommunityCategories.forEach(cat => addSection(cat, `## ${cat}`));
+    regularCommunityCategories.forEach(cat => addSection(cat, cat));
     
     // Classifieds and Lost & Found at the very end of community content
-    addSection('Classifieds', '## Classifieds');
-    addSection('Lost & Found', '## Lost & Found');
+    addSection('Classifieds', 'Classifieds');
+    addSection('Lost & Found', 'Lost & Found');
     
     // 9: End material
-    addSection('ACC Activity Log', '## ACC Activity Log');
-    addSection('CSC Table', '## CSC Table');
-    addSection('Security Report', '## Security Report');
-    addSection('Other', '## Other');
+    addSection('ACC Activity Log', 'ACC Activity Log');
+    addSection('CSC Table', 'CSC Table');
+    addSection('Security Report', 'Security Report');
+    addSection('Other', 'Other');
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 
@@ -214,7 +234,7 @@ export default function EditorPage() {
 
     // Add empty sections notice at the end
     if (emptySections.length > 0) {
-      result += `\n\n## List of Empty Sections\n\n`;
+      result += `\n\n---\n# List of Empty Sections\n---\n\n`;
       result += `The following sections had no submissions this month:\n\n`;
       result += emptySections.map(s => `  • ${s}`).join('\n');
       result += `\n\nWe welcome your contributions! Please visit sandiahomeowners.org to submit content for next month's issue.`;
@@ -422,12 +442,73 @@ export default function EditorPage() {
 
   const startEditingSubmission = (submissionId: string, content: string) => {
     setEditingSubmission(submissionId);
-    setEditContent(content);
+    
+    // Parse the content into structured fields
+    const lines = content.split('\n');
+    const firstLine = lines[0]?.trim() || '';
+    
+    // Parse "PublishedName - Title" or just "PublishedName"
+    const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
+    let publishedName = titleMatch ? titleMatch[1].trim() : firstLine;
+    const title = titleMatch ? titleMatch[2].trim() : '';
+    
+    // Remove "Author:" prefix if present
+    publishedName = publishedName.replace(/^Author:\s*/i, '');
+    
+    // Find metadata lines
+    let fullName = '';
+    let email = '';
+    let location = '';
+    let otherMetadata = '';
+    let contentStartIndex = 1;
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (line.startsWith('Full Name:')) {
+        fullName = line.replace('Full Name:', '').trim();
+      } else if (line.startsWith('Email:')) {
+        email = line.replace('Email:', '').trim();
+      } else if (line.startsWith('Location:')) {
+        location = line.replace('Location:', '').trim();
+      } else if (line.includes(':') && i < 10) {
+        // Capture other metadata like "In Response To:", "Type:", "Sighting Location:", etc.
+        otherMetadata += (otherMetadata ? '\n' : '') + line;
+      } else if (line.trim() === '' && i > 1) {
+        // Empty line after metadata marks start of content
+        const prevHasMetadata = lines[i - 1]?.includes(':');
+        if (prevHasMetadata) {
+          contentStartIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    // Get actual content (everything after metadata block)
+    const actualContent = lines.slice(contentStartIndex).join('\n').trim();
+    
+    setEditForm({
+      publishedName,
+      title,
+      fullName,
+      email,
+      location,
+      actualContent,
+      otherMetadata,
+    });
   };
 
   const cancelEditingSubmission = () => {
     setEditingSubmission(null);
-    setEditContent('');
+    setEditForm({
+      publishedName: '',
+      title: '',
+      fullName: '',
+      email: '',
+      location: '',
+      actualContent: '',
+      otherMetadata: '',
+    });
   };
 
   const saveEditedSubmission = async (submissionId: string) => {
@@ -439,10 +520,36 @@ export default function EditorPage() {
         return;
       }
 
+      // Reconstruct the content string in proper format
+      let reconstructedContent = '';
+      
+      // First line: PublishedName with optional title
+      if (editForm.title.trim()) {
+        reconstructedContent = `${editForm.publishedName.trim()} - ${editForm.title.trim()}\n\n`;
+      } else {
+        reconstructedContent = `${editForm.publishedName.trim()}\n\n`;
+      }
+      
+      // Add other metadata if exists (like "In Response To:", "Type:", etc.)
+      if (editForm.otherMetadata.trim()) {
+        reconstructedContent += `${editForm.otherMetadata.trim()}\n`;
+      }
+      
+      // Add standard metadata
+      reconstructedContent += `Full Name: ${editForm.fullName.trim()}\n`;
+      reconstructedContent += `Email: ${editForm.email.trim()}\n`;
+      if (editForm.location.trim()) {
+        reconstructedContent += `Location: ${editForm.location.trim()}\n`;
+      }
+      
+      // Add blank line before content
+      reconstructedContent += `\n${editForm.actualContent.trim()}`;
+
       // Update the submission with new content
       const updatedSubmission = {
         ...submission,
-        content: editContent,
+        content: reconstructedContent,
+        publishedName: editForm.publishedName.trim(),
       };
 
       // Save to database
@@ -462,7 +569,15 @@ export default function EditorPage() {
       if (response.ok) {
         setSubmissions(allSubs);
         setEditingSubmission(null);
-        setEditContent('');
+        setEditForm({
+          publishedName: '',
+          title: '',
+          fullName: '',
+          email: '',
+          location: '',
+          actualContent: '',
+          otherMetadata: '',
+        });
         showToastNotification('Submission updated');
       } else {
         showToastNotification('Failed to save changes');
@@ -763,27 +878,19 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <h1 className="mb-8 text-4xl font-bold text-orange-900">
+        <h1 className="mb-4 text-3xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
         
         {/* Month Selector */}
-        <div className="mb-6 rounded-xl bg-gradient-to-r from-orange-100 to-amber-100 border-2 border-orange-400 p-6 shadow-lg">
+        <div className="mb-4 rounded-lg bg-gradient-to-r from-orange-100 to-amber-100 border-2 border-orange-400 px-4 py-3 shadow">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-orange-900 mb-2">Select Newsletter Issue</h2>
-              <p className="text-sm text-gray-700">
-                Choose which month's content you want to edit. The current collection month (based on deadline) is pre-selected.
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <label className="text-lg font-semibold text-orange-900">
-                Editing:
-              </label>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-orange-900">Newsletter Issue:</h2>
               <select
                 value={selectedMonth}
                 onChange={(e) => handleMonthChange(e.target.value)}
-                className="text-lg font-semibold rounded-lg border-2 border-orange-400 bg-white px-4 py-3 text-orange-900 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 min-w-[250px]"
+                className="text-base font-semibold rounded border-2 border-orange-400 bg-white px-3 py-1.5 text-orange-900 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300"
               >
                 {availableMonths.map(month => (
                   <option key={month.key} value={month.key}>
@@ -792,6 +899,9 @@ export default function EditorPage() {
                 ))}
               </select>
             </div>
+            <p className="text-xs text-gray-700">
+              Editing content for the selected month
+            </p>
           </div>
         </div>
         
@@ -857,47 +967,44 @@ export default function EditorPage() {
         
         {/* Stats Bar - only show if not showing settings */}
         {!showSettings && currentMonth && (
-          <div className="mb-6 rounded-lg bg-white border-2 border-orange-300 p-4 shadow">
-            <div className="flex items-center justify-between">
+          <div className="mb-4 rounded-lg bg-white border border-orange-300 px-4 py-2 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
               {hasUnsavedChanges && (
-                <div className="flex-shrink-0 mr-6">
-                  <button
-                    onClick={saveChanges}
-                    disabled={isSaving}
-                    className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? 'Saving...' : '💾 Save All Changes'}
-                  </button>
-                  <div className="text-xs text-red-600 mt-1 font-semibold">Unsaved changes</div>
-                </div>
+                <button
+                  onClick={saveChanges}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Saving...' : '💾 Save Changes'}
+                </button>
               )}
-              <div className="flex gap-6">
-                <div>
-                  <span className="text-sm text-gray-600">Total Submissions</span>
-                  <p className="text-2xl font-bold text-orange-900">{submissions.length}</p>
+              <div className="flex items-center gap-6 flex-1">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-orange-900">{submissions.length}</p>
+                  <span className="text-xs text-gray-600">Total</span>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-600">Accepted for {selectedMonth}</span>
-                  <p className="text-2xl font-bold text-green-700">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-green-700">
                     {submissions.filter(s => s.disposition === selectedMonth).length}
                   </p>
+                  <span className="text-xs text-gray-600">Accepted</span>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-600">Backlogged</span>
-                  <p className="text-2xl font-bold text-yellow-700">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-yellow-700">
                     {submissions.filter(s => s.disposition === 'backlog').length}
                   </p>
+                  <span className="text-xs text-gray-600">Backlog</span>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-600">Unreviewed</span>
-                  <p className="text-2xl font-bold text-blue-700">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-blue-700">
                     {submissions.filter(s => !s.disposition || s.disposition === '').length}
                   </p>
+                  <span className="text-xs text-gray-600">Unreviewed</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-sm text-gray-600">Current Collection Deadline</span>
-                <p className="text-lg font-semibold text-red-700">{currentDeadlineInfo.deadline}</p>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-semibold text-red-700">{currentDeadlineInfo.deadline}</p>
+                <span className="text-xs text-gray-600">Deadline</span>
               </div>
             </div>
           </div>
@@ -1072,23 +1179,106 @@ export default function EditorPage() {
                             </div>
                             
                             {editingSubmission === sub.id ? (
-                              <div className="space-y-2">
-                                <textarea
-                                  value={editContent}
-                                  onChange={(e) => setEditContent(e.target.value)}
-                                  className="w-full h-48 p-3 border border-blue-300 rounded-lg text-sm font-mono text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Edit submission content..."
-                                />
-                                <div className="flex gap-2">
+                              <div className="space-y-3 bg-blue-50 p-4 rounded-lg border-2 border-blue-300">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Published Name *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={editForm.publishedName}
+                                      onChange={(e) => setEditForm({...editForm, publishedName: e.target.value})}
+                                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                      placeholder="Name as it appears in newsletter"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Title
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={editForm.title}
+                                      onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                      placeholder="Article title"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Full Name *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={editForm.fullName}
+                                      onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
+                                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Email *
+                                    </label>
+                                    <input
+                                      type="email"
+                                      value={editForm.email}
+                                      onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Location
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={editForm.location}
+                                      onChange={(e) => setEditForm({...editForm, location: e.target.value})}
+                                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                {editForm.otherMetadata && (
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                      Additional Metadata
+                                    </label>
+                                    <textarea
+                                      value={editForm.otherMetadata}
+                                      onChange={(e) => setEditForm({...editForm, otherMetadata: e.target.value})}
+                                      className="w-full h-16 px-2 py-1.5 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-gray-900 bg-white"
+                                      placeholder="In Response To:, Type:, etc."
+                                    />
+                                  </div>
+                                )}
+                                
+                                <div>
+                                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                    Content *
+                                  </label>
+                                  <textarea
+                                    value={editForm.actualContent}
+                                    onChange={(e) => setEditForm({...editForm, actualContent: e.target.value})}
+                                    className="w-full h-40 px-3 py-2 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                                    placeholder="The actual submission content..."
+                                  />
+                                </div>
+                                
+                                <div className="flex gap-2 pt-2">
                                   <button
                                     onClick={() => saveEditedSubmission(sub.id)}
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition"
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition"
                                   >
-                                    Save Changes
+                                    💾 Save Changes
                                   </button>
                                   <button
                                     onClick={cancelEditingSubmission}
-                                    className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-semibold rounded transition"
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-semibold rounded transition"
                                   >
                                     Cancel
                                   </button>
@@ -1457,7 +1647,7 @@ export default function EditorPage() {
                               className="rounded bg-white border border-green-200 p-3"
                             >
                               <div className="text-sm text-gray-800 line-clamp-2 mb-2">
-                                {extractContent(sub.content)}
+                                {extractContent(sub.content, sub.category)}
                               </div>
                               <div className="mb-2 text-xs text-gray-500">
                                 Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -1486,7 +1676,7 @@ export default function EditorPage() {
                     {(() => {
                       const combinedText = submissions
                         .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
-                        .map(s => extractContent(s.content))
+                        .map(s => extractContent(s.content, s.category))
                         .join('\n\n---\n\n');
                       const wordCount = combinedText.trim().split(/\s+/).filter(w => w.length > 0).length;
                       const charCount = combinedText.length;
@@ -1501,7 +1691,7 @@ export default function EditorPage() {
                     <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
                       {submissions
                         .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
-                        .map(s => extractContent(s.content))
+                        .map(s => extractContent(s.content, s.category))
                         .join('\n\n---\n\n') || 'No submissions accepted for this month yet.'}
                     </pre>
                   </div>
@@ -1538,7 +1728,7 @@ export default function EditorPage() {
                   <ContentFlow
                     submissions={submissions}
                     selectedMonth={selectedMonth}
-                    onOrderChange={(orderedIds) => setCustomOrder(orderedIds)}
+                    onOrderChange={handleOrderChange}
                   />
                 )}
 

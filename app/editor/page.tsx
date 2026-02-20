@@ -165,7 +165,7 @@ export default function EditorPage() {
         orderedSubs.forEach(sub => {
           // Add category heading when category changes
           if (sub.category !== currentCategory) {
-            sections.push(`---\n# ${sub.category}\n---`);
+            sections.push(`== ${sub.category}`);
             currentCategory = sub.category;
           }
           
@@ -188,7 +188,7 @@ export default function EditorPage() {
       );
       
       if (categorySubs.length > 0) {
-        sections.push(`---\n# ${sectionName}\n---`);
+        sections.push(`== ${sectionName}`);
         const formattedSubs = categorySubs.map(s => extractContent(s.content, s.category));
         sections.push(formattedSubs.join('\n\n'));
       } else {
@@ -234,7 +234,7 @@ export default function EditorPage() {
 
     // Add empty sections notice at the end
     if (emptySections.length > 0) {
-      result += `\n\n---\n# List of Empty Sections\n---\n\n`;
+      result += `\n\n== List of Empty Sections\n\n`;
       result += `The following sections had no submissions this month:\n\n`;
       result += emptySections.map(s => `  • ${s}`).join('\n');
       result += `\n\nWe welcome your contributions! Please visit sandiahomeowners.org to submit content for next month's issue.`;
@@ -878,32 +878,9 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <h1 className="mb-4 text-3xl font-bold text-orange-900">
+        <h1 className="mb-3 text-3xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
-        
-        {/* Month Selector */}
-        <div className="mb-4 rounded-lg bg-gradient-to-r from-orange-100 to-amber-100 border-2 border-orange-400 px-4 py-3 shadow">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-orange-900">Newsletter Issue:</h2>
-              <select
-                value={selectedMonth}
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className="text-base font-semibold rounded border-2 border-orange-400 bg-white px-3 py-1.5 text-orange-900 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300"
-              >
-                {availableMonths.map(month => (
-                  <option key={month.key} value={month.key}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="text-xs text-gray-700">
-              Editing content for the selected month
-            </p>
-          </div>
-        </div>
         
         {showSettings && (
           <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
@@ -965,43 +942,64 @@ export default function EditorPage() {
           </div>
         )}
         
-        {/* Stats Bar - only show if not showing settings */}
+        {/* Combined Newsletter Issue & Stats Bar */}
         {!showSettings && currentMonth && (
-          <div className="mb-4 rounded-lg bg-white border border-orange-300 px-4 py-2 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+          <div className="mb-4 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 px-4 py-2.5 shadow">
+            <div className="flex items-center justify-between gap-6">
+              {/* Newsletter Issue Selector */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-sm font-bold text-orange-900">Issue:</span>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => handleMonthChange(e.target.value)}
+                  className="text-sm font-semibold rounded border-2 border-orange-400 bg-white px-2.5 py-1 text-orange-900 focus:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                >
+                  {availableMonths.map(month => (
+                    <option key={month.key} value={month.key}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Save Button (if needed) */}
               {hasUnsavedChanges && (
                 <button
                   onClick={saveChanges}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
-                  {isSaving ? 'Saving...' : '💾 Save Changes'}
+                  {isSaving ? 'Saving...' : '💾 Save'}
                 </button>
               )}
-              <div className="flex items-center gap-6 flex-1">
+
+              {/* Stats */}
+              <div className="flex items-center gap-5 flex-1 justify-center">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-orange-900">{submissions.length}</p>
+                  <p className="text-base font-bold text-orange-900">{submissions.length}</p>
                   <span className="text-xs text-gray-600">Total</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-green-700">
+                  <p className="text-base font-bold text-green-700">
                     {submissions.filter(s => s.disposition === selectedMonth).length}
                   </p>
                   <span className="text-xs text-gray-600">Accepted</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-yellow-700">
+                  <p className="text-base font-bold text-yellow-700">
                     {submissions.filter(s => s.disposition === 'backlog').length}
                   </p>
                   <span className="text-xs text-gray-600">Backlog</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-blue-700">
+                  <p className="text-base font-bold text-blue-700">
                     {submissions.filter(s => !s.disposition || s.disposition === '').length}
                   </p>
                   <span className="text-xs text-gray-600">Unreviewed</span>
                 </div>
               </div>
+
+              {/* Deadline */}
               <div className="text-right flex-shrink-0">
                 <p className="text-sm font-semibold text-red-700">{currentDeadlineInfo.deadline}</p>
                 <span className="text-xs text-gray-600">Deadline</span>

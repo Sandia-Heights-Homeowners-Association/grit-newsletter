@@ -262,6 +262,20 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
         >
           ―
         </button>
+        
+        <div className="w-px bg-gray-300 mx-1"></div>
+        
+        <button
+          type="button"
+          onClick={() => {
+            const placeholder = '[PHOTO PLACEHOLDER - Insert emailed photo here]';
+            editor.chain().focus().insertContent(placeholder).run();
+          }}
+          className="rounded px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition font-medium"
+          title="Insert Photo Placeholder"
+        >
+          📷 Photo
+        </button>
       </div>
 
       {/* Editor Content */}

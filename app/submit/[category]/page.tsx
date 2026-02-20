@@ -224,9 +224,21 @@ export default function SubmitPage() {
                   <label className="font-semibold text-orange-900">
                     Your Submission *
                   </label>
-                  <span className="text-sm text-gray-600">
-                    {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const placeholder = '[PHOTO PLACEHOLDER - Insert emailed photo here]';
+                        setContent(content + (content ? '\n\n' : '') + placeholder);
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300 font-medium transition"
+                    >
+                      📷 Photo Placeholder
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
+                    </span>
+                  </div>
                 </div>
                 <textarea
                   value={content}

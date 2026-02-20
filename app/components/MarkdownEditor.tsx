@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface MarkdownEditorProps {
   value: string;
@@ -107,6 +107,12 @@ function markdownToHtml(markdown: string): string {
 }
 
 export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px' }: MarkdownEditorProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -128,13 +134,14 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[' + minHeight + '] p-3',
       },
     },
+    immediatelyRender: false,
   });
 
   // Update editor content when value changes externally
   useEffect(() => {
     if (editor && value !== editorToMarkdown(editor).trim()) {
       const { from, to } = editor.state.selection;
-      editor.commands.setContent(markdownToHtml(value || ''), false);
+      editor.commands.setContent(markdownToHtml(value || ''));
       // Restore cursor position if possible
       if (from === to) {
         editor.commands.setTextSelection(from);
@@ -142,8 +149,12 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
     }
   }, [value, editor]);
 
-  if (!editor) {
-    return null;
+  if (!isMounted || !editor) {
+    return (
+      <div className="rounded-lg border-2 border-orange-200 bg-white p-3" style={{ minHeight }}>
+        <div className="text-gray-400 text-sm">Loading editor...</div>
+      </div>
+    );
   }
 
   return (

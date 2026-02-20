@@ -377,19 +377,13 @@ export default function Home() {
                 Avoid inflammatory language, personal attacks, or speculation presented as fact.
               </li>
               <li>
-                Please avoid business promotion. For advertising, contact{" "}
+                Please avoid excessive business promotion. For advertising, contact{" "}
                 <a
                   href="mailto:office@sandiahomeowners.org"
                   className="text-blue-700 hover:text-blue-800 underline"
                 >
                   office@sandiahomeowners.org
                 </a>.
-              </li>
-              <li>
-                If your piece has sections, use simple headings such as:<br />
-                <code className="bg-gray-200 px-1 py-0.5 rounded">HEADING:</code> on its own line,
-                or{" "}
-                <code className="bg-gray-200 px-1 py-0.5 rounded">### Heading</code>.
               </li>
               <li>If you reference links, include the full URL.</li>
             </ul>

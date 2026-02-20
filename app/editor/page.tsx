@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
+import ContentFlow from '@/app/components/ContentFlow';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 
@@ -34,6 +35,7 @@ export default function EditorPage() {
   const [pendingChanges, setPendingChanges] = useState<Array<{id: string; category: string; action: string}>>([]);
   const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [customOrder, setCustomOrder] = useState<string[]>([]);
 
   const showToastNotification = (message: string) => {
     setToastMessage(message);
@@ -99,6 +101,40 @@ export default function EditorPage() {
   };
 
   const generateFullNewsletterPreview = (): string => {
+    // Get all submissions for the selected month
+    const monthSubmissions = submissions.filter(s => s.disposition === selectedMonth);
+    
+    if (monthSubmissions.length === 0) {
+      return 'No published content yet. Submissions will appear here once marked as published.';
+    }
+
+    // If custom order exists, use it; otherwise use default category order
+    if (customOrder.length > 0) {
+      const orderedSubs = customOrder
+        .map(id => monthSubmissions.find(s => s.id === id))
+        .filter((s): s is Submission => s !== undefined);
+      
+      if (orderedSubs.length > 0) {
+        // Group consecutive submissions from the same category to add headings
+        const sections: string[] = [];
+        let currentCategory: SubmissionCategory | null = null;
+        
+        orderedSubs.forEach(sub => {
+          // Add category heading when category changes
+          if (sub.category !== currentCategory) {
+            sections.push(`\n## ${sub.category}\n`);
+            currentCategory = sub.category;
+          }
+          
+          // Add submission content
+          sections.push(extractContent(sub.content));
+        });
+        
+        return sections.join('\n\n');
+      }
+    }
+
+    // Default behavior: use category-based ordering
     const sections: string[] = [];
     const emptySections: string[] = [];
     
@@ -1376,31 +1412,41 @@ export default function EditorPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-orange-900">
-                    Full Newsletter Preview
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">
-                      {getWordCount(generateFullNewsletterPreview()).toLocaleString()} words
-                    </span>
-                    <button
-                      onClick={copyFullTextToClipboard}
-                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
-                      title="Copy full text to clipboard"
-                    >
-                      📋 Copy Text
-                    </button>
+              <div className="space-y-6">
+                {/* Content Flow Component */}
+                <ContentFlow
+                  submissions={submissions}
+                  selectedMonth={selectedMonth}
+                  onOrderChange={(orderedIds) => setCustomOrder(orderedIds)}
+                />
+
+                {/* Full Newsletter Preview (Markdown Output) */}
+                <div className="rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-orange-900">
+                      Full Newsletter Preview
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600">
+                        {getWordCount(generateFullNewsletterPreview()).toLocaleString()} words
+                      </span>
+                      <button
+                        onClick={copyFullTextToClipboard}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition"
+                        title="Copy full text to clipboard"
+                      >
+                        📋 Copy Text
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <p className="mb-4 text-gray-700">
-                  This is a read-only preview of all content accepted for {selectedMonth}. To view individual sections, select a category from the left sidebar.
-                </p>
-                <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
-                    {generateFullNewsletterPreview()}
-                  </pre>
+                  <p className="mb-4 text-gray-700">
+                    This preview reflects the order from the Content Flow above. Copy this text for InDesign.
+                  </p>
+                  <div className="rounded-lg bg-amber-50 border-2 border-orange-200 p-6 max-h-[800px] overflow-y-auto">
+                    <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
+                      {generateFullNewsletterPreview()}
+                    </pre>
+                  </div>
                 </div>
               </div>
             )}

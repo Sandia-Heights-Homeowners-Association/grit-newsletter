@@ -223,7 +223,7 @@ export default function NatureWildlifePage() {
                   onChange={(e) => setTitle(e.target.value)}
                   required
                   className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Title for your observation"
+                  placeholder="Give your observation a title"
                 />
               </div>
 

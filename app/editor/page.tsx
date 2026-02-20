@@ -167,6 +167,7 @@ export default function EditorPage() {
     addSection('ACC Activity Log', '## ACC Activity Log');
     addSection('CSC Table', '## CSC Table');
     addSection('Security Report', '## Security Report');
+    addSection('Other', '## Other');
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 

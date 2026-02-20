@@ -316,10 +316,11 @@ export async function exportNewsletterText(month: string): Promise<string> {
     'Classifieds',
     'Lost & Found',
     
-    // 9: End material
+    // 9: End material + Other routine content
     'ACC Activity Log',
     'CSC Table',
     'Security Report',
+    'Other', // Routine Other at the very end
   ];
   
   let output = '';

@@ -5,13 +5,12 @@ import Link from 'next/link';
 import Header from '@/app/components/Header';
 import Captcha from '@/app/components/Captcha';
 
-export default function DIYCraftsPage() {
+export default function GeneralOtherPage() {
   const [content, setContent] = useState('');
   const [publishedName, setPublishedName] = useState('');
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
   const [email, setEmail] = useState('');
-  const [projectType, setProjectType] = useState('');
   const [title, setTitle] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -67,13 +66,13 @@ export default function DIYCraftsPage() {
     setError('');
 
     try {
-      const metadata = `Project Type: ${projectType}\nFull Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
+      const metadata = `Full Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
       const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'Home, DIY & Crafts', content: fullContent, publishedName, captchaToken }),
+        body: JSON.stringify({ category: 'General Submission / Other', content: fullContent, publishedName, captchaToken }),
       });
 
       if (response.ok) {
@@ -84,7 +83,6 @@ export default function DIYCraftsPage() {
         setFullName('');
         setLocation('');
         setEmail('');
-        setProjectType('');
         setTitle('');
         setCaptchaToken('');
       } else {
@@ -100,8 +98,8 @@ export default function DIYCraftsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      <Header />
       <main className="mx-auto max-w-3xl px-4 py-12">
+        <Header />
         <Link 
           href="/"
           className="mb-6 inline-block font-semibold text-orange-700 hover:text-orange-900"
@@ -111,12 +109,12 @@ export default function DIYCraftsPage() {
 
         <div className="rounded-xl bg-white p-8 shadow-xl border-2 border-orange-200">
           <h1 className="mb-4 text-3xl font-bold text-orange-900">
-            Home, DIY & Crafts
+            General Submission / Other
           </h1>
           
           <div className="mb-6">
             <p className="text-gray-800 leading-relaxed mb-2">
-              Share your favorite recipes, craft projects, gardening tips, home repairs, or DIY home improvement advice. Include step-by-step instructions if applicable.
+              Have something to share that doesn't quite fit into our other categories? Submit it here! This is for any neighborhood-relevant content that's worth sharing with the community.
             </p>
             <p className="text-sm text-gray-600">
               If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
@@ -147,9 +145,7 @@ export default function DIYCraftsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              {/* Two Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Published Info */}
                 <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50/30">
                   <h3 className="text-sm font-bold text-green-700 mb-3 uppercase">Will be Published</h3>
                   <div className="mb-4">
@@ -167,7 +163,6 @@ export default function DIYCraftsPage() {
                   </div>
                 </div>
 
-                {/* Private Info */}
                 <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50/30">
                   <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase">Will Not be Published</h3>
                   <div className="mb-4">
@@ -213,41 +208,22 @@ export default function DIYCraftsPage() {
               </div>
 
               <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                <label className="mb-2 block font-semibold text-orange-900">
                   Title (optional)
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Give your project a title"
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  placeholder="Optional title"
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Project Type *
-                </label>
-                <select
-                  value={projectType}
-                  onChange={(e) => setProjectType(e.target.value)}
-                  required
-                  className="w-full rounded-lg border-2 border-orange-200 p-2 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none text-sm"
-                >
-                  <option value="">Select a type...</option>
-                  <option value="Recipe">Recipe</option>
-                  <option value="Craft Project">Craft Project</option>
-                  <option value="Gardening Tip">Gardening Tip</option>
-                  <option value="Home Improvement">Home Improvement</option>
-                  <option value="Other DIY">Other DIY</option>
-                </select>
-              </div>
-
-              <div className="mb-4">
+              <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
                   <label className="font-semibold text-orange-900 text-sm">
-                    Your Submission *
+                    Your Content *
                   </label>
                   <span className="text-sm text-gray-600">
                     {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
@@ -257,19 +233,10 @@ export default function DIYCraftsPage() {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   required
-                  rows={14}
-                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
-                  placeholder="Share your recipe, project steps, tips, materials needed, etc. Be as detailed as you'd like!"
+                  rows={10}
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  placeholder="Share anything relevant to our community..."
                 />
-              </div>
-
-              <div className="mb-6">
-                <label className="mb-2 block font-semibold text-orange-900 text-sm">
-                  Photo (optional)
-                </label>
-                <div className="rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.</p>
-                </div>
               </div>
 
               <div className="mb-4 rounded-lg bg-blue-50 p-4 border-2 border-blue-200">

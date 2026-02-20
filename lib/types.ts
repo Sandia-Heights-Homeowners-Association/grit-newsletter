@@ -2,13 +2,16 @@
 export const COMMUNITY_CATEGORIES = [
   'Classifieds',
   'Lost & Found',
+  'Local Event Announcement',
+  'Neighbor Appreciation',
   'On My Mind',
   'Response to Prior Content',
-  'Local Event Announcement',
-  'Kids\' Corner',
-  'DIY & Crafts',
-  'Neighbor Appreciation',
+  'History & Memories',
+  'General Submission / Other',
+  'Home, DIY & Crafts',
   'Nature & Wildlife',
+  'Kids\' Corner',
+  'Pets & Critters',
 ] as const;
 
 export const ROUTINE_CATEGORIES = [
@@ -19,6 +22,7 @@ export const ROUTINE_CATEGORIES = [
   'CSC Table',
   'Security Report',
   'Association Events',
+  'Other',
 ] as const;
 
 export const COMMITTEE_CATEGORIES = [
@@ -33,6 +37,7 @@ export const COMMITTEE_CATEGORIES = [
   'Finance Committee',
   'Governance Committee',
   'Nominating Committee',
+  'Other',
 ] as const;
 
 export type CommunityCategory = typeof COMMUNITY_CATEGORIES[number];

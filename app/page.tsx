@@ -104,118 +104,120 @@ export default function Home() {
           
           {/* Community Contributions */}
           <div>
-            <h3 className="mb-6 text-xl font-semibold text-red-800 text-center">
+            <h3 className="mb-4 text-xl font-semibold text-red-800 text-center">
               Choose a Category
             </h3>
             
-            {/* Community Board Group */}
-            <div className="mb-6">
-              <h4 className="mb-3 text-lg font-semibold text-blue-800 border-b-2 border-blue-300 pb-1">
-                🏘️ Community Board
-              </h4>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Link
-                  href="/submit/classifieds"
-                  className="rounded-lg border-2 border-blue-600 bg-blue-50 p-3 transition hover:bg-blue-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-blue-900">Classifieds</div>
-                  <div className="mt-1 text-xs text-blue-700">Buy, sell, trade, services offered</div>
-                </Link>
-                <Link
-                  href="/submit/lost-found"
-                  className="rounded-lg border-2 border-blue-600 bg-blue-50 p-3 transition hover:bg-blue-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-blue-900">Lost & Found</div>
-                  <div className="mt-1 text-xs text-blue-700">Missing or found items locally</div>
-                </Link>
-                <Link
-                  href="/submit/local-event"
-                  className="rounded-lg border-2 border-blue-600 bg-blue-50 p-3 transition hover:bg-blue-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-blue-900">Local Event Announcement</div>
-                  <div className="mt-1 text-xs text-blue-700">Upcoming meetings, events, gatherings</div>
-                </Link>
-                <Link
-                  href="/submit/neighbor-appreciation"
-                  className="rounded-lg border-2 border-blue-600 bg-blue-50 p-3 transition hover:bg-blue-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-blue-900">Neighbor Appreciation</div>
-                  <div className="mt-1 text-xs text-blue-700">Thank-you or recognition for neighbor</div>
-                </Link>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {/* Stories & Perspectives Group */}
+              <div>
+                <h4 className="mb-2 text-base font-semibold text-orange-800 border-b border-orange-300 pb-1">
+                  Stories & Perspectives
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link
+                    href="/submit/on-my-mind"
+                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-orange-900">On My Mind</div>
+                    <div className="mt-0.5 text-xs text-orange-700">Reflections, opinions, ideas</div>
+                  </Link>
+                  <Link
+                    href="/submit/response"
+                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-orange-900">Responses</div>
+                    <div className="mt-0.5 text-xs text-orange-700">Reply to prior content</div>
+                  </Link>
+                  <Link
+                    href="/submit/history-memories"
+                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-orange-900">History & Memories</div>
+                    <div className="mt-0.5 text-xs text-orange-700">Past stories, photos</div>
+                  </Link>
+                  <Link
+                    href="/submit/general-other"
+                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-orange-900">General / Other</div>
+                    <div className="mt-0.5 text-xs text-orange-700">Anything else</div>
+                  </Link>
+                </div>
               </div>
-            </div>
 
-            {/* Stories & Perspectives Group */}
-            <div className="mb-6">
-              <h4 className="mb-3 text-lg font-semibold text-purple-800 border-b-2 border-purple-300 pb-1">
-                ✍️ Stories & Perspectives
-              </h4>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Link
-                  href="/submit/on-my-mind"
-                  className="rounded-lg border-2 border-purple-600 bg-purple-50 p-3 transition hover:bg-purple-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-purple-900">On My Mind</div>
-                  <div className="mt-1 text-xs text-purple-700">Personal reflections, opinions, community ideas</div>
-                </Link>
-                <Link
-                  href="/submit/response"
-                  className="rounded-lg border-2 border-purple-600 bg-purple-50 p-3 transition hover:bg-purple-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-purple-900">Response to Prior Content</div>
-                  <div className="mt-1 text-xs text-purple-700">Reply to previous GRIT article</div>
-                </Link>
-                <Link
-                  href="/submit/history-memories"
-                  className="rounded-lg border-2 border-purple-600 bg-purple-50 p-3 transition hover:bg-purple-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-purple-900">History & Memories</div>
-                  <div className="mt-1 text-xs text-purple-700">Past stories, photos, neighborhood history</div>
-                </Link>
-                <Link
-                  href="/submit/general-other"
-                  className="rounded-lg border-2 border-purple-600 bg-purple-50 p-3 transition hover:bg-purple-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-purple-900">General Submission / Other</div>
-                  <div className="mt-1 text-xs text-purple-700">Anything that doesn't fit elsewhere</div>
-                </Link>
+              {/* Family & Lifestyle Group */}
+              <div>
+                <h4 className="mb-2 text-base font-semibold text-red-800 border-b border-red-300 pb-1">
+                  Family & Lifestyle
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link
+                    href="/submit/diy-crafts"
+                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-red-900">Home, DIY & Crafts</div>
+                    <div className="mt-0.5 text-xs text-red-700">Projects, repairs, activities</div>
+                  </Link>
+                  <Link
+                    href="/submit/nature-wildlife"
+                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-red-900">Nature & Wildlife</div>
+                    <div className="mt-0.5 text-xs text-red-700">Animals, plants, outdoors</div>
+                  </Link>
+                  <Link
+                    href="/submit/kids-corner"
+                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-red-900">Kids' Corner</div>
+                    <div className="mt-0.5 text-xs text-red-700">Content for or by kids</div>
+                  </Link>
+                  <Link
+                    href="/submit/pets-critters"
+                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-red-900">Pets & Critters</div>
+                    <div className="mt-0.5 text-xs text-red-700">Pet stories, animal fun</div>
+                  </Link>
+                </div>
               </div>
-            </div>
 
-            {/* Family & Lifestyle Group */}
-            <div>
-              <h4 className="mb-3 text-lg font-semibold text-green-800 border-b-2 border-green-300 pb-1">
-                🏡 Family & Lifestyle
-              </h4>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Link
-                  href="/submit/diy-crafts"
-                  className="rounded-lg border-2 border-green-600 bg-green-50 p-3 transition hover:bg-green-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-green-900">Home, DIY & Crafts</div>
-                  <div className="mt-1 text-xs text-green-700">Projects, repairs, creative activities</div>
-                </Link>
-                <Link
-                  href="/submit/nature-wildlife"
-                  className="rounded-lg border-2 border-green-600 bg-green-50 p-3 transition hover:bg-green-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-green-900">Nature & Wildlife</div>
-                  <div className="mt-1 text-xs text-green-700">Animals, plants, outdoor observations</div>
-                </Link>
-                <Link
-                  href="/submit/kids-corner"
-                  className="rounded-lg border-2 border-green-600 bg-green-50 p-3 transition hover:bg-green-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-green-900">Kids' Corner</div>
-                  <div className="mt-1 text-xs text-green-700">Content for or by kids</div>
-                </Link>
-                <Link
-                  href="/submit/pets-critters"
-                  className="rounded-lg border-2 border-green-600 bg-green-50 p-3 transition hover:bg-green-100 hover:shadow-lg"
-                >
-                  <div className="font-semibold text-green-900">Pets & Critters</div>
-                  <div className="mt-1 text-xs text-green-700">Pet stories, photos, animal fun</div>
-                </Link>
+              {/* Community Board Group */}
+              <div>
+                <h4 className="mb-2 text-base font-semibold text-amber-800 border-b border-amber-300 pb-1">
+                  Community Board
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link
+                    href="/submit/classifieds"
+                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-amber-900">Classifieds</div>
+                    <div className="mt-0.5 text-xs text-amber-700">Buy, sell, trade, services</div>
+                  </Link>
+                  <Link
+                    href="/submit/lost-found"
+                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-amber-900">Lost & Found</div>
+                    <div className="mt-0.5 text-xs text-amber-700">Missing or found items</div>
+                  </Link>
+                  <Link
+                    href="/submit/local-event"
+                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-amber-900">Local Events</div>
+                    <div className="mt-0.5 text-xs text-amber-700">Meetings, gatherings</div>
+                  </Link>
+                  <Link
+                    href="/submit/neighbor-appreciation"
+                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow"
+                  >
+                    <div className="text-sm font-semibold text-amber-900">Neighbor Thanks</div>
+                    <div className="mt-0.5 text-xs text-amber-700">Recognition & appreciation</div>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

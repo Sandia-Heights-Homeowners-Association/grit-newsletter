@@ -78,10 +78,14 @@ export async function POST(request: NextRequest) {
     // Parse metadata from content for email notification
     const lines = content.split('\n');
     const fullNameLine = lines.find((l: string) => l.startsWith('Full Name:'));
+    const authorLine = lines.find((l: string) => l.startsWith('Author:'));
     const emailLine = lines.find((l: string) => l.startsWith('Email:'));
     const locationLine = lines.find((l: string) => l.startsWith('Location:'));
     
-    const fullName = fullNameLine?.replace('Full Name:', '').trim() || 'Unknown';
+    // Handle both "Full Name:" (community forms) and "Author:" (routine/committee forms)
+    const fullName = (fullNameLine?.replace('Full Name:', '').trim() || 
+                      authorLine?.replace('Author:', '').trim() || 
+                      'Unknown');
     const email = emailLine?.replace('Email:', '').trim() || '';
     const location = locationLine?.replace('Location:', '').trim() || '';
     

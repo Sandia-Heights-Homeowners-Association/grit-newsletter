@@ -16,12 +16,14 @@ export const COMMUNITY_CATEGORIES = [
 
 export const ROUTINE_CATEGORIES = [
   'President\'s Note',
+  'Letter from the Editor',
   'Board Notes',
   'Office Notes',
   'ACC Activity Log',
   'CSC Table',
   'Security Report',
   'Association Events',
+  'Errata',
   'Other',
 ] as const;
 

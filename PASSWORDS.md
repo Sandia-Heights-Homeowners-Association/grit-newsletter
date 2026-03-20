@@ -12,7 +12,7 @@ Keep this file secure and do not commit to version control!
 ### Routine Content Submission
 - **URL:** `/routine`
 - **Password:** `routine2025`
-- **Purpose:** Submit President's Note, Board Notes, Office Notes, ACC Activity Log, CSC Table, Security Report
+- **Purpose:** Submit Letter from the Editor, President's Note, Board Notes, Office Notes, Association Events, ACC Activity Log, CSC Table, Security Report, Errata, and Other routine content
 
 ### Committee Content Submission
 - **URL:** `/committee`

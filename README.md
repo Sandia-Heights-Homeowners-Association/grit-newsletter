@@ -27,12 +27,16 @@ Anyone can submit content in these categories:
 - Photos
 
 ### Routine Content Submissions (Password Protected)
+- Letter from the Editor
 - President's Note
 - Board Notes
 - Office Notes
+- Association Events
 - ACC Activity Log (copy/paste from Excel)
 - CSC Table (CSV format)
 - Security Report (Excel/CSV)
+- Errata
+- Other
 
 **Password:** `routine2025`
 

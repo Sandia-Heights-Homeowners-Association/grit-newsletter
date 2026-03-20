@@ -27,7 +27,7 @@ const NEWSLETTER_SECTIONS = [
   {
     id: 'routine-main',
     name: 'Main Routine Content',
-    categories: ['President\'s Note', 'Board Notes', 'Office Notes', 'Association Events'],
+    categories: ['Letter from the Editor', 'President\'s Note', 'Board Notes', 'Office Notes', 'Association Events'],
     colors: {
       bg: 'bg-blue-50',
       border: 'border-blue-300',
@@ -128,7 +128,7 @@ const NEWSLETTER_SECTIONS = [
   {
     id: 'end-material',
     name: 'End Material',
-    categories: ['ACC Activity Log', 'CSC Table', 'Security Report'],
+    categories: ['ACC Activity Log', 'CSC Table', 'Security Report', 'Errata', 'Other'],
     colors: {
       bg: 'bg-gray-50',
       border: 'border-gray-300',
@@ -184,11 +184,15 @@ interface SubmissionTileProps {
   isDragging?: boolean;
 }
 
-function extractTitle(content: string): string {
+function extractTitle(content: string, category?: string): string {
   // Parse the raw submission format
-  // First line has: "PublishedName - Title" or just "PublishedName"
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
+  
+  // For routine/committee content (starts with "Author:"), use category as title
+  if (firstLine.startsWith('Author:')) {
+    return category || 'Routine Content';
+  }
   
   // Check if first line contains a title (has " - " separator)
   const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
@@ -202,9 +206,13 @@ function extractTitle(content: string): string {
 
 function extractAuthor(content: string): string {
   // Parse the raw submission format
-  // First line has: "PublishedName - Title" or just "PublishedName"
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
+  
+  // Handle routine/committee format: "Author: Name"
+  if (firstLine.startsWith('Author:')) {
+    return firstLine.replace('Author:', '').trim() || 'Unknown Author';
+  }
   
   // If first line is empty or looks like metadata, try to find "Full Name:"
   if (!firstLine || firstLine.startsWith('Full Name:') || firstLine.startsWith('Email:')) {
@@ -242,7 +250,7 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const title = extractTitle(submission.content);
+  const title = extractTitle(submission.content, submission.category);
   const author = extractAuthor(submission.content);
   const wordCount = getWordCount(submission.content);
   const colors = getSectionColors(submission.category);
@@ -394,7 +402,7 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
                     <div className="text-gray-400 text-base flex-shrink-0">⋮⋮</div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 text-sm truncate">
-                        {extractTitle(activeSubmission.content)}
+                        {extractTitle(activeSubmission.content, activeSubmission.category)}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
                         <span className="truncate">{extractAuthor(activeSubmission.content)}</span>

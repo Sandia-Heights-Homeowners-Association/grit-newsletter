@@ -196,23 +196,24 @@ export default function EditorPage() {
       }
     };
 
-    // 1-4: Main Routine Content
+    // 1-5: Main Routine Content
+    addSection('Letter from the Editor', 'Letter from the Editor');
     addSection('President\'s Note', 'President\'s Note');
     addSection('Board Notes', 'Board Notes');
     addSection('Office Notes', 'Office Notes');
     addSection('Association Events', 'Association Events');
     
-    // 5-6: Special committee sections first (The Board, General Announcements)
+    // 6-7: Special committee sections first (The Board, General Announcements)
     addSection('The Board', 'The Board');
     addSection('General Announcements', 'General Announcements');
     
-    // 7: All other committee categories
+    // 8: All other committee categories
     const otherCommitteeCategories = COMMITTEE_CATEGORIES.filter(
       cat => cat !== 'The Board' && cat !== 'General Announcements'
     );
     otherCommitteeCategories.forEach(cat => addSection(cat, cat));
     
-    // 8: Community categories (Classifieds and Lost & Found last)
+    // 9: Community categories (Classifieds and Lost & Found last)
     const regularCommunityCategories = COMMUNITY_CATEGORIES.filter(
       cat => cat !== 'Classifieds' && cat !== 'Lost & Found'
     );
@@ -222,10 +223,11 @@ export default function EditorPage() {
     addSection('Classifieds', 'Classifieds');
     addSection('Lost & Found', 'Lost & Found');
     
-    // 9: End material
+    // 10: End material
     addSection('ACC Activity Log', 'ACC Activity Log');
     addSection('CSC Table', 'CSC Table');
     addSection('Security Report', 'Security Report');
+    addSection('Errata', 'Errata');
     addSection('Other', 'Other');
 
     let result = sections.length > 0 

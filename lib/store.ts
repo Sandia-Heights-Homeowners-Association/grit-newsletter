@@ -290,36 +290,39 @@ export async function exportNewsletterText(month: string): Promise<string> {
   await ensureDbInitialized();
   
   // Define category order matching the newsletter structure:
-  // 1. President's note
-  // 2. Board Notes
-  // 3. Office Notes
-  // 4. Association Events
-  // 5-6. Committee: The Board, General Announcements
-  // 7. Other Committee Content
-  // 8. Community Contributions (Classifieds, Lost & Found last)
-  // 9. End material: ACC Activity Log, CSC Table, Security Report
+  // 1. Letter from the Editor
+  // 2. President's note
+  // 3. Board Notes
+  // 4. Office Notes
+  // 5. Association Events
+  // 6-7. Committee: The Board, General Announcements
+  // 8. Other Committee Content
+  // 9. Community Contributions (Classifieds, Lost & Found last)
+  // 10. End material: ACC Activity Log, CSC Table, Security Report, Errata
   
   const orderedCategories: SubmissionCategory[] = [
-    // 1-4: Main routine content
+    // 1-5: Main routine content
+    'Letter from the Editor',
     'President\'s Note',
     'Board Notes',
     'Office Notes',
     'Association Events',
     
-    // 5-7: Committee content (special ones first)
+    // 6-8: Committee content (special ones first)
     'The Board',
     'General Announcements',
     ...COMMITTEE_CATEGORIES.filter(cat => cat !== 'The Board' && cat !== 'General Announcements'),
     
-    // 8: Community contributions (Classifieds and Lost & Found last)
+    // 9: Community contributions (Classifieds and Lost & Found last)
     ...COMMUNITY_CATEGORIES.filter(cat => cat !== 'Classifieds' && cat !== 'Lost & Found'),
     'Classifieds',
     'Lost & Found',
     
-    // 9: End material + Other routine content
+    // 10: End material + Other routine content
     'ACC Activity Log',
     'CSC Table',
     'Security Report',
+    'Errata',
     'Other', // Routine Other at the very end
   ];
   

@@ -176,6 +176,7 @@ function getWordCount(content: string): number {
 interface ContentFlowProps {
   submissions: Submission[];
   selectedMonth: string;
+  customOrder?: string[];
   onOrderChange: (orderedIds: string[]) => void;
 }
 
@@ -291,7 +292,7 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
   );
 }
 
-export default function ContentFlow({ submissions, selectedMonth, onOrderChange }: ContentFlowProps) {
+export default function ContentFlow({ submissions, selectedMonth, customOrder, onOrderChange }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -312,7 +313,16 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
       s => s.disposition === selectedMonth
     );
     
-    // Group by section and maintain section order
+    // If custom order exists, use it
+    if (customOrder && customOrder.length > 0) {
+      const ordered = customOrder
+        .map(id => monthSubmissions.find(s => s.id === id))
+        .filter((s): s is Submission => s !== undefined);
+      setOrderedSubmissions(ordered);
+      return;
+    }
+    
+    // Otherwise, group by section and maintain section order
     const grouped: Submission[] = [];
     
     NEWSLETTER_SECTIONS.forEach(section => {
@@ -323,7 +333,7 @@ export default function ContentFlow({ submissions, selectedMonth, onOrderChange 
     });
     
     setOrderedSubmissions(grouped);
-  }, [submissions, selectedMonth]);
+  }, [submissions, selectedMonth, customOrder]);
 
   // Notify parent of order changes
   useEffect(() => {

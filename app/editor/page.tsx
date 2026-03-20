@@ -723,6 +723,7 @@ export default function EditorPage() {
   const handleMonthChange = async (monthKey: string) => {
     setSelectedMonth(monthKey);
     setSelectedCategory(null); // Clear selected category when changing months
+    setCustomOrder([]); // Clear custom order when changing months
     await loadEditorData(monthKey);
   };
 
@@ -1728,6 +1729,7 @@ export default function EditorPage() {
                   <ContentFlow
                     submissions={submissions}
                     selectedMonth={selectedMonth}
+                    customOrder={customOrder}
                     onOrderChange={handleOrderChange}
                   />
                 )}

@@ -195,6 +195,13 @@ function extractTitle(content: string, category?: string): string {
     return category || 'Routine Content';
   }
   
+  // If first line is empty or looks like metadata, return Untitled
+  if (!firstLine || firstLine.startsWith('Full Name:') || firstLine.startsWith('Email:') || 
+      firstLine.startsWith('In Response To:') || firstLine.startsWith('Type:') || 
+      firstLine.startsWith('Project Type:') || firstLine.startsWith('Sighting Location:')) {
+    return 'Untitled';
+  }
+  
   // Check if first line contains a title (has " - " separator)
   const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
   
@@ -202,7 +209,9 @@ function extractTitle(content: string, category?: string): string {
     return titleMatch[2].trim();
   }
   
-  return 'Untitled';
+  // First line exists but has no title separator
+  // Use the published name as the title
+  return firstLine;
 }
 
 function extractAuthor(content: string): string {

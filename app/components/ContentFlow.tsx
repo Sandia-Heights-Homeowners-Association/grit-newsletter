@@ -186,35 +186,41 @@ interface SubmissionTileProps {
 }
 
 function extractTitle(content: string, category?: string): string {
-  // Parse the raw submission format
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
-  const fallbackTitle = category || 'Untitled';
-  
-  // For routine/committee content (starts with "Author:"), use category as title
+  const categoryFallback = category || 'Untitled';
+
+  // Routine/committee: "Author: Name" — no article title concept, group by category
   if (firstLine.startsWith('Author:')) {
-    return fallbackTitle;
+    return categoryFallback;
   }
-  
-  // If first line is empty or looks like metadata, use the category name.
-  if (!firstLine || firstLine.startsWith('Full Name:') || firstLine.startsWith('Email:') || 
-      firstLine.startsWith('In Response To:') || firstLine.startsWith('Type:') || 
-      firstLine.startsWith('Project Type:') || firstLine.startsWith('Sighting Location:')) {
-    return fallbackTitle;
+
+  // Truly empty first line or starts with a metadata field — use category name
+  if (
+    !firstLine ||
+    firstLine.startsWith('Full Name:') ||
+    firstLine.startsWith('Email:') ||
+    firstLine.startsWith('In Response To:') ||
+    firstLine.startsWith('Type:') ||
+    firstLine.startsWith('Project Type:') ||
+    firstLine.startsWith('Sighting Location:')
+  ) {
+    return categoryFallback;
   }
-  
-  // Use the optional title if present and non-empty.
-  const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
-  
+
+  // Community format: "PublishedName - Title" (title is optional).
+  // Require a space on each side of the dash so hyphenated names like "Mary-Jane" don't false-match.
+  const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
   if (titleMatch) {
     const parsedTitle = titleMatch[2]?.trim();
     if (parsedTitle) {
       return parsedTitle;
     }
   }
-  
-  // If no explicit title exists, label the tile by category.
-  return fallbackTitle;
+
+  // No explicit article title — use the published name (first line).
+  // This is more specific than the category name, which is already shown in the tile subtitle.
+  return firstLine;
 }
 
 function extractAuthor(content: string): string {

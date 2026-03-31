@@ -189,29 +189,32 @@ function extractTitle(content: string, category?: string): string {
   // Parse the raw submission format
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
+  const fallbackTitle = category || 'Untitled';
   
   // For routine/committee content (starts with "Author:"), use category as title
   if (firstLine.startsWith('Author:')) {
-    return category || 'Routine Content';
+    return fallbackTitle;
   }
   
-  // If first line is empty or looks like metadata, return Untitled
+  // If first line is empty or looks like metadata, use the category name.
   if (!firstLine || firstLine.startsWith('Full Name:') || firstLine.startsWith('Email:') || 
       firstLine.startsWith('In Response To:') || firstLine.startsWith('Type:') || 
       firstLine.startsWith('Project Type:') || firstLine.startsWith('Sighting Location:')) {
-    return 'Untitled';
+    return fallbackTitle;
   }
   
-  // Check if first line contains a title (has " - " separator)
+  // Use the optional title if present and non-empty.
   const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
   
-  if (titleMatch && titleMatch[2]) {
-    return titleMatch[2].trim();
+  if (titleMatch) {
+    const parsedTitle = titleMatch[2]?.trim();
+    if (parsedTitle) {
+      return parsedTitle;
+    }
   }
   
-  // First line exists but has no title separator
-  // Use the published name as the title
-  return firstLine;
+  // If no explicit title exists, label the tile by category.
+  return fallbackTitle;
 }
 
 function extractAuthor(content: string): string {

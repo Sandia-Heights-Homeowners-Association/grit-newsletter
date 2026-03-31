@@ -190,16 +190,18 @@ function extractTitle(content: string, category?: string): string {
   const firstLine = lines[0]?.trim() || '';
   const categoryFallback = category || 'Untitled';
 
-  // Routine/committee: "Author: Name" — no article title concept, group by category
+  // ── Routine / committee: "Author: Name …" ──────────────────────────────────
+  // These sections don't have article titles; label by section name.
   if (firstLine.startsWith('Author:')) {
     return categoryFallback;
   }
 
-  // Truly empty first line or starts with a metadata field — use category name
+  // ── Committee submitted without Author line (starts with Email / body) ──────
+  // Also catches truly empty content.
   if (
     !firstLine ||
-    firstLine.startsWith('Full Name:') ||
     firstLine.startsWith('Email:') ||
+    firstLine.startsWith('Full Name:') ||
     firstLine.startsWith('In Response To:') ||
     firstLine.startsWith('Type:') ||
     firstLine.startsWith('Project Type:') ||
@@ -208,8 +210,17 @@ function extractTitle(content: string, category?: string): string {
     return categoryFallback;
   }
 
-  // Community format: "PublishedName - Title" (title is optional).
-  // Require a space on each side of the dash so hyphenated names like "Mary-Jane" don't false-match.
+  // ── Old community format: "Published Name: Jane Smith" ───────────────────────
+  // Earlier form versions prefixed the published name with "Published Name:".
+  // Strip the prefix and use the name itself as the display title.
+  if (firstLine.startsWith('Published Name:')) {
+    const name = firstLine.replace(/^Published Name:\s*/i, '').trim();
+    return name || categoryFallback;
+  }
+
+  // ── Current community format: "PublishedName - Title" ────────────────────────
+  // Title is optional. Require spaces around the dash so hyphenated names
+  // like "Mary-Jane" are not misread as Name="Mary" / Title="Jane".
   const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
   if (titleMatch) {
     const parsedTitle = titleMatch[2]?.trim();
@@ -218,8 +229,9 @@ function extractTitle(content: string, category?: string): string {
     }
   }
 
-  // No explicit article title — use the published name (first line).
-  // This is more specific than the category name, which is already shown in the tile subtitle.
+  // ── Community submission with no explicit title: first line is the name ──────
+  // Use the published name — it is always unique and more meaningful than the
+  // category name (which is already shown in the tile subtitle).
   return firstLine;
 }
 

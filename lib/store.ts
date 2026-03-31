@@ -103,10 +103,12 @@ export async function getSubmissionsByMonth(month: string): Promise<Submission[]
   // Get all submissions from database
   const allSubmissions = await db.getAllSubmissions();
   
-  // Include all submissions for the specified month
-  // PLUS all routine/committee submissions regardless of month (since they're evergreen content)
+  // Include all submissions for the specified month,
+  // PLUS all backlog items regardless of month,
+  // PLUS all routine/committee submissions regardless of month (since they're evergreen content).
   return allSubmissions.filter(s => 
-    s.month === month || 
+    s.month === month ||
+    s.disposition === 'backlog' ||
     routineAndCommitteeCategories.includes(s.category)
   );
 }

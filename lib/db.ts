@@ -125,12 +125,12 @@ export const db = {
     return rows.map(rowToSubmission);
   },
 
-  // Get submissions by category and month
+  // Get submissions by category and month (includes items accepted from backlog)
   async getSubmissionsByCategory(category: SubmissionCategory, month: string): Promise<Submission[]> {
     const sql = getSQL();
     const rows = (await sql`
       SELECT * FROM submissions 
-      WHERE category = ${category} AND month = ${month}
+      WHERE category = ${category} AND (month = ${month} OR disposition = ${month})
       ORDER BY submitted_at DESC
     `) as any[];
     

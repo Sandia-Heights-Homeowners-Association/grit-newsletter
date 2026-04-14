@@ -10,6 +10,8 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   minHeight?: string;
+  simpleToolbar?: boolean;
+  maxLength?: number;
 }
 
 // Convert Tiptap JSON to Markdown
@@ -106,7 +108,7 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
-export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px' }: MarkdownEditorProps) {
+export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px', simpleToolbar = false, maxLength }: MarkdownEditorProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -116,9 +118,11 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
+        heading: simpleToolbar ? false : { levels: [1, 2, 3] },
+        bulletList: simpleToolbar ? false : undefined,
+        orderedList: simpleToolbar ? false : undefined,
+        horizontalRule: simpleToolbar ? false : undefined,
+        listItem: simpleToolbar ? false : undefined,
       }),
       Placeholder.configure({
         placeholder,
@@ -126,6 +130,12 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
     ],
     content: markdownToHtml(value || ''),
     onUpdate: ({ editor }) => {
+      const text = editor.getText();
+      if (maxLength && text.length > maxLength) {
+        // Truncate to maxLength
+        editor.commands.setContent(editor.getHTML().slice(0, -1));
+        return;
+      }
       const markdown = editorToMarkdown(editor);
       onChange(markdown.trim());
     },
@@ -186,96 +196,100 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
           I
         </button>
         
-        <div className="w-px bg-gray-300 mx-1"></div>
-        
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`rounded px-3 py-1 text-sm font-semibold transition ${
-            editor.isActive('heading', { level: 1 })
-              ? 'bg-orange-200 text-orange-900'
-              : 'bg-white text-gray-700 hover:bg-orange-100'
-          }`}
-          title="Heading 1"
-        >
-          H1
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`rounded px-3 py-1 text-sm font-semibold transition ${
-            editor.isActive('heading', { level: 2 })
-              ? 'bg-orange-200 text-orange-900'
-              : 'bg-white text-gray-700 hover:bg-orange-100'
-          }`}
-          title="Heading 2"
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`rounded px-3 py-1 text-sm font-semibold transition ${
-            editor.isActive('heading', { level: 3 })
-              ? 'bg-orange-200 text-orange-900'
-              : 'bg-white text-gray-700 hover:bg-orange-100'
-          }`}
-          title="Heading 3"
-        >
-          H3
-        </button>
-        
-        <div className="w-px bg-gray-300 mx-1"></div>
-        
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`rounded px-3 py-1 text-sm transition ${
-            editor.isActive('bulletList')
-              ? 'bg-orange-200 text-orange-900'
-              : 'bg-white text-gray-700 hover:bg-orange-100'
-          }`}
-          title="Bullet List"
-        >
-          • List
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`rounded px-3 py-1 text-sm transition ${
-            editor.isActive('orderedList')
-              ? 'bg-orange-200 text-orange-900'
-              : 'bg-white text-gray-700 hover:bg-orange-100'
-          }`}
-          title="Numbered List"
-        >
-          1. List
-        </button>
-        
-        <div className="w-px bg-gray-300 mx-1"></div>
-        
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="rounded px-3 py-1 text-sm bg-white text-gray-700 hover:bg-orange-100 transition"
-          title="Horizontal Line"
-        >
-          ―
-        </button>
-        
-        <div className="w-px bg-gray-300 mx-1"></div>
-        
-        <button
-          type="button"
-          onClick={() => {
-            const placeholder = '[PHOTO PLACEHOLDER - Insert emailed photo here]';
-            editor.chain().focus().insertContent(placeholder).run();
-          }}
-          className="rounded px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition font-medium"
-          title="Insert Photo Placeholder"
-        >
-          📷 Photo
-        </button>
+        {!simpleToolbar && (
+          <>
+            <div className="w-px bg-gray-300 mx-1"></div>
+            
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              className={`rounded px-3 py-1 text-sm font-semibold transition ${
+                editor.isActive('heading', { level: 1 })
+                  ? 'bg-orange-200 text-orange-900'
+                  : 'bg-white text-gray-700 hover:bg-orange-100'
+              }`}
+              title="Heading 1"
+            >
+              H1
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              className={`rounded px-3 py-1 text-sm font-semibold transition ${
+                editor.isActive('heading', { level: 2 })
+                  ? 'bg-orange-200 text-orange-900'
+                  : 'bg-white text-gray-700 hover:bg-orange-100'
+              }`}
+              title="Heading 2"
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              className={`rounded px-3 py-1 text-sm font-semibold transition ${
+                editor.isActive('heading', { level: 3 })
+                  ? 'bg-orange-200 text-orange-900'
+                  : 'bg-white text-gray-700 hover:bg-orange-100'
+              }`}
+              title="Heading 3"
+            >
+              H3
+            </button>
+            
+            <div className="w-px bg-gray-300 mx-1"></div>
+            
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={`rounded px-3 py-1 text-sm transition ${
+                editor.isActive('bulletList')
+                  ? 'bg-orange-200 text-orange-900'
+                  : 'bg-white text-gray-700 hover:bg-orange-100'
+              }`}
+              title="Bullet List"
+            >
+              • List
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={`rounded px-3 py-1 text-sm transition ${
+                editor.isActive('orderedList')
+                  ? 'bg-orange-200 text-orange-900'
+                  : 'bg-white text-gray-700 hover:bg-orange-100'
+              }`}
+              title="Numbered List"
+            >
+              1. List
+            </button>
+            
+            <div className="w-px bg-gray-300 mx-1"></div>
+            
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().setHorizontalRule().run()}
+              className="rounded px-3 py-1 text-sm bg-white text-gray-700 hover:bg-orange-100 transition"
+              title="Horizontal Line"
+            >
+              ―
+            </button>
+            
+            <div className="w-px bg-gray-300 mx-1"></div>
+            
+            <button
+              type="button"
+              onClick={() => {
+                const placeholder = '[PHOTO PLACEHOLDER - Insert emailed photo here]';
+                editor.chain().focus().insertContent(placeholder).run();
+              }}
+              className="rounded px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition font-medium"
+              title="Insert Photo Placeholder"
+            >
+              📷 Photo
+            </button>
+          </>
+        )}
       </div>
 
       {/* Editor Content */}

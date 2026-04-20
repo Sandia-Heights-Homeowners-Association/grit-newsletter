@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -325,6 +325,9 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
 export default function ContentFlow({ submissions, selectedMonth, customOrder, onOrderChange }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Track whether the user has reordered within this month so we don't
+  // stomp their drag result with the incoming customOrder prop.
+  const isDraggingRef = React.useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -337,42 +340,48 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
     })
   );
 
-  // Initialize ordered submissions when submissions or month changes
+  // Build the ordered list whenever the source data or month changes.
+  // We intentionally omit `customOrder` from deps — the only time we
+  // use it is on the *initial* mount or when the month changes.  After
+  // that, local drag-and-drop state is authoritative.
   useEffect(() => {
     const monthSubmissions = submissions.filter(
       s => s.disposition === selectedMonth
     );
-    
-    // If custom order exists, use it
+
+    // If we already have a custom order, apply it
     if (customOrder && customOrder.length > 0) {
       const ordered = customOrder
         .map(id => monthSubmissions.find(s => s.id === id))
         .filter((s): s is Submission => s !== undefined);
-      setOrderedSubmissions(ordered);
+      // Include any new submissions not yet in the custom order
+      const remaining = monthSubmissions.filter(
+        s => !customOrder.includes(s.id)
+      );
+      setOrderedSubmissions([...ordered, ...remaining]);
       return;
     }
-    
+
     // Otherwise, group by section and maintain section order
     const grouped: Submission[] = [];
-    
+
     NEWSLETTER_SECTIONS.forEach(section => {
-      const sectionSubs = monthSubmissions.filter(s => 
+      const sectionSubs = monthSubmissions.filter(s =>
         section.categories.includes(s.category)
       );
       grouped.push(...sectionSubs);
     });
-    
-    setOrderedSubmissions(grouped);
-  }, [submissions, selectedMonth, customOrder]);
 
-  // Notify parent of order changes
-  useEffect(() => {
-    if (orderedSubmissions.length > 0) {
-      onOrderChange(orderedSubmissions.map(s => s.id));
-    }
-  }, [orderedSubmissions, onOrderChange]);
+    setOrderedSubmissions(grouped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submissions, selectedMonth]);
+
+  // Stable ref for the callback so we can call it without re-triggering effects
+  const onOrderChangeRef = React.useRef(onOrderChange);
+  onOrderChangeRef.current = onOrderChange;
 
   function handleDragStart(event: DragStartEvent) {
+    isDraggingRef.current = true;
     setActiveId(event.active.id as string);
   }
 
@@ -384,9 +393,14 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
       setOrderedSubmissions((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        // Notify parent of the new order immediately (via ref to avoid loops)
+        onOrderChangeRef.current(newItems.map(s => s.id));
+        return newItems;
       });
     }
+
+    isDraggingRef.current = false;
   }
 
   if (orderedSubmissions.length === 0) {

@@ -123,7 +123,7 @@ export default function LocalEventPage() {
           
           <div className="mb-6">
             <p className="text-sm text-gray-600">
-              Short-form submissions are welcome, and longer pieces are fine too. If you are writing an article, please try to keep it concise. If you have photos, please mention in your text where they should appear (e.g., "photo here"), then email photos to griteditor@sandiahomeowners.org or include a link in your description.
+              Event announcements are limited to <strong>300 characters</strong>. No images. Please include essential details: what, when, where, and how to RSVP.
             </p>
           </div>
 
@@ -218,6 +218,20 @@ export default function LocalEventPage() {
 
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900 text-sm">
+                  Event Title *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600 text-sm"
+                  placeholder="e.g. Spring Community Cleanup Day"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900 text-sm">
                   Event Date *
                 </label>
                 <input
@@ -272,14 +286,25 @@ export default function LocalEventPage() {
                   <label className="font-semibold text-orange-900 text-sm">
                     Event Details *
                   </label>
-                  <span className="text-sm text-gray-600">
-                    {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
+                  <span className={`text-sm font-medium ${
+                    content.length > 300
+                      ? 'text-red-600'
+                      : 'text-gray-600'
+                  }`}>
+                    {content.length} / 300 characters{content.length > 300 && ' — over limit'}
                   </span>
                 </div>
+                {content.length > 300 && (
+                  <div className="mb-2 rounded-md bg-red-50 border border-red-300 px-3 py-2 text-sm text-red-700">
+                    Your description is {content.length - 300} character{content.length - 300 === 1 ? '' : 's'} over the 300-character limit. Please shorten it before submitting.
+                  </div>
+                )}
                 <MarkdownEditor
                   value={content}
                   onChange={setContent}
                   placeholder="Describe the event, RSVP details, contact info, parking instructions, etc..."
+                  simpleToolbar
+                  maxLength={500}
                 />
               </div>
 
@@ -302,7 +327,7 @@ export default function LocalEventPage() {
 
               <button
                 type="submit"
-                disabled={submitting || !captchaToken}
+                disabled={submitting || !captchaToken || content.length > 300}
                 className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 py-3 font-semibold text-white shadow-lg transition hover:from-orange-700 hover:to-red-700 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting...' : 'Submit'}

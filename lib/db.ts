@@ -64,6 +64,19 @@ export async function initializeDatabase() {
       )
     `;
 
+    // Create caption contest entries table
+    await sql`
+      CREATE TABLE IF NOT EXISTS captions (
+        id TEXT PRIMARY KEY,
+        published_name TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        location TEXT NOT NULL,
+        caption TEXT NOT NULL,
+        submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
     console.log('Database tables initialized successfully');
     return true;
   } catch (error) {
@@ -255,4 +268,75 @@ export const db = {
       }
     }
   },
+
+  // ── Caption Contest ──────────────────────────────────────────────────────────
+
+  async getCaptionContest(): Promise<{ enabled: boolean; imageData: string | null; imageType: string | null; title: string | null; description: string | null }> {
+    const sql = getSQL();
+    const rows = (await sql`
+      SELECT value FROM config WHERE key = 'caption_contest'
+    `) as any[];
+
+    if (rows.length === 0) {
+      return { enabled: false, imageData: null, imageType: null, title: null, description: null };
+    }
+
+    const v = rows[0].value;
+    return {
+      enabled: v.enabled ?? false,
+      imageData: v.imageData ?? null,
+      imageType: v.imageType ?? null,
+      title: v.title ?? null,
+      description: v.description ?? null,
+    };
+  },
+
+  async setCaptionContest(data: { enabled: boolean; imageData?: string | null; imageType?: string | null; title?: string | null; description?: string | null }): Promise<void> {
+    const sql = getSQL();
+    // Merge with existing so a toggle doesn't wipe the image
+    const existing = await db.getCaptionContest();
+    const merged = {
+      enabled: data.enabled,
+      imageData: data.imageData !== undefined ? data.imageData : existing.imageData,
+      imageType: data.imageType !== undefined ? data.imageType : existing.imageType,
+      title: data.title !== undefined ? data.title : existing.title,
+      description: data.description !== undefined ? data.description : existing.description,
+    };
+    await sql`
+      INSERT INTO config (key, value, updated_at)
+      VALUES ('caption_contest', ${JSON.stringify(merged)}, CURRENT_TIMESTAMP)
+      ON CONFLICT (key)
+      DO UPDATE SET value = ${JSON.stringify(merged)}, updated_at = CURRENT_TIMESTAMP
+    `;
+  },
+
+  async insertCaption(caption: { id: string; publishedName: string; fullName: string; email: string; location: string; caption: string }): Promise<void> {
+    const sql = getSQL();
+    await sql`
+      INSERT INTO captions (id, published_name, full_name, email, location, caption)
+      VALUES (${caption.id}, ${caption.publishedName}, ${caption.fullName}, ${caption.email}, ${caption.location}, ${caption.caption})
+    `;
+  },
+
+  async getCaptions(): Promise<Array<{ id: string; publishedName: string; fullName: string; email: string; location: string; caption: string; submittedAt: Date }>> {
+    const sql = getSQL();
+    const rows = (await sql`
+      SELECT * FROM captions ORDER BY submitted_at DESC
+    `) as any[];
+    return rows.map((r: any) => ({
+      id: r.id,
+      publishedName: r.published_name,
+      fullName: r.full_name,
+      email: r.email,
+      location: r.location,
+      caption: r.caption,
+      submittedAt: new Date(r.submitted_at),
+    }));
+  },
+
+  async clearCaptions(): Promise<void> {
+    const sql = getSQL();
+    await sql`DELETE FROM captions`;
+  },
 };
+

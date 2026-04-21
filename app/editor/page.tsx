@@ -22,6 +22,21 @@ export default function EditorPage() {
   const [blobStatus, setBlobStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [blobError, setBlobError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showCaptionContest, setShowCaptionContest] = useState(false);
+  const [captionContest, setCaptionContest] = useState<{
+    enabled: boolean;
+    imageData: string | null;
+    imageType: string | null;
+    title: string | null;
+    description: string | null;
+  }>({ enabled: false, imageData: null, imageType: null, title: null, description: null });
+  const [captionEntries, setCaptionEntries] = useState<Array<{
+    id: string; publishedName: string; fullName: string; email: string; location: string; caption: string; submittedAt: Date;
+  }>>([]);
+  const [captionContestTitle, setCaptionContestTitle] = useState('');
+  const [captionContestDesc, setCaptionContestDesc] = useState('');
+  const [captionImageFile, setCaptionImageFile] = useState<File | null>(null);
+  const [captionImagePreview, setCaptionImagePreview] = useState<string | null>(null);
   const [deadlineDay, setDeadlineDay] = useState<number>(10);
   const [currentDeadlineInfo, setCurrentDeadlineInfo] = useState<{month: string; deadline: string}>({month: '', deadline: ''});
   const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -865,6 +880,33 @@ export default function EditorPage() {
               ⚙️ Settings
             </button>
             <button
+              onClick={async () => {
+                if (!showCaptionContest) {
+                  // Load current contest data
+                  try {
+                    const res = await fetch('/api/editor', {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'getCaptionContest' }),
+                    });
+                    if (res.ok) {
+                      const d = await res.json();
+                      setCaptionContest(d.contest);
+                      setCaptionEntries(d.captions || []);
+                      setCaptionContestTitle(d.contest.title || '');
+                      setCaptionContestDesc(d.contest.description || '');
+                      setCaptionImagePreview(d.contest.imageData || null);
+                    }
+                  } catch (e) { console.error(e); }
+                }
+                setShowCaptionContest(!showCaptionContest);
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white shadow transition ${captionContest.enabled ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600' : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'}`}
+              title="Manage Caption Contest"
+            >
+              🏆 Caption Contest
+            </button>
+            <button
               onClick={() => setShowJsonViewer(!showJsonViewer)}
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
@@ -940,6 +982,204 @@ export default function EditorPage() {
                 className="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-500"
               >
                 Close Settings
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Caption Contest Panel */}
+        {showCaptionContest && (
+          <div className="mb-6 rounded-lg bg-white border-2 border-yellow-300 p-5 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">🏆 Caption Contest</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">Contest Active:</span>
+                <button
+                  onClick={async () => {
+                    const newEnabled = !captionContest.enabled;
+                    try {
+                      const res = await fetch('/api/editor', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'setCaptionContest', enabled: newEnabled }),
+                      });
+                      if (res.ok) {
+                        setCaptionContest(prev => ({ ...prev, enabled: newEnabled }));
+                        showToastNotification(newEnabled ? 'Caption contest enabled' : 'Caption contest disabled');
+                      }
+                    } catch (e) { console.error(e); }
+                  }}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${captionContest.enabled ? 'bg-green-500' : 'bg-gray-300'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${captionContest.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className={`text-sm font-semibold ${captionContest.enabled ? 'text-green-700' : 'text-gray-500'}`}>
+                  {captionContest.enabled ? 'ON' : 'OFF'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Settings */}
+              <div>
+                <h3 className="mb-3 text-sm font-bold text-gray-700 uppercase">Contest Settings</h3>
+
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Title</label>
+                  <input
+                    type="text"
+                    value={captionContestTitle}
+                    onChange={e => setCaptionContestTitle(e.target.value)}
+                    placeholder="Caption Contest"
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Description (optional)</label>
+                  <textarea
+                    value={captionContestDesc}
+                    onChange={e => setCaptionContestDesc(e.target.value)}
+                    rows={2}
+                    placeholder="A brief description shown on the contest page"
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Contest Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0] ?? null;
+                      setCaptionImageFile(file);
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = ev => setCaptionImagePreview(ev.target?.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-sm text-gray-700"
+                  />
+                  {captionImagePreview && (
+                    <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={captionImagePreview} alt="Preview" className="max-h-40 w-full object-contain" />
+                    </div>
+                  )}
+                  {captionImagePreview && !captionImageFile && (
+                    <p className="mt-1 text-xs text-gray-500">Current uploaded image. Select a new file to replace it.</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={async () => {
+                      try {
+                        let imageData = captionContest.imageData;
+                        let imageType = captionContest.imageType;
+                        if (captionImageFile) {
+                          imageData = captionImagePreview;
+                          imageType = captionImageFile.type;
+                        }
+                        const res = await fetch('/api/editor', {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            action: 'setCaptionContest',
+                            enabled: captionContest.enabled,
+                            imageData,
+                            imageType,
+                            title: captionContestTitle || null,
+                            description: captionContestDesc || null,
+                          }),
+                        });
+                        if (res.ok) {
+                          setCaptionContest(prev => ({ ...prev, imageData: imageData ?? null, imageType: imageType ?? null, title: captionContestTitle || null, description: captionContestDesc || null }));
+                          setCaptionImageFile(null);
+                          showToastNotification('Caption contest saved');
+                        }
+                      } catch (e) { console.error(e); }
+                    }}
+                    className="rounded bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
+                  >
+                    Save Settings
+                  </button>
+                  {captionContest.imageData && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Remove the contest image?')) return;
+                        const res = await fetch('/api/editor', {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'setCaptionContest', enabled: captionContest.enabled, imageData: null, imageType: null }),
+                        });
+                        if (res.ok) {
+                          setCaptionContest(prev => ({ ...prev, imageData: null, imageType: null }));
+                          setCaptionImagePreview(null);
+                          showToastNotification('Image removed');
+                        }
+                      }}
+                      className="rounded bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+                    >
+                      Remove Image
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Entries */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase">
+                    Caption Entries ({captionEntries.length})
+                  </h3>
+                  {captionEntries.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Clear all ${captionEntries.length} caption entries? This cannot be undone.`)) return;
+                        const res = await fetch('/api/editor', {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'clearCaptions' }),
+                        });
+                        if (res.ok) {
+                          setCaptionEntries([]);
+                          showToastNotification('Caption entries cleared');
+                        }
+                      }}
+                      className="rounded bg-red-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-600"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                {captionEntries.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No entries yet.</p>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                    {captionEntries.map(entry => (
+                      <div key={entry.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <p className="text-sm font-semibold text-gray-900">&ldquo;{entry.caption}&rdquo;</p>
+                        <p className="mt-1 text-xs text-gray-600">
+                          <span className="font-medium">{entry.publishedName}</span>
+                          {' · '}{entry.fullName}{' · '}{entry.location}
+                        </p>
+                        <p className="text-xs text-gray-400">{entry.email}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-gray-200 pt-3">
+              <button
+                onClick={() => setShowCaptionContest(false)}
+                className="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-500"
+              >
+                Close
               </button>
             </div>
           </div>

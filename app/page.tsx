@@ -16,6 +16,18 @@ export default function Home() {
   const [currentRoutineCommitteeCount, setCurrentRoutineCommitteeCount] = useState(0);
   const [previousRoutineCommitteeCount, setPreviousRoutineCommitteeCount] = useState(0);
   const [deadlineInfo, setDeadlineInfo] = useState({ month: '', deadline: '' });
+  const [captionContestEnabled, setCaptionContestEnabled] = useState(false);
+  const [captionContestTitle, setCaptionContestTitle] = useState('Caption Contest');
+
+  useEffect(() => {
+    fetch('/api/caption')
+      .then(res => res.json())
+      .then(data => {
+        setCaptionContestEnabled(data.enabled || false);
+        setCaptionContestTitle(data.title || 'Caption Contest');
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/stats')
@@ -222,6 +234,28 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Caption Contest Banner */}
+        {captionContestEnabled && (
+          <div className="mb-8">
+            <Link
+              href="/caption"
+              className="flex items-center justify-between rounded-xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 px-6 py-4 shadow transition hover:shadow-md hover:border-yellow-500"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🏆</span>
+                <div>
+                  <div className="text-lg font-bold text-amber-900">{captionContestTitle}</div>
+                  <div className="text-sm text-amber-700">Enter this month's caption contest!</div>
+                </div>
+              </div>
+              <span className="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                Enter Now →
+              </span>
+            </Link>
+          </div>
+        )}
+
         <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-red-100">
           <h2 className="mb-6 text-2xl font-bold text-red-900 text-center">
             Community Contributions

@@ -15,6 +15,7 @@ import {
 import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
 import { setDeadlineDay } from '@/lib/store';
+import { db } from '@/lib/db';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -183,6 +184,21 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         }
+
+      case 'getCaptionContest':
+        const contest = await db.getCaptionContest();
+        const captions = await db.getCaptions();
+        return NextResponse.json({ contest, captions });
+
+      case 'setCaptionContest': {
+        const { enabled, imageData, imageType, title: contestTitle, description: contestDesc } = data;
+        await db.setCaptionContest({ enabled, imageData, imageType, title: contestTitle, description: contestDesc });
+        return NextResponse.json({ success: true });
+      }
+
+      case 'clearCaptions':
+        await db.clearCaptions();
+        return NextResponse.json({ success: true });
 
       default:
         return NextResponse.json(

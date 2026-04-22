@@ -16,6 +16,8 @@ export default function Home() {
   const [currentRoutineCommitteeCount, setCurrentRoutineCommitteeCount] = useState(0);
   const [previousRoutineCommitteeCount, setPreviousRoutineCommitteeCount] = useState(0);
   const [deadlineInfo, setDeadlineInfo] = useState({ month: '', deadline: '' });
+  const [captionCount, setCaptionCount] = useState(0);
+  const [captionContributors, setCaptionContributors] = useState<string[]>([]);
   const [captionContestEnabled, setCaptionContestEnabled] = useState(false);
   const [captionContestTitle, setCaptionContestTitle] = useState('Caption Contest');
 
@@ -42,6 +44,8 @@ export default function Home() {
         setCurrentRoutineCommitteeCount(data.currentRoutineCommitteeCount || 0);
         setPreviousRoutineCommitteeCount(data.previousRoutineCommitteeCount || 0);
         setDeadlineInfo(data.deadlineInfo || { month: '', deadline: '' });
+        setCaptionCount(data.captionCount || 0);
+        setCaptionContributors(data.captionContributors || []);
       })
       .catch(err => console.error('Failed to load stats:', err));
   }, []);
@@ -277,6 +281,12 @@ export default function Home() {
                   <span>Routine & Committee:</span>
                   <span className="font-semibold text-red-700">{currentRoutineCommitteeCount}</span>
                 </li>
+                {captionContestEnabled && captionCount > 0 && (
+                  <li className="flex justify-between text-gray-800">
+                    <span>🏆 Caption Contest:</span>
+                    <span className="font-semibold text-red-700">{captionCount}</span>
+                  </li>
+                )}
               </ul>
               
               {/* Current Contributors List */}
@@ -284,22 +294,27 @@ export default function Home() {
                 <h4 className="mb-3 text-base font-semibold text-red-900 text-center">
                   Contributors
                 </h4>
-                {currentContributors.length > 0 ? (
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {currentContributors.map((name, idx) => (
-                      <span 
-                        key={idx}
-                        className="rounded-full bg-gradient-to-r from-red-100 to-amber-100 px-3 py-1 text-sm font-medium text-red-900 border border-red-300"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-sm text-gray-600 italic">
-                    No submissions for this month yet
-                  </p>
-                )}
+                {(() => {
+                  const allContributors = captionContestEnabled && captionContributors.length > 0
+                    ? [...new Set([...currentContributors, ...captionContributors])].sort()
+                    : currentContributors;
+                  return allContributors.length > 0 ? (
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {allContributors.map((name, idx) => (
+                        <span 
+                          key={idx}
+                          className="rounded-full bg-gradient-to-r from-red-100 to-amber-100 px-3 py-1 text-sm font-medium text-red-900 border border-red-300"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-sm text-gray-600 italic">
+                      No submissions for this month yet
+                    </p>
+                  );
+                })()}
               </div>
             </div>
 

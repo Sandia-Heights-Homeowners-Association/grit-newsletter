@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay, reloadData } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
+import { db } from '@/lib/db';
 
 // Disable caching for this dynamic stats endpoint
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,15 @@ export async function GET(request: NextRequest) {
     const previousContributors = await getContributorNames(previousMonth);
     const previousRoutineCommitteeCount = await getRoutineAndCommitteeCount(previousMonth);
 
+    const captionContest = await db.getCaptionContest();
+    let captionCount = 0;
+    let captionContributors: string[] = [];
+    if (captionContest.enabled) {
+      const captions = await db.getCaptions();
+      captionCount = captions.length;
+      captionContributors = [...new Set(captions.map(c => c.publishedName))].sort();
+    }
+
     return NextResponse.json({ 
       currentStats,
       currentContributors,
@@ -33,7 +43,9 @@ export async function GET(request: NextRequest) {
       previousContributors,
       previousMonth,
       previousRoutineCommitteeCount,
-      deadlineInfo
+      deadlineInfo,
+      captionCount,
+      captionContributors,
     });
   } catch (error) {
     console.error('Stats error:', error);

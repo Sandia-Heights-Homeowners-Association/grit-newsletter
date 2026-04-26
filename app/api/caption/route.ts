@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase } from '@/lib/db';
 import { sendCaptionConfirmation } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 let initialized = false;
 async function ensureInit() {
   if (!initialized) {

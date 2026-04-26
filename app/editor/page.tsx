@@ -896,8 +896,11 @@ export default function EditorPage() {
                       setCaptionContestTitle(d.contest.title || '');
                       setCaptionContestDesc(d.contest.description || '');
                       setCaptionImagePreview(d.contest.imageData || null);
+                    } else {
+                      const err = await res.json().catch(() => ({}));
+                      showToastNotification('Failed to load caption data: ' + (err.error || `${res.status} ${res.statusText}`));
                     }
-                  } catch (e) { console.error(e); }
+                  } catch (e) { console.error(e); showToastNotification('Network error loading caption data'); }
                 }
                 setShowCaptionContest(!showCaptionContest);
               }}
@@ -1006,8 +1009,11 @@ export default function EditorPage() {
                       if (res.ok) {
                         setCaptionContest(prev => ({ ...prev, enabled: newEnabled }));
                         showToastNotification(newEnabled ? 'Caption contest enabled' : 'Caption contest disabled');
+                      } else {
+                        const err = await res.json().catch(() => ({}));
+                        showToastNotification('Failed to update: ' + (err.error || `${res.status} ${res.statusText}`));
                       }
-                    } catch (e) { console.error(e); }
+                    } catch (e) { console.error(e); showToastNotification('Network error — check console'); }
                   }}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${captionContest.enabled ? 'bg-green-500' : 'bg-gray-300'}`}
                 >
@@ -1099,8 +1105,11 @@ export default function EditorPage() {
                           setCaptionContest(prev => ({ ...prev, imageData: imageData ?? null, imageType: imageType ?? null, title: captionContestTitle || null, description: captionContestDesc || null }));
                           setCaptionImageFile(null);
                           showToastNotification('Caption contest saved');
+                        } else {
+                          const err = await res.json().catch(() => ({}));
+                          showToastNotification('Failed to save: ' + (err.error || `${res.status} ${res.statusText}`));
                         }
-                      } catch (e) { console.error(e); }
+                      } catch (e) { console.error(e); showToastNotification('Network error — check console'); }
                     }}
                     className="rounded bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
                   >

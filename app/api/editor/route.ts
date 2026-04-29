@@ -191,14 +191,31 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ contest, captions });
 
       case 'setCaptionContest': {
-        const { enabled, imageData, imageType, title: contestTitle, description: contestDesc } = data;
-        await db.setCaptionContest({ enabled, imageData, imageType, title: contestTitle, description: contestDesc });
+        const { enabled, title: contestTitle, description: contestDesc } = data;
+        await db.setCaptionContest({ enabled, title: contestTitle, description: contestDesc });
         return NextResponse.json({ success: true });
       }
 
-      case 'clearCaptions':
-        await db.clearCaptions();
+      case 'setCaptionImage': {
+        const { imageData, imageType } = data;
+        if (!imageData || typeof imageData !== 'string') {
+          return NextResponse.json({ error: 'Invalid image data' }, { status: 400 });
+        }
+        await db.setCaptionImage(imageData, imageType || 'image/jpeg');
         return NextResponse.json({ success: true });
+      }
+
+      case 'clearCaptionImage': {
+        await db.clearCaptionImage();
+        return NextResponse.json({ success: true });
+      }
+
+      case 'deleteCaption': {
+        const { captionId } = data;
+        if (!captionId) return NextResponse.json({ error: 'captionId required' }, { status: 400 });
+        await db.deleteCaption(captionId);
+        return NextResponse.json({ success: true });
+      }
 
       default:
         return NextResponse.json(

@@ -7,6 +7,34 @@ import ContentFlow from '@/app/components/ContentFlow';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 
+/** Resize an image file to at most maxDim px on the longest side, encoded as JPEG. */
+async function resizeImageToDataUrl(file: File, maxDim = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width >= height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Failed to load image')); };
+    img.src = objectUrl;
+  });
+}
+
 export default function EditorPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -37,6 +65,8 @@ export default function EditorPage() {
   const [captionContestDesc, setCaptionContestDesc] = useState('');
   const [captionImageFile, setCaptionImageFile] = useState<File | null>(null);
   const [captionImagePreview, setCaptionImagePreview] = useState<string | null>(null);
+  const [captionImageUploading, setCaptionImageUploading] = useState(false);
+  const [captionEntriesLoaded, setCaptionEntriesLoaded] = useState(false);
   const [deadlineDay, setDeadlineDay] = useState<number>(10);
   const [currentDeadlineInfo, setCurrentDeadlineInfo] = useState<{month: string; deadline: string}>({month: '', deadline: ''});
   const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -889,13 +919,14 @@ export default function EditorPage() {
                       headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
                       body: JSON.stringify({ action: 'getCaptionContest' }),
                     });
-                    if (res.ok) {
+                  if (res.ok) {
                       const d = await res.json();
                       setCaptionContest(d.contest);
                       setCaptionEntries(d.captions || []);
                       setCaptionContestTitle(d.contest.title || '');
                       setCaptionContestDesc(d.contest.description || '');
-                      setCaptionImagePreview(d.contest.imageData || null);
+                      setCaptionImagePreview(null);
+                      setCaptionEntriesLoaded(true);
                     } else {
                       const err = await res.json().catch(() => ({}));
                       showToastNotification('Failed to load caption data: ' + (err.error || `${res.status} ${res.statusText}`));
@@ -998,6 +1029,7 @@ export default function EditorPage() {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700">Contest Active:</span>
                 <button
+                  type="button"
                   onClick={async () => {
                     const newEnabled = !captionContest.enabled;
                     try {
@@ -1053,58 +1085,83 @@ export default function EditorPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="mb-1 block text-sm font-semibold text-gray-800">Contest Image</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={e => {
-                      const file = e.target.files?.[0] ?? null;
-                      setCaptionImageFile(file);
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = ev => setCaptionImagePreview(ev.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="w-full text-sm text-gray-700"
-                  />
-                  {captionImagePreview && (
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">
+                    Contest Image <span className="text-red-600">*</span>
+                    <span className="ml-1 text-xs font-normal text-gray-500">(resized to 1200px JPEG on upload)</span>
+                  </label>
+                  <label className={`mt-1 flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 transition ${
+                    captionImageUploading
+                      ? 'border-orange-400 bg-orange-100 cursor-wait'
+                      : 'border-orange-300 bg-orange-50 hover:border-orange-400 hover:bg-orange-100'
+                  }`}>
+                    <span className="text-xl">{captionImageUploading ? '⏳' : '📷'}</span>
+                    <span className="text-sm font-medium text-orange-800">
+                      {captionImageUploading
+                        ? 'Uploading image…'
+                        : captionContest.imageData
+                        ? 'Replace image…'
+                        : 'Choose image…'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={captionImageUploading}
+                      className="sr-only"
+                      onChange={async e => {
+                        const file = e.target.files?.[0] ?? null;
+                        setCaptionImageFile(file);
+                        if (!file) return;
+                        try {
+                          const resized = await resizeImageToDataUrl(file);
+                          setCaptionImagePreview(resized);
+                          setCaptionImageUploading(true);
+                          const res = await fetch('/api/editor', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'setCaptionImage', imageData: resized, imageType: 'image/jpeg' }),
+                          });
+                          setCaptionImageUploading(false);
+                          if (res.ok) {
+                            setCaptionContest(prev => ({ ...prev, imageData: resized, imageType: 'image/jpeg' }));
+                            setCaptionImageFile(null);
+                            showToastNotification('Image uploaded ✓');
+                          } else {
+                            const err = await res.json().catch(() => ({}));
+                            showToastNotification('Image upload failed: ' + (err.error || `${res.status} ${res.statusText}`));
+                          }
+                        } catch {
+                          setCaptionImageUploading(false);
+                          showToastNotification('Failed to process image');
+                        }
+                      }}
+                    />
+                  </label>
+                  {(captionImagePreview || captionContest.imageData) && (
                     <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={captionImagePreview} alt="Preview" className="max-h-40 w-full object-contain" />
+                      <img src={captionImagePreview || captionContest.imageData!} alt="Preview" className="max-h-40 w-full object-contain" />
                     </div>
-                  )}
-                  {captionImagePreview && !captionImageFile && (
-                    <p className="mt-1 text-xs text-gray-500">Current uploaded image. Select a new file to replace it.</p>
                   )}
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
                   <button
+                    type="button"
                     onClick={async () => {
                       try {
-                        let imageData = captionContest.imageData;
-                        let imageType = captionContest.imageType;
-                        if (captionImageFile) {
-                          imageData = captionImagePreview;
-                          imageType = captionImageFile.type;
-                        }
                         const res = await fetch('/api/editor', {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             action: 'setCaptionContest',
                             enabled: captionContest.enabled,
-                            imageData,
-                            imageType,
                             title: captionContestTitle || null,
                             description: captionContestDesc || null,
                           }),
                         });
                         if (res.ok) {
-                          setCaptionContest(prev => ({ ...prev, imageData: imageData ?? null, imageType: imageType ?? null, title: captionContestTitle || null, description: captionContestDesc || null }));
-                          setCaptionImageFile(null);
-                          showToastNotification('Caption contest saved');
+                          setCaptionContest(prev => ({ ...prev, title: captionContestTitle || null, description: captionContestDesc || null }));
+                          showToastNotification('Settings saved ✓');
                         } else {
                           const err = await res.json().catch(() => ({}));
                           showToastNotification('Failed to save: ' + (err.error || `${res.status} ${res.statusText}`));
@@ -1117,12 +1174,13 @@ export default function EditorPage() {
                   </button>
                   {captionContest.imageData && (
                     <button
+                      type="button"
                       onClick={async () => {
                         if (!confirm('Remove the contest image?')) return;
                         const res = await fetch('/api/editor', {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'setCaptionContest', enabled: captionContest.enabled, imageData: null, imageType: null }),
+                          body: JSON.stringify({ action: 'clearCaptionImage' }),
                         });
                         if (res.ok) {
                           setCaptionContest(prev => ({ ...prev, imageData: null, imageType: null }));
@@ -1140,29 +1198,11 @@ export default function EditorPage() {
 
               {/* Right: Entries */}
               <div>
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3">
                   <h3 className="text-sm font-bold text-gray-700 uppercase">
                     Caption Entries ({captionEntries.length})
                   </h3>
-                  {captionEntries.length > 0 && (
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Clear all ${captionEntries.length} caption entries? This cannot be undone.`)) return;
-                        const res = await fetch('/api/editor', {
-                          method: 'POST',
-                          headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'clearCaptions' }),
-                        });
-                        if (res.ok) {
-                          setCaptionEntries([]);
-                          showToastNotification('Caption entries cleared');
-                        }
-                      }}
-                      className="rounded bg-red-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-600"
-                    >
-                      Clear All
-                    </button>
-                  )}
+                  <p className="mt-1 text-xs text-gray-500">To delete an entry, use View Data above.</p>
                 </div>
                 {captionEntries.length === 0 ? (
                   <p className="text-sm text-gray-500 italic">No entries yet.</p>
@@ -1571,6 +1611,89 @@ export default function EditorPage() {
                   })()}
                 </div>
               </div>
+          </div>
+        )}
+
+        {/* Caption Entries in View Data */}
+        {showJsonViewer && (
+          <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-yellow-300">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-yellow-900">🏆 Caption Contest Entries</h2>
+              {!captionEntriesLoaded && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/editor', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'getCaptionContest' }),
+                      });
+                      if (res.ok) {
+                        const d = await res.json();
+                        setCaptionEntries(d.captions || []);
+                        setCaptionEntriesLoaded(true);
+                      } else {
+                        showToastNotification('Failed to load caption entries');
+                      }
+                    } catch { showToastNotification('Network error loading entries'); }
+                  }}
+                  className="rounded bg-yellow-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+                >
+                  Load Entries
+                </button>
+              )}
+            </div>
+            {captionEntriesLoaded ? (
+              captionEntries.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">No caption entries yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {captionEntries.map(entry => (
+                    <div key={entry.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900">&ldquo;{entry.caption}&rdquo;</p>
+                          <p className="mt-1 text-xs text-gray-700">
+                            <span className="font-medium">{entry.publishedName}</span>
+                            {' · '}{entry.fullName}{' · '}{entry.location}
+                          </p>
+                          <p className="text-xs text-gray-500">{entry.email}</p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {new Date(entry.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm(`Delete caption entry from ${entry.publishedName}? This cannot be undone.`)) return;
+                            try {
+                              const res = await fetch('/api/editor', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'deleteCaption', captionId: entry.id }),
+                              });
+                              if (res.ok) {
+                                setCaptionEntries(prev => prev.filter(e => e.id !== entry.id));
+                                showToastNotification('Entry deleted');
+                              } else {
+                                const err = await res.json().catch(() => ({}));
+                                showToastNotification('Failed to delete: ' + (err.error || `${res.status}`));
+                              }
+                            } catch { showToastNotification('Network error'); }
+                          }}
+                          className="flex-shrink-0 rounded px-3 py-1 text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 border border-red-300 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <p className="text-sm text-gray-500 italic">Click “Load Entries” to view caption contest submissions.</p>
+            )}
           </div>
         )}
 

@@ -38,7 +38,8 @@ export async function sendSubmissionNotification({
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [process.env.EDITOR_EMAIL],
-      subject: `New ${category} Submission - ${publishedName}`,
+      subject: `[GRIT] New submission: ${category} — ${publishedName}`,
+      cc: ['griteditor@sandiahomeowners.org'],
       html: `
         <!DOCTYPE html>
         <html>
@@ -110,11 +111,6 @@ export async function sendSubmissionNotification({
       `,
     };
 
-    // Add BCC if configured
-    if (process.env.EDITOR_EMAIL_BCC) {
-      emailPayload.bcc = [process.env.EDITOR_EMAIL_BCC];
-    }
-
     await resend.emails.send(emailPayload);
 
     console.log('Email notification sent successfully');
@@ -147,7 +143,8 @@ export async function sendSubmitterConfirmation({
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [email],
-      subject: 'Thank you for your submission to the GRIT!',
+      subject: `[GRIT] Submission received — ${category}`,
+      cc: ['griteditor@sandiahomeowners.org'],
       html: `
         <!DOCTYPE html>
         <html>
@@ -212,11 +209,6 @@ export async function sendSubmitterConfirmation({
       `,
     };
 
-    // Add BCC to editor if configured
-    if (process.env.EDITOR_EMAIL_BCC) {
-      emailPayload.bcc = [process.env.EDITOR_EMAIL_BCC];
-    }
-
     await resend.emails.send(emailPayload);
 
     console.log('Submitter confirmation sent successfully to:', email);
@@ -247,7 +239,8 @@ export async function sendCaptionConfirmation({
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [email],
-      subject: 'Your caption contest entry — The GRIT',
+      subject: '[GRIT] Caption contest entry received',
+      cc: ['griteditor@sandiahomeowners.org'],
       html: `
         <!DOCTYPE html>
         <html>

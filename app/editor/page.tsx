@@ -1617,32 +1617,49 @@ export default function EditorPage() {
         {/* Caption Entries in View Data */}
         {showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-yellow-300">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-yellow-900">🏆 Caption Contest Entries</h2>
-              {!captionEntriesLoaded && (
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <h2 className="mr-auto text-2xl font-bold text-yellow-900">🏆 Caption Contest Entries</h2>
+              {captionEntriesLoaded && captionEntries.length > 0 && (
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch('/api/editor', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'getCaptionContest' }),
-                      });
-                      if (res.ok) {
-                        const d = await res.json();
-                        setCaptionEntries(d.captions || []);
-                        setCaptionEntriesLoaded(true);
-                      } else {
-                        showToastNotification('Failed to load caption entries');
-                      }
-                    } catch { showToastNotification('Network error loading entries'); }
+                  onClick={() => {
+                    const lines = captionEntries.map((entry, i) => {
+                      const date = new Date(entry.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                      return `${i + 1}. "${entry.caption}"\n   — ${entry.publishedName} (${entry.fullName}, ${entry.location})\n   — Submitted: ${date}`;
+                    });
+                    const text = `CAPTION CONTEST ENTRIES (${captionEntries.length})\n${'='.repeat(40)}\n\n${lines.join('\n\n')}`;
+                    navigator.clipboard.writeText(text).then(
+                      () => showToastNotification('Entries copied to clipboard ✓'),
+                      () => showToastNotification('Copy failed — try selecting and copying manually'),
+                    );
                   }}
-                  className="rounded bg-yellow-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+                  className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  Load Entries
+                  Copy All
                 </button>
               )}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/editor', {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${password}`, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'getCaptionContest' }),
+                    });
+                    if (res.ok) {
+                      const d = await res.json();
+                      setCaptionEntries(d.captions || []);
+                      setCaptionEntriesLoaded(true);
+                    } else {
+                      showToastNotification('Failed to load caption entries');
+                    }
+                  } catch { showToastNotification('Network error loading entries'); }
+                }}
+                className="rounded bg-yellow-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+              >
+                {captionEntriesLoaded ? 'Refresh' : 'Load Entries'}
+              </button>
             </div>
             {captionEntriesLoaded ? (
               captionEntries.length === 0 ? (
@@ -1692,7 +1709,7 @@ export default function EditorPage() {
                 </div>
               )
             ) : (
-              <p className="text-sm text-gray-500 italic">Click “Load Entries” to view caption contest submissions.</p>
+              <p className="text-sm text-gray-500 italic">Click &ldquo;Load Entries&rdquo; to view caption contest submissions.</p>
             )}
           </div>
         )}

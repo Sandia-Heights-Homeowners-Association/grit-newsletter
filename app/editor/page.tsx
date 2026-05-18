@@ -73,6 +73,7 @@ export default function EditorPage() {
   const [availableMonths, setAvailableMonths] = useState<Array<{key: string; label: string}>>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showBacklogPanel, setShowBacklogPanel] = useState(false);
   const [dataViewerFilter, setDataViewerFilter] = useState<string>('all');
   const [dataViewerSort, setDataViewerSort] = useState<'newest' | 'oldest'>('newest');
   const [toastMessage, setToastMessage] = useState<string>('');
@@ -941,6 +942,13 @@ export default function EditorPage() {
               🏆 Caption Contest
             </button>
             <button
+              onClick={() => setShowBacklogPanel(!showBacklogPanel)}
+              className="rounded-lg bg-gradient-to-r from-yellow-600 to-amber-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-yellow-700 hover:to-amber-700"
+              title="View backlogged submissions"
+            >
+              {showBacklogPanel ? 'Hide Backlog' : `Backlog (${submissions.filter(s => s.disposition === 'backlog').length})`}
+            </button>
+            <button
               onClick={() => setShowJsonViewer(!showJsonViewer)}
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
@@ -1299,6 +1307,69 @@ export default function EditorPage() {
             </div>
           </div>
         )}
+
+        {/* Backlog Panel */}
+        {showBacklogPanel && (() => {
+          const backlogSubs = submissions.filter(s => s.disposition === 'backlog');
+          // Group by category, preserving category display order
+          const grouped = backlogSubs.reduce<Record<string, typeof backlogSubs>>((acc, s) => {
+            if (!acc[s.category]) acc[s.category] = [];
+            acc[s.category].push(s);
+            return acc;
+          }, {});
+          const categories = Object.keys(grouped);
+          return (
+            <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-yellow-400">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-yellow-900">📋 Backlog ({backlogSubs.length})</h2>
+                <p className="text-sm text-gray-500">Submissions held for a future issue</p>
+              </div>
+              {backlogSubs.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">No backlogged submissions.</p>
+              ) : (
+                <div className="space-y-5">
+                  {categories.map(cat => {
+                    const subs = grouped[cat];
+                    const totalWords = subs.reduce((sum, s) => sum + getWordCount(s.content), 0);
+                    return (
+                      <div key={cat}>
+                        <div className="mb-2 flex items-baseline gap-3">
+                          <h3 className="text-sm font-bold text-yellow-800 uppercase tracking-wide">{cat}</h3>
+                          <span className="text-xs text-gray-500">{subs.length} item{subs.length !== 1 ? 's' : ''} &middot; {totalWords} words total</span>
+                        </div>
+                        <div className="space-y-2">
+                          {subs.map(sub => {
+                            const lines = sub.content.split('\n');
+                            const firstLine = lines[0] || '';
+                            const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
+                            const displayName = titleMatch ? titleMatch[1].trim().replace(/^Author:\s*/i, '') : firstLine.replace(/^Author:\s*/i, '').trim();
+                            const displayTitle = titleMatch ? titleMatch[2].trim() : '';
+                            const wordCount = getWordCount(sub.content);
+                            const submittedDate = new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            return (
+                              <div key={sub.id} className="flex items-start justify-between gap-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
+                                <div className="flex-1 min-w-0">
+                                  {displayTitle ? (
+                                    <p className="text-sm font-semibold text-gray-900 truncate">{displayTitle}</p>
+                                  ) : null}
+                                  <p className="text-xs text-gray-600 truncate">{displayName}</p>
+                                  <p className="mt-0.5 text-xs text-gray-400">{submittedDate}</p>
+                                </div>
+                                <div className="flex-shrink-0 text-right">
+                                  <span className="inline-block rounded bg-yellow-200 px-2 py-0.5 text-xs font-semibold text-yellow-900">{wordCount} words</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Data Viewer */}
         {showJsonViewer && (

@@ -11,6 +11,7 @@ export default function SubmitPage() {
   const category = decodeURIComponent(params.category as string);
   
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [publishedName, setPublishedName] = useState('');
   const [fullName, setFullName] = useState('');
   const [location, setLocation] = useState('');
@@ -70,7 +71,7 @@ export default function SubmitPage() {
 
     try {
       const metadata = `Full Name: ${fullName}\nEmail: ${email}\nLocation: ${location}`;
-      const fullContent = `${publishedName}\n\n${metadata}\n\n${content}`;
+      const fullContent = `${publishedName}${title ? ` - ${title}` : ''}\n\n${metadata}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -87,6 +88,7 @@ export default function SubmitPage() {
         setSuccess(true);
         createConfetti();
         setContent('');
+        setTitle('');
         setPublishedName('');
         setFullName('');
         setLocation('');
@@ -163,6 +165,20 @@ export default function SubmitPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label className="mb-2 block font-semibold text-orange-900">
+                  Title or Heading *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                  placeholder="A short title for your submission"
+                />
+              </div>
+
               <div className="mb-4">
                 <label className="mb-2 block font-semibold text-orange-900">
                   Your Name (as you would like it published) *

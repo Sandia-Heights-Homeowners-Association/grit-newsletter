@@ -11,6 +11,7 @@ export default function CommitteePage() {
   const router = useRouter();
   const [category, setCategory] = useState<typeof COMMITTEE_CATEGORIES[number]>(COMMITTEE_CATEGORIES[0]);
   const [content, setContent] = useState('');
+  const [title, setTitle] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -64,7 +65,7 @@ export default function CommitteePage() {
     }
 
     try {
-      const fullContent = `Author: ${authorName}\nEmail: ${email}\n\n${content}`;
+      const fullContent = `Title: ${title}\nAuthor: ${authorName}\nEmail: ${email}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -82,6 +83,7 @@ export default function CommitteePage() {
       if (response.ok && data.success) {
         setSuccess(true);
         setContent('');
+        setTitle('');
         setAuthorName('');
         setEmail('');
         setCaptchaToken('');
@@ -135,6 +137,20 @@ export default function CommitteePage() {
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block font-semibold text-orange-900">
+                Title or Heading *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                placeholder="e.g. Trails Committee Report — May 2026"
+              />
             </div>
 
             <div className="mb-6">

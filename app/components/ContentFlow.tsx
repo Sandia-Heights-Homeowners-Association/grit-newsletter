@@ -190,6 +190,12 @@ function extractTitle(content: string, category?: string): string {
   const firstLine = lines[0]?.trim() || '';
   const categoryFallback = category || 'Untitled';
 
+  // ── Committee new format: "Title: My Article" on first line ──────────────────
+  if (firstLine.startsWith('Title:')) {
+    const parsed = firstLine.replace(/^Title:\s*/i, '').trim();
+    return parsed || categoryFallback;
+  }
+
   // ── Routine / committee: "Author: Name …" ──────────────────────────────────
   // These sections don't have article titles; label by section name.
   if (firstLine.startsWith('Author:')) {
@@ -239,7 +245,14 @@ function extractAuthor(content: string): string {
   // Parse the raw submission format
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
-  
+
+  // Handle committee new format: "Title: ...", then "Author: Name"
+  if (firstLine.startsWith('Title:')) {
+    const authorLine = lines.find((l: string) => l.startsWith('Author:'));
+    if (authorLine) return authorLine.replace('Author:', '').trim() || 'Unknown Author';
+    return 'Unknown Author';
+  }
+
   // Handle routine/committee format: "Author: Name"
   if (firstLine.startsWith('Author:')) {
     return firstLine.replace('Author:', '').trim() || 'Unknown Author';
@@ -388,6 +401,7 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
+    isDraggingRef.current = false;
 
     if (over && active.id !== over.id) {
       setOrderedSubmissions((items) => {
@@ -399,7 +413,10 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
         return newItems;
       });
     }
+  }
 
+  function handleDragCancel() {
+    setActiveId(null);
     isDraggingRef.current = false;
   }
 
@@ -431,6 +448,7 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext
           items={orderedSubmissions.map(s => s.id)}

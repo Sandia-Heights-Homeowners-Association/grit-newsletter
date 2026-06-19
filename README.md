@@ -1,270 +1,214 @@
-# The GRIT - Newsletter Content Management System
+# The GRIT Newsletter System
 
-**Guiding Residents, Inspiring Togetherness**
+The GRIT is a Next.js application for collecting, reviewing, organizing, and exporting newsletter content for the Sandia Heights Homeowners Association.
 
-A comprehensive Next.js application for collecting and managing content for the Sandia Heights Homeowners Association Newsletter.
+It provides public submission forms for neighbors, routine and committee submission forms for regular contributors, and an editor dashboard for newsletter assembly.
 
 ## Features
 
-### Public Dashboard
-- View submission statistics and newsletter progress
-- Submit community contributions (no password required)
-- See submission deadlines and guidelines
-- Access to protected pages for routine and committee content
+- Public dashboard with current and previous issue submission counts
+- Community submission forms for categories such as classifieds, events, history, wildlife, kids' corner, pets, and general contributions
+- Routine and committee submission forms
+- Cloudflare Turnstile CAPTCHA on public submission flows
+- Neon Postgres persistence for submissions, editor settings, and caption contest data
+- Resend email confirmations for submitters when email is configured
+- Editor dashboard for reviewing submissions, assigning dispositions, editing entries, ordering content, exporting newsletter text, and exporting all data
+- Quick editor-created reminder/placeholders that appear in issue preview/export until resolved
+- Optional caption contest with editor-managed image, title, description, entries, and public submission page
+- Local JSON backup/export helpers for database data snapshots
 
-### Community Submission Categories
-Anyone can submit content in these categories:
-- Classifieds
-- Lost & Found
-- On My Mind
-- Response to Prior Content
-- Local Event Announcement
-- Kids' Corner
-- DIY & Crafts
-- Rants & Raves
-- Neighbor Appreciation
-- Wildlife
-- Photos
+## Tech Stack
 
-### Routine Content Submissions (Password Protected)
-- Letter from the Editor
-- President's Note
-- Board Notes
-- Office Notes
-- Association Events
-- ACC Activity Log (copy/paste from Excel)
-- CSC Table (CSV format)
-- Security Report (Excel/CSV)
-- Errata
-- Other
+- Next.js 16 with the App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Neon serverless Postgres
+- Cloudflare Turnstile
+- Resend
+- dnd-kit for editor content ordering
+- Tiptap packages for rich text/editor support
 
-**Password:** `routine2025`
+## Requirements
 
-### Committee Content Submissions (Password Protected)
-- Architectural Control Committee (ACC)
-- Covenant Support Committee (CSC)
-- Communications & Publications Committee
-- Community Service & Membership Committee
-- Environment & Safety Committee
-- Executive Committee
-- Finance Committee
-- Governance Committee
-- Nominating Committee
+- Node.js compatible with Next.js 16
+- npm
+- A Neon Postgres database URL for normal app operation
 
-**Password:** `committee2025`
-
-### Editor Dashboard (Password Protected)
-**Password:** `grit2025`
-
-Editors can:
-- View all submissions organized by category
-- Set disposition for each submission (Published, Backlogged, or Archived)
-- See concatenated content for each section
-- Edit combined text directly in the dashboard
-- Access backlogged content from previous months
-- Mark sections as complete
-- Export the entire newsletter as a .txt file
+The app initializes required database tables lazily on first use through `lib/db.ts`.
 
 ## Getting Started
 
-### Installation
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Development
+Create a local environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Set at least:
+
+```bash
+DATABASE_URL="postgresql://..."
+EDITOR_PASSWORD="..."
+```
+
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Open [http://localhost:3000](http://localhost:3000).
 
-### Build for Production
+## Environment Variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | Neon Postgres connection string. The app throws if this is missing when database-backed routes run. |
+| `EDITOR_PASSWORD` | Yes for editor | Password used by `/editor` and protected editor APIs. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Production | Public Cloudflare Turnstile site key. A test key is used as a local fallback. |
+| `TURNSTILE_SECRET_KEY` | Production | Server-side Cloudflare Turnstile secret. In development, the API skips verification if this is absent, but forms still need a CAPTCHA token. |
+| `RESEND_API_KEY` | Optional | Enables confirmation emails. Missing key skips email sends. |
+| `EDITOR_EMAIL` | Optional | Primary recipient for editor notifications if notification sending is used. |
+| `EDITOR_EMAIL_BCC` | Optional | BCC address listed in environment examples. |
+| `NEXT_PUBLIC_SITE_URL` | Optional | Public site URL used in generated email links. Include the protocol, for example `https://sandiaheightsgrit.app`. |
+
+Do not commit `.env.local` or real credentials.
+
+## Available Commands
 
 ```bash
+npm run dev
 npm run build
-npm start
+npm run start
+npm run lint
+npm run db:view
 ```
 
-## Usage
+There is currently no test script in `package.json`.
 
-### For Community Members
-1. Visit the main dashboard
-2. Click on any community contribution category
-3. Fill out the form with your name, email, and content
-4. Submit
+## Viewing Database Contents
 
-### For Routine Content Contributors
-1. Click "Routine Content" on the dashboard
-2. Enter password: `routine2025`
-3. Select category from dropdown
-4. Paste your content (can copy directly from Excel for ACC Activity Log and Security Report)
-5. Submit
-
-### For Committee Chairs
-1. Click "Committee Content" on the dashboard
-2. Enter password: `committee2025`
-3. Select your committee from dropdown
-4. Enter your report
-5. Submit
-
-### For Editors
-1. Click "Editor Dashboard" on the main page
-2. Enter password: `grit2025`
-3. **Select Month**: Use the prominent month selector at the top to choose which newsletter issue to edit
-   - Defaults to the current collection month (based on deadline)
-   - Can switch between past, current, and future months
-   - Useful for handling late submissions near deadline boundaries
-4. **Settings**: Click the ⚙️ Settings button to:
-   - Change the submission deadline day (1-28 of month)
-   - View current deadline and target publication month
-5. Select a section from the left sidebar to edit
-6. For each submission:
-   - Set disposition (Published, Backlogged, or Archived)
-   - Only "Published" submissions appear in the concatenated content
-7. Edit the combined text in the main editor
-8. Access backlogged content from previous months if needed
-9. Click "Save Progress" to save changes
-10. Click "Mark as Complete" when section is finalized
-11. Use "Export Newsletter" button to download the complete newsletter as a .txt file
-
-## Data Storage
-
-**File-Based JSON Storage** - All data is stored in human-readable JSON files in the `/data` directory:
-
-- `data/submissions.json` - All newsletter submissions (master log)
-  - `month`: Immutable, records which collection period submission was originally for
-  - `disposition`: Mutable, current status (assigned month, backlog, archived, or unreviewed)
-- `data/backups/` - Automatic timestamped backups
-
-### Data Persistence
-
-Data persists across server restarts and deployments. The JSON files are:
-- **Human-readable** - Open in any text editor
-- **Portable** - Easy to backup, transfer, or archive
-- **Git-friendly** - Can optionally commit to version control (currently gitignored)
-
-### Backup & Export Features
-
-Editors can:
-1. **Create Backup** - Timestamped snapshot of all data
-2. **Export All Data** - Download complete dataset as JSON
-3. **Export Newsletter** - Download formatted newsletter as text file
-
-### Data Location
-
-```
-data/
-├── submissions.json          # All submissions (master log)
-└── backups/                  # Timestamped backups
-    ├── 2025-11-27T10-30-00/
-    │   └── submissions.json
-    └── 2025-12-01T15-45-00/
-        └── submissions.json
-```
-
-
-### Month-to-Month Handling
-
-Each submission is tagged with its target publication month:
-- Submissions made in November are for the December issue
-- Data from all months is retained indefinitely
-- Backlogged items from previous months remain accessible
-- Editors can filter by month when needed
-
-### Manual Backup
-
-You can manually backup data by copying the `/data` directory:
+For quick read-only inspection from a terminal, use:
 
 ```bash
-cp -r data data-backup-$(date +%Y-%m-%d)
+npm run db:view
+npm run db:view -- submissions --limit 25 --status backlog
+npm run db:view -- submissions --month 2026-07 --search wildlife
+npm run db:view -- submission <submission-id>
+npm run db:view -- captions
+npm run db:view -- schema
 ```
 
-### Committing Data to Git (Optional)
+The viewer loads `DATABASE_URL` from `.env.local` or the current shell environment and never prints the database URL.
 
-By default, `/data/*.json` is gitignored. To commit your data:
+## Main Routes
 
-1. Remove the gitignore entry for data files
-2. Commit the data directory to your repository
-3. Data will be versioned with your code
+- `/` - public dashboard, contribution category links, stats, guidelines, terms, and caption contest callout when enabled
+- `/submit/[category]` and category-specific `/submit/...` pages - public community contribution forms
+- `/routine` - routine newsletter content submission form
+- `/committee` - committee report submission form
+- `/caption` - public caption contest entry form when the contest is enabled
+- `/editor` - editor dashboard, protected by `EDITOR_PASSWORD`
 
-## Customization
+## API Routes
 
-### Changing Passwords
-Edit the passwords in `lib/constants.ts`:
-```typescript
-export const EDITOR_PASSWORD = 'your-editor-password';
-export const ROUTINE_PASSWORD = 'your-routine-password';
-export const COMMITTEE_PASSWORD = 'your-committee-password';
-```
+- `POST /api/submit` - validates CAPTCHA, stores a submission, and sends a submitter confirmation when possible
+- `GET /api/stats` - returns current and previous collection-period stats
+- `GET /api/caption` - returns public caption contest state and image when enabled
+- `POST /api/caption` - validates CAPTCHA and stores a caption contest entry
+- `GET /api/editor` - returns editor dashboard data after bearer-password validation
+- `POST /api/editor` - handles editor actions such as disposition updates, exports, deadline settings, caption contest management, and deletion
+- `GET /api/backup?action=export` - exports all database-backed submissions as JSON after editor authentication
 
-### Modifying Categories
-Edit the category lists in `lib/types.ts`:
-```typescript
-export const COMMUNITY_CATEGORIES = [...];
-export const ROUTINE_CATEGORIES = [...];
-export const COMMITTEE_CATEGORIES = [...];
-```
+## Data Model
 
-### Changing Submission Deadline
-**Recommended Method:** Use the Settings panel in the Editor Dashboard:
-1. Click "Editor Dashboard" and log in
-2. Click the ⚙️ Settings button
-3. Enter a new deadline day (1-28)
-4. Click "Update Deadline"
+The live source of truth is Neon Postgres.
 
-The deadline setting is stored in Vercel Blob and persists across deployments.
+`lib/db.ts` creates these tables when needed:
 
-**Alternative Method:** Edit `SUBMISSION_DEADLINE_DAY` in `lib/constants.ts`:
-```typescript
-export const SUBMISSION_DEADLINE_DAY = 10; // Day of the month
-```
-Note: This requires redeployment and will be overridden by the Settings panel value if one exists.
+- `submissions` - newsletter submissions
+- `config` - settings such as the deadline day and caption contest configuration
+- `captions` - caption contest entries
+- `caption_image` - the current caption contest image as text plus image type
 
-## File Structure
+New submissions store private contact fields separately from newsletter copy:
 
-```
+- `contact_name`
+- `contact_email`
+- `location`
+- `title`
+- `item_type`, currently `submission` or `placeholder`
+- `priority`, `editor_notes`, and `needs_attention`
+
+Submission dispositions use the current newer model:
+
+- `undefined` or empty - unreviewed
+- `YYYY-MM` - accepted for a specific issue month
+- `backlog` - saved for later
+- `archived` - not currently used
+
+The `month` field records the original collection period and should be treated as immutable.
+
+## Backups and Exports
+
+The editor dashboard can export all database-backed submissions as JSON and export accepted newsletter content as text.
+
+`lib/backup.ts` can also create and restore local JSON snapshots under `data/backups/`, but live app reads and writes go through Neon. The `data/` directory is gitignored.
+
+Some root docs and scripts still describe earlier file-based or Vercel Blob storage iterations. Treat this README and the current source code as authoritative for the present implementation.
+
+## Project Structure
+
+```text
 app/
-├── page.tsx                    # Main public dashboard
-├── layout.tsx                  # App layout and metadata
-├── submit/[category]/page.tsx  # Community submission form
-├── routine/page.tsx            # Routine content submission
-├── committee/page.tsx          # Committee content submission
-├── editor/page.tsx             # Editor dashboard
-└── api/
-    ├── submit/route.ts         # Submission API
-    ├── stats/route.ts          # Statistics API
-    └── editor/route.ts         # Editor API
+  api/                 Route handlers for submissions, stats, editor, backup, captions
+  caption/             Public caption contest page
+  committee/           Committee submission form
+  components/          Shared UI components
+  editor/              Editor dashboard
+  routine/             Routine content submission form
+  submit/              Community submission forms
 lib/
-├── types.ts                    # TypeScript types and categories
-├── constants.ts                # App constants and helpers
-└── store.ts                    # Data storage functions
+  backup.ts            Database export/import and local backup helpers
+  constants.ts         App labels, editor password, month/deadline helpers
+  db.ts                Neon schema and query helpers
+  email.ts             Resend email helpers
+  store.ts             Application-level data operations
+  types.ts             Categories and submission types
+public/
+  logo.png             Primary GRIT logo
+data/
+  backups/             Local backup snapshots, gitignored
 ```
 
-## Technologies Used
+## Development Notes
 
-- **Next.js 16** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **React 19** - UI library
+- Use the `@/*` import alias for project-root imports.
+- Keep category changes centralized in `lib/types.ts`.
+- Keep month/deadline logic centralized in `lib/constants.ts` and `lib/store.ts`.
+- Editor authentication is simple bearer-password checking, not a full session/auth provider.
+- Routine and committee forms are currently public forms protected by CAPTCHA rather than password-gated pages.
+- `scripts/` contains historical Blob migration/debug utilities and is excluded from TypeScript. The normal app workflow does not depend on those scripts.
 
-## Future Enhancements
+## Deployment
 
-Consider implementing:
-- Database integration (PostgreSQL, Supabase, etc.)
-- Proper authentication with NextAuth.js
-- Email notifications for new submissions
-- Rich text editor for better formatting
-- Image upload support for Photos category
-- Search and filter functionality
-- Multi-month archive view
-- PDF export instead of just .txt
-- Submission editing/deletion capabilities
-- User roles and permissions system
+For production, configure the same environment variables in the hosting provider:
+
+- `DATABASE_URL`
+- `EDITOR_PASSWORD`
+- Turnstile site and secret keys
+- Resend settings if email confirmations should be sent
+- `NEXT_PUBLIC_SITE_URL` with `https://`
+
+Run `npm run build` before deployment or let the hosting platform run the Next.js build.
 
 ## License
 
-This project is proprietary to Sandia Heights Homeowners Association.
-
+This project is proprietary to the Sandia Heights Homeowners Association.

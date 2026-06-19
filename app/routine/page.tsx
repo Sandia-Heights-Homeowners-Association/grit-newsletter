@@ -64,9 +64,7 @@ export default function RoutinePage() {
     }
 
     try {
-      const fullContent = email 
-        ? `Author: ${authorName}\nEmail: ${email}\n\n${content}`
-        : `Author: ${authorName}\n\n${content}`;
+      const fullContent = `Author: ${authorName}\nEmail: ${email}\n\n${content}`;
       
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -75,6 +73,8 @@ export default function RoutinePage() {
           category, 
           content: fullContent, 
           publishedName: authorName,
+          contactName: authorName,
+          contactEmail: email,
           captchaToken 
         }),
       });
@@ -140,16 +140,17 @@ export default function RoutinePage() {
 
             <div className="mb-6">
               <label className="mb-2 block font-semibold text-orange-900">
-                Email (optional)
+                Contact Email (will not be published) *
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                 placeholder="your.email@example.com"
               />
-              <p className="mt-1 text-sm text-gray-800">If provided, you'll receive an email confirmation of your submission.</p>
+              <p className="mt-1 text-sm text-gray-800">You'll receive an email confirmation of your submission.</p>
             </div>
 
             <div className="mb-6">
@@ -195,7 +196,7 @@ export default function RoutinePage() {
 
             <div className="mb-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
               <p className="text-sm text-blue-800">
-                <strong>📧 Email Confirmation:</strong> If you provide an email address, you will receive a confirmation of your submission. 
+                <strong>📧 Email Confirmation:</strong> You will receive a confirmation of your submission.
                 If you don't receive it, please check your spam folder.
               </p>
             </div>

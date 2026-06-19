@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addSubmission } from '@/lib/store';
 import type { SubmissionCategory } from '@/lib/types';
-import { sendSubmitterConfirmation } from '@/lib/email';
+import { sendSubmissionNotification, sendSubmitterConfirmation } from '@/lib/email';
+import { normalizeEmail, normalizeText, parseSubmissionMetadata } from '@/lib/submissionMetadata';
 
 // Verify Cloudflare Turnstile token
 async function verifyTurnstileToken(token: string): Promise<boolean> {
@@ -40,15 +41,28 @@ async function verifyTurnstileToken(token: string): Promise<boolean> {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { category, content, publishedName, captchaToken } = body;
+    const { category, content, captchaToken } = body;
+    const parsedMetadata = parseSubmissionMetadata(content || '');
+    const publishedName = normalizeText(body.publishedName) || parsedMetadata.publishedName || 'Anonymous';
+    const title = normalizeText(body.title) || parsedMetadata.title;
+    const fullName = normalizeText(body.contactName) || normalizeText(body.fullName) || parsedMetadata.contactName;
+    const email = normalizeEmail(body.contactEmail) || normalizeEmail(body.email) || normalizeEmail(parsedMetadata.contactEmail);
+    const location = normalizeText(body.location) || parsedMetadata.location || '';
 
-    console.log('Submit API called:', { category, contentLength: content?.length, publishedName });
+    console.log('Submit API called:', { category, contentLength: content?.length, publishedName, contactEmail: email });
 
     // Verify required fields
     if (!category || !content) {
       console.log('Missing required fields');
       return NextResponse.json(
         { error: 'Category and content are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!fullName || !email) {
+      return NextResponse.json(
+        { error: 'Name and contact email are required' },
         { status: 400 }
       );
     }
@@ -71,48 +85,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const submission = await addSubmission(category as SubmissionCategory, content, publishedName);
+    const submission = await addSubmission(category as SubmissionCategory, content, {
+      publishedName,
+      title,
+      contactName: fullName,
+      contactEmail: email,
+      location,
+      itemType: 'submission',
+    });
     
     console.log('Submission created successfully:', submission.id);
-    
-    // Parse metadata from content for email notification
-    const lines = content.split('\n');
-    const fullNameLine = lines.find((l: string) => l.startsWith('Full Name:'));
-    const authorLine = lines.find((l: string) => l.startsWith('Author:'));
-    const emailLine = lines.find((l: string) => l.startsWith('Email:'));
-    const locationLine = lines.find((l: string) => l.startsWith('Location:'));
-    
-    // Handle both "Full Name:" (community forms) and "Author:" (routine/committee forms)
-    const fullName = (fullNameLine?.replace('Full Name:', '').trim() || 
-                      authorLine?.replace('Author:', '').trim() || 
-                      'Unknown');
-    const email = emailLine?.replace('Email:', '').trim() || '';
-    const location = locationLine?.replace('Location:', '').trim() || '';
-    
-    console.log('Email extraction:', { fullName, email, location, category });
-    console.log('Content lines:', lines.slice(0, 10)); // Log first 10 lines for debugging
-    
-    // Send confirmation to submitter with editor BCC'd (non-blocking)
-    if (email) {
-      console.log('Attempting to send confirmation email to:', email);
+
+    const [submitterConfirmation, editorNotification] = await Promise.all([
       sendSubmitterConfirmation({
         category,
-        publishedName: publishedName || 'Anonymous',
+        publishedName,
         content,
         fullName,
         email,
-      }).then(result => {
-        console.log('Email send result:', result);
-      }).catch(err => {
-        console.error('Confirmation email failed:', err);
-      });
-    } else {
-      console.warn('No email found in submission content - skipping confirmation email');
-    }
+      }),
+      sendSubmissionNotification({
+        category,
+        publishedName,
+        content,
+        fullName,
+        email,
+        location,
+      }),
+    ]);
     
     return NextResponse.json({ 
       success: true, 
-      submission 
+      submission,
+      email: {
+        submitterConfirmation,
+        editorNotification,
+      },
     });
   } catch (error: any) {
     console.error('Submission error:', error);

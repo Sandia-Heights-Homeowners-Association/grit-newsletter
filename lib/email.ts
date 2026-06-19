@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface SendSubmissionNotificationParams {
   category: string;
   publishedName: string;
@@ -9,6 +7,35 @@ interface SendSubmissionNotificationParams {
   fullName: string;
   email: string;
   location: string;
+}
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function editorDelivery() {
+  const to = process.env.EDITOR_EMAIL || process.env.EDITOR_EMAIL_BCC;
+  const bcc =
+    process.env.EDITOR_EMAIL &&
+    process.env.EDITOR_EMAIL_BCC &&
+    process.env.EDITOR_EMAIL_BCC !== process.env.EDITOR_EMAIL
+      ? [process.env.EDITOR_EMAIL_BCC]
+      : undefined;
+
+  return { to, bcc };
+}
+
+function confirmationBcc() {
+  return process.env.EDITOR_EMAIL_BCC ? [process.env.EDITOR_EMAIL_BCC] : undefined;
 }
 
 export async function sendSubmissionNotification({
@@ -24,8 +51,9 @@ export async function sendSubmissionNotification({
     return { success: false, skipped: true };
   }
 
-  if (!process.env.EDITOR_EMAIL) {
-    console.warn('EDITOR_EMAIL not set - skipping email notification');
+  const delivery = editorDelivery();
+  if (!delivery.to) {
+    console.warn('EDITOR_EMAIL/EDITOR_EMAIL_BCC not set - skipping editor notification');
     return { success: false, skipped: true };
   }
 
@@ -37,9 +65,9 @@ export async function sendSubmissionNotification({
     const emailPayload: any = {
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
-      to: [process.env.EDITOR_EMAIL],
+      to: [delivery.to],
       subject: `[GRIT] New submission: ${category} — ${publishedName}`,
-      cc: ['griteditor@sandiahomeowners.org'],
+      ...(delivery.bcc ? { bcc: delivery.bcc } : {}),
       html: `
         <!DOCTYPE html>
         <html>
@@ -73,24 +101,24 @@ export async function sendSubmissionNotification({
               </p>
               
               <div class="info-row">
-                <span class="label">Category:</span> ${category}
+                <span class="label">Category:</span> ${escapeHtml(category)}
               </div>
               <div class="info-row">
-                <span class="label">Published Name:</span> ${publishedName}
+                <span class="label">Published Name:</span> ${escapeHtml(publishedName)}
               </div>
               <div class="info-row">
-                <span class="label">Full Name:</span> ${fullName}
+                <span class="label">Full Name:</span> ${escapeHtml(fullName)}
               </div>
               <div class="info-row">
-                <span class="label">Email:</span> ${email}
+                <span class="label">Email:</span> ${escapeHtml(email)}
               </div>
               <div class="info-row">
-                <span class="label">Location:</span> ${location}
+                <span class="label">Location:</span> ${escapeHtml(location || 'Not provided')}
               </div>
               
               <div class="preview">
                 <div class="label">Content Preview:</div>
-                <p>${contentPreview.replace(/\n/g, '<br>')}</p>
+                <p>${escapeHtml(contentPreview).replace(/\n/g, '<br>')}</p>
               </div>
               
               <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/editor" class="button">
@@ -111,7 +139,7 @@ export async function sendSubmissionNotification({
       `,
     };
 
-    await resend.emails.send(emailPayload);
+    await getResend().emails.send(emailPayload);
 
     console.log('Email notification sent successfully');
     return { success: true };
@@ -144,7 +172,7 @@ export async function sendSubmitterConfirmation({
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [email],
       subject: `[GRIT] Submission received — ${category}`,
-      cc: ['griteditor@sandiahomeowners.org'],
+      ...(confirmationBcc() ? { bcc: confirmationBcc() } : {}),
       html: `
         <!DOCTYPE html>
         <html>
@@ -174,18 +202,18 @@ export async function sendSubmitterConfirmation({
               </p>
               
               <p style="margin: 15px 0;">
-                Dear ${fullName},
+                Dear ${escapeHtml(fullName)},
               </p>
               
               <p style="margin: 15px 0;">
-                We've received your submission for the <strong>${category}</strong> section of the GRIT newsletter.
+                We've received your submission for the <strong>${escapeHtml(category)}</strong> section of the GRIT newsletter.
               </p>
               
               <div class="submission-box">
                 <p style="font-weight: bold; color: #6b7280; margin: 0 0 10px 0;">Your Submission:</p>
-                <p style="margin: 0 0 5px 0;"><strong>Published Name:</strong> ${publishedName}</p>
-                <p style="margin: 0 0 15px 0;"><strong>Category:</strong> ${category}</p>
-                <p style="white-space: pre-wrap; margin: 0;">${content}</p>
+                <p style="margin: 0 0 5px 0;"><strong>Published Name:</strong> ${escapeHtml(publishedName)}</p>
+                <p style="margin: 0 0 15px 0;"><strong>Category:</strong> ${escapeHtml(category)}</p>
+                <p style="white-space: pre-wrap; margin: 0;">${escapeHtml(content)}</p>
               </div>
               
               <p style="margin: 15px 0;">
@@ -209,7 +237,7 @@ export async function sendSubmitterConfirmation({
       `,
     };
 
-    await resend.emails.send(emailPayload);
+    await getResend().emails.send(emailPayload);
 
     console.log('Submitter confirmation sent successfully to:', email);
     return { success: true };
@@ -235,12 +263,12 @@ export async function sendCaptionConfirmation({
   }
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [email],
       subject: '[GRIT] Caption contest entry received',
-      cc: ['griteditor@sandiahomeowners.org'],
+      ...(confirmationBcc() ? { bcc: confirmationBcc() } : {}),
       html: `
         <!DOCTYPE html>
         <html>
@@ -264,12 +292,12 @@ export async function sendCaptionConfirmation({
               <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.95;">Sandia Heights GRIT Newsletter</p>
             </div>
             <div class="content">
-              <p>Dear ${fullName},</p>
+              <p>Dear ${escapeHtml(fullName)},</p>
               <p>We received your caption contest entry. Here's what you submitted:</p>
               <div class="caption-box">
                 <p style="font-weight: bold; color: #6b7280; margin: 0 0 8px 0;">Your Caption:</p>
-                <p style="margin: 0; font-size: 15px;">${caption}</p>
-                <p style="margin: 10px 0 0 0; font-size: 12px; color: #9ca3af;">Published as: ${publishedName}</p>
+                <p style="margin: 0; font-size: 15px;">${escapeHtml(caption)}</p>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #9ca3af;">Published as: ${escapeHtml(publishedName)}</p>
               </div>
               <p>Winners and selected captions may be published in an upcoming issue of The GRIT. Good luck!</p>
               <p style="font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 15px;">
@@ -290,4 +318,3 @@ export async function sendCaptionConfirmation({
     return { success: false, error };
   }
 }
-

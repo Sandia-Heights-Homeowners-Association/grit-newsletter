@@ -61,34 +61,92 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+export interface AddSubmissionDetails {
+  publishedName?: string;
+  title?: string;
+  contactName?: string;
+  contactEmail?: string;
+  location?: string;
+  itemType?: Submission['itemType'];
+  editorNotes?: string;
+  priority?: Submission['priority'];
+  needsAttention?: boolean;
+  disposition?: string;
+  month?: string;
+}
+
 // Add a new submission
 export async function addSubmission(
   category: SubmissionCategory,
   content: string,
-  publishedName?: string
+  publishedNameOrDetails?: string | AddSubmissionDetails,
+  details?: AddSubmissionDetails
 ): Promise<Submission> {
   await ensureDbInitialized();
   
   // Load deadline to calculate correct month
   const deadlineDay = await getDeadlineDay();
-  const monthKey = getCurrentMonthKey(deadlineDay);
+  const submissionDetails: AddSubmissionDetails =
+    typeof publishedNameOrDetails === 'object'
+      ? publishedNameOrDetails
+      : { ...(details || {}), publishedName: publishedNameOrDetails };
+  const monthKey = submissionDetails.month || getCurrentMonthKey(deadlineDay);
   
-  console.log('Adding submission:', { category, contentLength: content.length, publishedName, monthKey, deadlineDay });
+  console.log('Adding submission:', {
+    category,
+    contentLength: content.length,
+    publishedName: submissionDetails.publishedName,
+    contactEmail: submissionDetails.contactEmail,
+    monthKey,
+    deadlineDay,
+  });
   
   const submission: Submission = {
     id: generateId(),
     category,
     content,
     submittedAt: new Date(),
-    disposition: undefined, // Unreviewed until editor accepts for a month
+    disposition: submissionDetails.disposition, // Unreviewed until editor accepts for a month
     month: monthKey,
-    publishedName,
+    publishedName: submissionDetails.publishedName,
+    title: submissionDetails.title,
+    contactName: submissionDetails.contactName,
+    contactEmail: submissionDetails.contactEmail,
+    location: submissionDetails.location,
+    itemType: submissionDetails.itemType || 'submission',
+    editorNotes: submissionDetails.editorNotes,
+    priority: submissionDetails.priority || 'normal',
+    needsAttention: submissionDetails.needsAttention || false,
   };
   
   await db.insertSubmission(submission);
   console.log('Submission saved successfully');
   
   return submission;
+}
+
+export async function addPlaceholder(
+  category: SubmissionCategory,
+  title: string,
+  notes: string,
+  month: string,
+  priority: Submission['priority'] = 'high'
+): Promise<Submission> {
+  const trimmedTitle = title.trim();
+  const trimmedNotes = notes.trim();
+  const content = `Title: ${trimmedTitle}\nAuthor: Editor Reminder\n\n${trimmedNotes || 'Placeholder for an item that still needs copy.'}`;
+
+  return addSubmission(category, content, {
+    publishedName: 'Editor Reminder',
+    title: trimmedTitle,
+    contactName: 'Editor',
+    itemType: 'placeholder',
+    editorNotes: trimmedNotes,
+    priority,
+    needsAttention: true,
+    disposition: month,
+    month,
+  });
 }
 
 // Get all submissions for a specific month
@@ -343,7 +401,13 @@ export async function exportNewsletterText(month: string): Promise<string> {
       
       accepted.forEach((sub, idx) => {
         if (idx > 0) output += '\n\n---\n\n';
-        output += sub.content;
+        if (sub.itemType === 'placeholder') {
+          output += `*** PLACEHOLDER: ${sub.title || sub.category} ***\n`;
+          output += `${sub.editorNotes || sub.content}`;
+          output += '\n*** NEEDS ATTENTION BEFORE FINAL LAYOUT ***';
+        } else {
+          output += sub.content;
+        }
       });
       
       output += '\n\n';

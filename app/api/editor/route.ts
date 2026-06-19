@@ -10,7 +10,8 @@ import {
   deleteSubmission,
   getCategorySubmissionCounts,
   reloadData,
-  getDeadlineDay
+  getDeadlineDay,
+  addPlaceholder
 } from '@/lib/store';
 import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
@@ -152,9 +153,31 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: deleted });
 
       case 'export':
-        const exportMonth = getCurrentMonthKey(deadlineDay);
+        const exportMonth = data.month || getCurrentMonthKey(deadlineDay);
         const text = await exportNewsletterText(exportMonth);
         return NextResponse.json({ text });
+
+      case 'createPlaceholder': {
+        const { category: placeholderCategory, title, notes, month, priority } = data;
+        const targetMonth = month || getCurrentMonthKey(deadlineDay);
+
+        if (!placeholderCategory || typeof title !== 'string' || title.trim().length === 0) {
+          return NextResponse.json(
+            { error: 'Category and title are required.' },
+            { status: 400 }
+          );
+        }
+
+        const placeholder = await addPlaceholder(
+          placeholderCategory as SubmissionCategory,
+          title,
+          typeof notes === 'string' ? notes : '',
+          targetMonth,
+          priority === 'low' || priority === 'normal' || priority === 'high' ? priority : 'high'
+        );
+
+        return NextResponse.json({ success: true, submission: placeholder });
+      }
 
       case 'updateDeadline':
         const { deadlineDay: newDeadlineDay } = data;

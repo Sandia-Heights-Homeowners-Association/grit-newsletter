@@ -28,10 +28,27 @@ export async function initializeDatabase() {
         disposition TEXT,
         month TEXT NOT NULL,
         published_name TEXT,
+        title TEXT,
+        contact_name TEXT,
+        contact_email TEXT,
+        location TEXT,
+        item_type TEXT DEFAULT 'submission',
+        editor_notes TEXT,
+        priority TEXT DEFAULT 'normal',
+        needs_attention BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS title TEXT`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS contact_name TEXT`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS contact_email TEXT`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS location TEXT`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS item_type TEXT DEFAULT 'submission'`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS editor_notes TEXT`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'normal'`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS needs_attention BOOLEAN DEFAULT FALSE`;
 
     // Create indexes for common queries
     await sql`
@@ -47,6 +64,16 @@ export async function initializeDatabase() {
     await sql`
       CREATE INDEX IF NOT EXISTS idx_submissions_disposition 
       ON submissions(disposition)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_submissions_contact_email
+      ON submissions(contact_email)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_submissions_item_type
+      ON submissions(item_type)
     `;
 
     // Create composite index for common query pattern
@@ -105,6 +132,14 @@ function rowToSubmission(row: any): Submission {
     disposition: row.disposition || undefined,
     month: row.month,
     publishedName: row.published_name || undefined,
+    title: row.title || undefined,
+    contactName: row.contact_name || undefined,
+    contactEmail: row.contact_email || undefined,
+    location: row.location || undefined,
+    itemType: row.item_type || 'submission',
+    editorNotes: row.editor_notes || undefined,
+    priority: row.priority || 'normal',
+    needsAttention: Boolean(row.needs_attention),
   };
 }
 
@@ -118,6 +153,14 @@ function submissionToRow(submission: Submission) {
     disposition: submission.disposition || null,
     month: submission.month,
     published_name: submission.publishedName || null,
+    title: submission.title || null,
+    contact_name: submission.contactName || null,
+    contact_email: submission.contactEmail || null,
+    location: submission.location || null,
+    item_type: submission.itemType || 'submission',
+    editor_notes: submission.editorNotes || null,
+    priority: submission.priority || 'normal',
+    needs_attention: submission.needsAttention || false,
   };
 }
 
@@ -129,8 +172,40 @@ export const db = {
     const row = submissionToRow(submission);
     
     await sql`
-      INSERT INTO submissions (id, category, content, submitted_at, disposition, month, published_name)
-      VALUES (${row.id}, ${row.category}, ${row.content}, ${row.submitted_at}, ${row.disposition}, ${row.month}, ${row.published_name})
+      INSERT INTO submissions (
+        id,
+        category,
+        content,
+        submitted_at,
+        disposition,
+        month,
+        published_name,
+        title,
+        contact_name,
+        contact_email,
+        location,
+        item_type,
+        editor_notes,
+        priority,
+        needs_attention
+      )
+      VALUES (
+        ${row.id},
+        ${row.category},
+        ${row.content},
+        ${row.submitted_at},
+        ${row.disposition},
+        ${row.month},
+        ${row.published_name},
+        ${row.title},
+        ${row.contact_name},
+        ${row.contact_email},
+        ${row.location},
+        ${row.item_type},
+        ${row.editor_notes},
+        ${row.priority},
+        ${row.needs_attention}
+      )
     `;
     
     return submission;
@@ -377,5 +452,4 @@ export const db = {
     await sql`DELETE FROM captions`;
   },
 };
-
 

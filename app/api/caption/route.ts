@@ -99,12 +99,9 @@ export async function POST(request: NextRequest) {
       caption,
     });
 
-    // Send confirmation email (non-blocking)
-    sendCaptionConfirmation({ publishedName, fullName, email, caption }).catch(err => {
-      console.error('Caption confirmation email failed:', err);
-    });
+    const emailResult = await sendCaptionConfirmation({ publishedName, fullName, email, caption });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, email: { submitterConfirmation: emailResult } });
   } catch (error) {
     console.error('Caption POST error:', error);
     return NextResponse.json({ error: 'Failed to submit caption' }, { status: 500 });

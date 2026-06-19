@@ -62,6 +62,14 @@ export interface Submission {
   disposition?: DispositionStatus; // Optional - undefined means not yet reviewed
   month: string; // Format: YYYY-MM - the month this was originally submitted for
   publishedName?: string; // Name as it should appear in contributor list
+  title?: string;
+  contactName?: string; // Private/editor-facing contact name
+  contactEmail?: string; // Private/editor-facing contact email
+  location?: string;
+  itemType?: 'submission' | 'placeholder';
+  editorNotes?: string;
+  priority?: 'low' | 'normal' | 'high';
+  needsAttention?: boolean;
 }
 
 export interface CategoryStats {

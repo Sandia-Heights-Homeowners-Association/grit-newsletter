@@ -7,6 +7,12 @@ import ContentFlow from '@/app/components/ContentFlow';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 
+const ALL_CATEGORIES = Array.from(new Set([
+  ...COMMUNITY_CATEGORIES,
+  ...ROUTINE_CATEGORIES,
+  ...COMMITTEE_CATEGORIES,
+])) as SubmissionCategory[];
+
 /** Resize an image file to at most maxDim px on the longest side, encoded as JPEG. */
 async function resizeImageToDataUrl(file: File, maxDim = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -83,6 +89,11 @@ export default function EditorPage() {
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [previewTab, setPreviewTab] = useState<'flow' | 'preview'>('flow');
+  const [showReminderForm, setShowReminderForm] = useState(false);
+  const [reminderCategory, setReminderCategory] = useState<SubmissionCategory>('General Announcements');
+  const [reminderTitle, setReminderTitle] = useState('');
+  const [reminderNotes, setReminderNotes] = useState('');
+  const [reminderPriority, setReminderPriority] = useState<'low' | 'normal' | 'high'>('high');
   const [editingSubmission, setEditingSubmission] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     publishedName: string;
@@ -127,25 +138,36 @@ export default function EditorPage() {
   }, []);
 
   // Helper function to extract just the content that will be published
-  const extractContent = (rawContent: string, category: SubmissionCategory): string => {
+  const extractContent = (rawContent: string, category: SubmissionCategory, submission?: Submission): string => {
+    if (submission?.itemType === 'placeholder') {
+      return [
+        `*** PLACEHOLDER: ${submission.title || category} ***`,
+        submission.editorNotes || rawContent,
+        '*** NEEDS ATTENTION BEFORE FINAL LAYOUT ***',
+      ].join('\n');
+    }
+
     const lines = rawContent.split('\n');
-    
-    // First line has: "PublishedName - Title" or just "PublishedName"
     const firstLine = lines[0] || '';
-    const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
-    
+
     let publishedName = '';
     let title = '';
-    
-    if (titleMatch) {
-      publishedName = titleMatch[1].trim();
-      title = titleMatch[2].trim();
+
+    // Committee new format: first line is "Title: ...", second is "Author: ..."
+    if (firstLine.startsWith('Title:')) {
+      title = firstLine.replace(/^Title:\s*/i, '').trim();
+      const authorLine = lines.find(l => l.startsWith('Author:'));
+      publishedName = authorLine ? authorLine.replace(/^Author:\s*/i, '').trim() : '';
     } else {
-      publishedName = firstLine.trim();
+      // Community / routine format: "PublishedName - Title" or just "PublishedName"
+      const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
+      if (titleMatch) {
+        publishedName = titleMatch[1].trim();
+        title = titleMatch[2].trim();
+      } else {
+        publishedName = firstLine.replace(/^Author:\s*/i, '').trim();
+      }
     }
-    
-    // Remove "Author:" prefix if present
-    publishedName = publishedName.replace(/^Author:\s*/i, '');
     
     // Skip blank line, then skip metadata block (Full Name, Email, Location)
     let contentStart = 1;
@@ -216,7 +238,7 @@ export default function EditorPage() {
           }
           
           // Add submission content
-          sections.push(extractContent(sub.content, sub.category));
+          sections.push(extractContent(sub.content, sub.category, sub));
         });
         
         return sections.join('\n\n');
@@ -235,7 +257,7 @@ export default function EditorPage() {
       
       if (categorySubs.length > 0) {
         sections.push(`== ${sectionName}`);
-        const formattedSubs = categorySubs.map(s => extractContent(s.content, s.category));
+        const formattedSubs = categorySubs.map(s => extractContent(s.content, s.category, s));
         sections.push(formattedSubs.join('\n\n'));
       } else {
         emptySections.push(category);
@@ -491,17 +513,24 @@ export default function EditorPage() {
   const startEditingSubmission = (submissionId: string, content: string) => {
     setEditingSubmission(submissionId);
     
-    // Parse the content into structured fields
     const lines = content.split('\n');
     const firstLine = lines[0]?.trim() || '';
-    
-    // Parse "PublishedName - Title" or just "PublishedName"
-    const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
-    let publishedName = titleMatch ? titleMatch[1].trim() : firstLine;
-    const title = titleMatch ? titleMatch[2].trim() : '';
-    
-    // Remove "Author:" prefix if present
-    publishedName = publishedName.replace(/^Author:\s*/i, '');
+
+    let publishedName = '';
+    let title = '';
+
+    if (firstLine.startsWith('Title:')) {
+      // Committee new format: Title: ... / Author: ...
+      title = firstLine.replace(/^Title:\s*/i, '').trim();
+      const authorLine = lines.find(l => l.startsWith('Author:'));
+      publishedName = authorLine ? authorLine.replace(/^Author:\s*/i, '').trim() : '';
+    } else {
+      // Community format: "PublishedName - Title" or just "PublishedName"
+      const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
+      publishedName = titleMatch ? titleMatch[1].trim() : firstLine;
+      title = titleMatch ? titleMatch[2].trim() : '';
+      publishedName = publishedName.replace(/^Author:\s*/i, '').trim();
+    }
     
     // Find metadata lines
     let fullName = '';
@@ -743,7 +772,7 @@ export default function EditorPage() {
           'Authorization': `Bearer ${password}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'export' }),
+        body: JSON.stringify({ action: 'export', month: selectedMonth }),
       });
 
       if (response.ok) {
@@ -804,6 +833,49 @@ export default function EditorPage() {
     } catch (err) {
       console.error('Failed to update deadline:', err);
       alert('An error occurred while updating the deadline');
+    }
+  };
+
+  const createReminderPlaceholder = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!reminderTitle.trim()) {
+      showToastNotification('Reminder title is required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'createPlaceholder',
+          category: reminderCategory,
+          title: reminderTitle.trim(),
+          notes: reminderNotes.trim(),
+          priority: reminderPriority,
+          month: selectedMonth,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSubmissions(prev => [data.submission, ...prev]);
+        setReminderTitle('');
+        setReminderNotes('');
+        setReminderPriority('high');
+        setShowReminderForm(false);
+        showToastNotification('Reminder placeholder added');
+      } else {
+        showToastNotification(data.error || 'Failed to add reminder');
+      }
+    } catch (err) {
+      console.error('Failed to add reminder placeholder:', err);
+      showToastNotification('Failed to add reminder');
     }
   };
 
@@ -949,6 +1021,16 @@ export default function EditorPage() {
               {showBacklogPanel ? 'Hide Backlog' : `Backlog (${submissions.filter(s => s.disposition === 'backlog').length})`}
             </button>
             <button
+              onClick={() => {
+                if (selectedCategory) setReminderCategory(selectedCategory);
+                setShowReminderForm(!showReminderForm);
+              }}
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-700 hover:to-cyan-700"
+              title="Add reminder or placeholder"
+            >
+              {showReminderForm ? 'Hide Reminder' : 'Add Reminder'}
+            </button>
+            <button
               onClick={() => setShowJsonViewer(!showJsonViewer)}
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
@@ -968,6 +1050,100 @@ export default function EditorPage() {
         <h1 className="mb-3 text-3xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
+
+        {showReminderForm && (
+          <form
+            onSubmit={createReminderPlaceholder}
+            className="mb-6 rounded-lg bg-white border-2 border-cyan-300 p-4 shadow-lg"
+          >
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-cyan-950">Add Reminder Placeholder</h2>
+                <p className="mt-1 text-sm text-gray-700">
+                  Adds a visible needs-attention item to the selected issue so layout cannot forget it.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReminderForm(false)}
+                className="rounded bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-[1.2fr_0.6fr_2fr]">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                  Section
+                </label>
+                <select
+                  value={reminderCategory}
+                  onChange={(e) => setReminderCategory(e.target.value as SubmissionCategory)}
+                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                >
+                  {ALL_CATEGORIES.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                  Priority
+                </label>
+                <select
+                  value={reminderPriority}
+                  onChange={(e) => setReminderPriority(e.target.value as 'low' | 'normal' | 'high')}
+                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                >
+                  <option value="high">High</option>
+                  <option value="normal">Normal</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                  Reminder Title *
+                </label>
+                <input
+                  type="text"
+                  value={reminderTitle}
+                  onChange={(e) => setReminderTitle(e.target.value)}
+                  required
+                  placeholder="e.g. Add final board election notice"
+                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                Notes
+              </label>
+              <textarea
+                value={reminderNotes}
+                onChange={(e) => setReminderNotes(e.target.value)}
+                rows={3}
+                placeholder="What still needs to be written, verified, or placed?"
+                className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-xs text-gray-600">
+                Target issue: <span className="font-semibold text-gray-900">{selectedMonth}</span>
+              </p>
+              <button
+                type="submit"
+                className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
+              >
+                Add Placeholder
+              </button>
+            </div>
+          </form>
+        )}
         
         {showSettings && (
           <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
@@ -1341,9 +1517,17 @@ export default function EditorPage() {
                           {subs.map(sub => {
                             const lines = sub.content.split('\n');
                             const firstLine = lines[0] || '';
-                            const titleMatch = firstLine.match(/^(.+?)\s*-\s*(.+)$/);
-                            const displayName = titleMatch ? titleMatch[1].trim().replace(/^Author:\s*/i, '') : firstLine.replace(/^Author:\s*/i, '').trim();
-                            const displayTitle = titleMatch ? titleMatch[2].trim() : '';
+                            let displayName = '';
+                            let displayTitle = '';
+                            if (firstLine.startsWith('Title:')) {
+                              displayTitle = firstLine.replace(/^Title:\s*/i, '').trim();
+                              const authorLine = lines.find(l => l.startsWith('Author:'));
+                              displayName = authorLine ? authorLine.replace(/^Author:\s*/i, '').trim() : '';
+                            } else {
+                              const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
+                              displayName = titleMatch ? titleMatch[1].trim().replace(/^Author:\s*/i, '') : firstLine.replace(/^Author:\s*/i, '').trim();
+                              displayTitle = titleMatch ? titleMatch[2].trim() : '';
+                            }
                             const wordCount = getWordCount(sub.content);
                             const submittedDate = new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                             return (
@@ -2108,7 +2292,7 @@ export default function EditorPage() {
                               className="rounded bg-white border border-green-200 p-3"
                             >
                               <div className="text-sm text-gray-800 line-clamp-2 mb-2">
-                                {extractContent(sub.content, sub.category)}
+                                {extractContent(sub.content, sub.category, sub)}
                               </div>
                               <div className="mb-2 text-xs text-gray-500">
                                 Submitted: {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -2137,7 +2321,7 @@ export default function EditorPage() {
                     {(() => {
                       const combinedText = submissions
                         .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
-                        .map(s => extractContent(s.content, s.category))
+                        .map(s => extractContent(s.content, s.category, s))
                         .join('\n\n---\n\n');
                       const wordCount = combinedText.trim().split(/\s+/).filter(w => w.length > 0).length;
                       const charCount = combinedText.length;
@@ -2152,7 +2336,7 @@ export default function EditorPage() {
                     <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800">
                       {submissions
                         .filter(s => s.category === selectedCategory && s.disposition === selectedMonth && !backlog.some(b => b.id === s.id))
-                        .map(s => extractContent(s.content, s.category))
+                        .map(s => extractContent(s.content, s.category, s))
                         .join('\n\n---\n\n') || 'No submissions accepted for this month yet.'}
                     </pre>
                   </div>

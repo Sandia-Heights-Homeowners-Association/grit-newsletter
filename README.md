@@ -28,12 +28,14 @@ It provides public submission forms for neighbors, routine and committee submiss
 - Resend
 - dnd-kit for editor content ordering
 - Tiptap packages for rich text/editor support
+- Docker for optional self-hosted deployment
 
 ## Requirements
 
 - Node.js compatible with Next.js 16
 - npm
 - A Neon Postgres database URL for normal app operation
+- Docker and Docker Compose for container deployment
 
 The app initializes required database tables lazily on first use through `lib/db.ts`.
 
@@ -72,7 +74,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Neon Postgres connection string. The app throws if this is missing when database-backed routes run. |
 | `EDITOR_PASSWORD` | Yes for editor | Password used by `/editor` and protected editor APIs. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Production | Public Cloudflare Turnstile site key. A test key is used as a local fallback. |
+| `TURNSTILE_SITE_KEY` | Production | Public Cloudflare Turnstile site key served through `/api/public-config`. A test key is used as a local fallback. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Optional | Backward-compatible public Turnstile key name. Prefer `TURNSTILE_SITE_KEY` for container runtime config. |
 | `TURNSTILE_SECRET_KEY` | Production | Server-side Cloudflare Turnstile secret. In development, the API skips verification if this is absent, but forms still need a CAPTCHA token. |
 | `RESEND_API_KEY` | Optional | Enables confirmation emails. Missing key skips email sends. |
 | `EDITOR_EMAIL` | Optional | Primary recipient for editor notifications if notification sending is used. |
@@ -123,6 +126,8 @@ The viewer loads `DATABASE_URL` from `.env.local` or the current shell environme
 - `GET /api/stats` - returns current and previous collection-period stats
 - `GET /api/caption` - returns public caption contest state and image when enabled
 - `POST /api/caption` - validates CAPTCHA and stores a caption contest entry
+- `GET /api/health` - lightweight container health check
+- `GET /api/public-config` - exposes non-secret browser runtime configuration such as the Turnstile site key
 - `GET /api/editor` - returns editor dashboard data after bearer-password validation
 - `POST /api/editor` - handles editor actions such as disposition updates, exports, deadline settings, caption contest management, and deletion
 - `GET /api/backup?action=export` - exports all database-backed submissions as JSON after editor authentication
@@ -208,6 +213,20 @@ For production, configure the same environment variables in the hosting provider
 - `NEXT_PUBLIC_SITE_URL` with `https://`
 
 Run `npm run build` before deployment or let the hosting platform run the Next.js build.
+
+### DigitalOcean Docker Deployment
+
+The app can run on a DigitalOcean droplet as a standalone Next.js container:
+
+```bash
+cp .env.production.example .env.production
+docker compose up -d --build
+curl http://127.0.0.1:3000/api/health
+```
+
+The Compose file binds the app to `127.0.0.1:3000` so a host-level reverse proxy can terminate HTTPS. See [DEPLOYMENT.md](DEPLOYMENT.md) and [deploy/Caddyfile](deploy/Caddyfile).
+
+The current live path does not require Vercel services. Neon can remain the database while the web app moves to DigitalOcean; moving Postgres onto the droplet can be handled later as a separate data migration.
 
 ## License
 

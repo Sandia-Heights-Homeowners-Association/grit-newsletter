@@ -122,11 +122,13 @@ export async function POST(request: NextRequest) {
         editorNotification,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown submission error';
+    const stack = error instanceof Error ? error.stack : undefined;
     console.error('Submission error:', error);
-    console.error('Error details:', error.message, error.stack);
+    console.error('Error details:', message, stack);
     return NextResponse.json(
-      { error: 'Failed to submit', details: error.message },
+      { error: 'Failed to submit', details: message },
       { status: 500 }
     );
   }

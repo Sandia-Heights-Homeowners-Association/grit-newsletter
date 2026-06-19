@@ -2413,26 +2413,26 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Blob Storage Status Indicator */}
+        {/* Database Status Indicator */}
         {authenticated && (
           <div className="mt-6 flex justify-center">
             {blobStatus === 'checking' && (
               <div className="rounded-lg bg-gray-100 border border-gray-300 px-4 py-2 flex items-center gap-2">
                 <div className="animate-spin h-3 w-3 border-2 border-gray-600 border-t-transparent rounded-full"></div>
-                <span className="text-xs text-gray-600">Checking blob storage...</span>
+                <span className="text-xs text-gray-600">Checking database...</span>
               </div>
             )}
             {blobStatus === 'connected' && (
               <div className="rounded-lg bg-green-50 border border-green-400 px-4 py-2 flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                <span className="text-xs text-green-800">Blob storage connected</span>
+                <span className="text-xs text-green-800">Database connected</span>
               </div>
             )}
             {blobStatus === 'error' && (
               <div className="rounded-lg bg-red-50 border border-red-400 px-4 py-2">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                  <span className="text-xs text-red-800">Blob storage error</span>
+                  <span className="text-xs text-red-800">Database error</span>
                   {blobError && (
                     <span className="text-xs text-red-700">- {blobError}</span>
                   )}

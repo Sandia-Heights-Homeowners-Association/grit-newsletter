@@ -22,6 +22,7 @@ npm run dev
 npm run build
 npm run start
 npm run lint
+docker compose up -d --build
 ```
 
 There is no configured test script at the moment. Use `npm run lint` and `npm run build` as the main verification commands when appropriate.
@@ -34,7 +35,8 @@ Important variables:
 
 - `DATABASE_URL` for Neon Postgres
 - `EDITOR_PASSWORD` for `/editor` and editor APIs
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` for production CAPTCHA
+- `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` for production CAPTCHA
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is still supported for compatibility, but prefer `TURNSTILE_SITE_KEY` for container runtime config
 - `RESEND_API_KEY`, `EDITOR_EMAIL`, `EDITOR_EMAIL_BCC`, and `NEXT_PUBLIC_SITE_URL` for email behavior
 
 If `TURNSTILE_SECRET_KEY` is absent in development, server verification is skipped, but client forms still expect a CAPTCHA token.
@@ -64,6 +66,13 @@ If `TURNSTILE_SECRET_KEY` is absent in development, server verification is skipp
 - Keep the current warm GRIT visual language unless the user asks for a redesign.
 - Public pages include submission guidelines and terms; avoid hiding operationally important text behind undocumented controls.
 - Editor features include disposition management, backlog/archive views, data export, bulk deletion, content ordering, preview/export, deadline settings, and caption contest management.
+
+## Deployment Notes
+
+- Container deployment uses `Dockerfile`, `docker-compose.yml`, and standalone Next output from `next.config.ts`.
+- The Compose app binds to `127.0.0.1:3000`; use Caddy/nginx on the droplet for HTTPS.
+- Keep deployment docs in `DEPLOYMENT.md`.
+- Do not add new Vercel-only dependencies unless the user explicitly asks to return to Vercel.
 
 ## Verification
 

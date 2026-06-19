@@ -62,7 +62,7 @@ export async function sendSubmissionNotification({
     : content;
 
   try {
-    const emailPayload: any = {
+    const emailPayload = {
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [delivery.to],
@@ -167,12 +167,13 @@ export async function sendSubmitterConfirmation({
   }
 
   try {
-    const emailPayload: any = {
+    const bcc = confirmationBcc();
+    const emailPayload = {
       from: 'GRIT Newsletter <noreply@sandiaheightsgrit.app>',
       replyTo: 'griteditor@sandiahomeowners.org',
       to: [email],
       subject: `[GRIT] Submission received — ${category}`,
-      ...(confirmationBcc() ? { bcc: confirmationBcc() } : {}),
+      ...(bcc ? { bcc } : {}),
       html: `
         <!DOCTYPE html>
         <html>

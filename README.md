@@ -15,7 +15,7 @@ It provides public submission forms for neighbors, routine and committee submiss
 - Editor dashboard for reviewing submissions, assigning dispositions, editing entries, ordering content, exporting newsletter text, and exporting all data
 - Quick editor-created reminder/placeholders that appear in issue preview/export until resolved
 - Optional caption contest with editor-managed image, title, description, entries, and public submission page
-- Local JSON backup/export helpers for database data snapshots
+- Database-backed JSON export from the editor dashboard
 
 ## Tech Stack
 
@@ -84,6 +84,15 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Do not commit `.env.local` or real credentials.
 
+### Environment File Rules
+
+- `.env.example` is the committed local development template.
+- `.env.local` is the ignored local development file used by `npm run dev`.
+- `.env.production.example` is the committed Docker/DigitalOcean template.
+- `.env.production` is the ignored production runtime file used by Docker Compose because `docker-compose.yml` lists it under `env_file`.
+- Do not commit real database URLs, API keys, editor passwords, Vercel tokens, or production `.env` files.
+- `TURNSTILE_SITE_KEY` is the canonical public Turnstile key. `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is only a temporary compatibility fallback.
+
 ## Available Commands
 
 ```bash
@@ -130,7 +139,7 @@ The viewer loads `DATABASE_URL` from `.env.local` or the current shell environme
 - `GET /api/public-config` - exposes non-secret browser runtime configuration such as the Turnstile site key
 - `GET /api/editor` - returns editor dashboard data after bearer-password validation
 - `POST /api/editor` - handles editor actions such as disposition updates, exports, deadline settings, caption contest management, and deletion
-- `GET /api/backup?action=export` - exports all database-backed submissions as JSON after editor authentication
+- `GET /api/backup?action=export` - exports database-backed submissions as JSON after editor authentication
 
 ## Data Model
 
@@ -165,9 +174,7 @@ The `month` field records the original collection period and should be treated a
 
 The editor dashboard can export all database-backed submissions as JSON and export accepted newsletter content as text.
 
-`lib/backup.ts` can also create and restore local JSON snapshots under `data/backups/`, but live app reads and writes go through Neon. The `data/` directory is gitignored.
-
-Some root docs and scripts still describe earlier file-based or Vercel Blob storage iterations. Treat this README and the current source code as authoritative for the present implementation.
+The editor dashboard can export all database-backed submissions as JSON. Live app reads and writes go through Postgres.
 
 ## Project Structure
 
@@ -181,7 +188,7 @@ app/
   routine/             Routine content submission form
   submit/              Community submission forms
 lib/
-  backup.ts            Database export/import and local backup helpers
+  backup.ts            Database export helper
   constants.ts         App labels, editor password, month/deadline helpers
   db.ts                Neon schema and query helpers
   email.ts             Resend email helpers
@@ -189,8 +196,6 @@ lib/
   types.ts             Categories and submission types
 public/
   logo.png             Primary GRIT logo
-data/
-  backups/             Local backup snapshots, gitignored
 ```
 
 ## Development Notes
@@ -200,11 +205,11 @@ data/
 - Keep month/deadline logic centralized in `lib/constants.ts` and `lib/store.ts`.
 - Editor authentication is simple bearer-password checking, not a full session/auth provider.
 - Routine and committee forms are currently public forms protected by CAPTCHA rather than password-gated pages.
-- `scripts/` contains historical Blob migration/debug utilities and is excluded from TypeScript. The normal app workflow does not depend on those scripts.
+- Historical file-storage migration notes have been removed; current app storage is Postgres-backed.
 
 ## Deployment
 
-For production, configure the same environment variables in the hosting provider:
+For production, configure the same environment variables in the hosting environment:
 
 - `DATABASE_URL`
 - `EDITOR_PASSWORD`
@@ -212,7 +217,7 @@ For production, configure the same environment variables in the hosting provider
 - Resend settings if email confirmations should be sent
 - `NEXT_PUBLIC_SITE_URL` with `https://`
 
-Run `npm run build` before deployment or let the hosting platform run the Next.js build.
+`next build` and `next start` follow Next.js production-mode environment loading. In the standalone Docker deployment, the container receives runtime values from Compose rather than from committed files.
 
 ### DigitalOcean Docker Deployment
 
@@ -227,6 +232,8 @@ curl http://127.0.0.1:3000/api/health
 The Compose file binds the app to `127.0.0.1:3000` so a host-level reverse proxy can terminate HTTPS. See [DEPLOYMENT.md](DEPLOYMENT.md) and [deploy/Caddyfile](deploy/Caddyfile).
 
 The current live path does not require Vercel services. Neon can remain the database while the web app moves to DigitalOcean; moving Postgres onto the droplet can be handled later as a separate data migration.
+
+The Docker image should remain secret-free. Keep `.env.production` on the server, or inject the same variables through your deployment system. Resend remains the recommended outbound email provider for now because it is already integrated and simpler than Microsoft Graph OAuth for transactional confirmations.
 
 ## License
 

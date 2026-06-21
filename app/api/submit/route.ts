@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addSubmission } from '@/lib/store';
 import type { SubmissionCategory } from '@/lib/types';
-import { sendSubmissionNotification, sendSubmitterConfirmation } from '@/lib/email';
+import { sendSubmitterConfirmation } from '@/lib/email';
 import { normalizeEmail, normalizeText, parseSubmissionMetadata } from '@/lib/submissionMetadata';
 
 // Verify Cloudflare Turnstile token
@@ -96,30 +96,19 @@ export async function POST(request: NextRequest) {
     
     console.log('Submission created successfully:', submission.id);
 
-    const [submitterConfirmation, editorNotification] = await Promise.all([
-      sendSubmitterConfirmation({
-        category,
-        publishedName,
-        content,
-        fullName,
-        email,
-      }),
-      sendSubmissionNotification({
-        category,
-        publishedName,
-        content,
-        fullName,
-        email,
-        location,
-      }),
-    ]);
+    const submitterConfirmation = await sendSubmitterConfirmation({
+      category,
+      publishedName,
+      content,
+      fullName,
+      email,
+    });
     
     return NextResponse.json({ 
       success: true, 
       submission,
       email: {
         submitterConfirmation,
-        editorNotification,
       },
     });
   } catch (error) {

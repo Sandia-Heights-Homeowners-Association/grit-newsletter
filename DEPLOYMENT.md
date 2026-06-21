@@ -14,6 +14,8 @@ cp .env.production.example .env.production
 
 Edit `.env.production` with the real database URL, editor password, Turnstile keys, Resend key, and public site URL.
 
+`docker-compose.yml` requires `.env.production` through `env_file`. If this file is missing, Compose stops before the app starts. This is separate from Next.js automatic `.env*` loading.
+
 ## Build And Run
 
 ```bash
@@ -48,7 +50,13 @@ docker image prune -f
 
 The current live data source is Postgres through `DATABASE_URL`. Neon can remain the database while the app moves off Vercel. If you later move Postgres onto the droplet, use a Docker volume or managed backup process before switching `DATABASE_URL`.
 
-Caption contest images are stored in Postgres as text. There is no Vercel Blob dependency in the current live path.
+Caption contest images are stored in Postgres as text. There is no object-storage dependency in the current live path.
+
+## Secrets
+
+Keep the Docker image secret-free. Do not commit `.env.local`, `.env.production`, database URLs, API keys, editor passwords, Vercel tokens, or provider credentials.
+
+Use Resend for outbound submission emails for now. It is already integrated and is simpler for transactional confirmations than Microsoft Graph. Revisit Microsoft Graph only if SHHA requires mail to originate from Microsoft 365 or needs Microsoft 365 audit/compliance controls.
 
 ## Backups
 

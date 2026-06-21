@@ -6,14 +6,14 @@ Guidance for coding agents working on this repository.
 
 This is The GRIT newsletter submission and editor system for the Sandia Heights Homeowners Association. It is a Next.js 16 App Router app using React 19, TypeScript, Tailwind CSS 4, Neon Postgres, Cloudflare Turnstile, Resend, dnd-kit, and Tiptap packages.
 
-The normal live data path is Neon Postgres through `lib/db.ts` and `lib/store.ts`. Local JSON is used for export/backup helpers only.
+The normal live data path is Postgres through `lib/db.ts` and `lib/store.ts`. The editor can export database data as JSON, but local JSON files are not live storage.
 
 ## First Things To Check
 
 - Run `git status --short` before editing. This repo may contain user changes; do not revert them.
 - Prefer `rg` and `rg --files` for searching.
 - Read `README.md`, `package.json`, `lib/db.ts`, `lib/store.ts`, `lib/types.ts`, and the relevant route/page before making behavioral changes.
-- Treat comments or docs mentioning Vercel Blob or file-based live storage as legacy unless the current source code proves otherwise.
+- Treat comments or docs mentioning file-based live storage as legacy unless the current source code proves otherwise.
 
 ## Commands
 
@@ -41,6 +41,10 @@ Important variables:
 
 If `TURNSTILE_SECRET_KEY` is absent in development, server verification is skipped, but client forms still expect a CAPTCHA token.
 
+Committed env templates are limited to `.env.example` for local development and `.env.production.example` for Docker/DigitalOcean production. Real `.env.local`, `.env.production`, API keys, database URLs, editor passwords, and provider tokens must remain ignored.
+
+Docker Compose uses `.env.production` because `docker-compose.yml` explicitly lists it under `env_file`; this is separate from Next.js automatic env loading.
+
 ## Data And Domain Rules
 
 - The `submissions.month` value records the original target issue/collection period and should remain immutable.
@@ -53,8 +57,7 @@ If `TURNSTILE_SECRET_KEY` is absent in development, server verification is skipp
 ## Editing Guidance
 
 - Keep changes scoped. Avoid unrelated refactors or broad UI rewrites.
-- Do not edit `.env.local`, `.next/`, `node_modules/`, generated TypeScript build info, or local backup data unless explicitly asked.
-- The `scripts/` folder contains historical local migration/debug utilities, many from a Vercel Blob era. Do not assume they are part of the current app workflow.
+- Do not edit `.env.local`, `.next/`, `node_modules/`, or generated TypeScript build info unless explicitly asked.
 - Use `apply_patch` for manual edits.
 - Preserve existing TypeScript strictness and the `@/*` path alias.
 - For public form changes, check both the page component and `app/api/submit/route.ts`.
@@ -73,6 +76,7 @@ If `TURNSTILE_SECRET_KEY` is absent in development, server verification is skipp
 - The Compose app binds to `127.0.0.1:3000`; use Caddy/nginx on the droplet for HTTPS.
 - Keep deployment docs in `DEPLOYMENT.md`.
 - Do not add new Vercel-only dependencies unless the user explicitly asks to return to Vercel.
+- Keep the Docker image secret-free. Runtime secrets belong in `.env.production` on the server or an equivalent secret injection mechanism.
 
 ## Verification
 

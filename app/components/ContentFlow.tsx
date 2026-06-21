@@ -185,6 +185,19 @@ interface SubmissionTileProps {
   isDragging?: boolean;
 }
 
+function uniqueSubmissionsById(submissions: Submission[]): Submission[] {
+  const seen = new Set<string>();
+  return submissions.filter((submission) => {
+    if (seen.has(submission.id)) return false;
+    seen.add(submission.id);
+    return true;
+  });
+}
+
+function uniqueIds(ids: string[]): string[] {
+  return Array.from(new Set(ids));
+}
+
 function extractTitle(content: string, category?: string): string {
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() || '';
@@ -338,9 +351,6 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
 export default function ContentFlow({ submissions, selectedMonth, customOrder, onOrderChange }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Track whether the user has reordered within this month so we don't
-  // stomp their drag result with the incoming customOrder prop.
-  const isDraggingRef = React.useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -358,18 +368,19 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
   // use it is on the *initial* mount or when the month changes.  After
   // that, local drag-and-drop state is authoritative.
   useEffect(() => {
-    const monthSubmissions = submissions.filter(
-      s => s.disposition === selectedMonth
+    const monthSubmissions = uniqueSubmissionsById(
+      submissions.filter(s => s.disposition === selectedMonth)
     );
+    const orderedIds = uniqueIds(customOrder || []);
 
     // If we already have a custom order, apply it
-    if (customOrder && customOrder.length > 0) {
-      const ordered = customOrder
+    if (orderedIds.length > 0) {
+      const ordered = orderedIds
         .map(id => monthSubmissions.find(s => s.id === id))
         .filter((s): s is Submission => s !== undefined);
       // Include any new submissions not yet in the custom order
       const remaining = monthSubmissions.filter(
-        s => !customOrder.includes(s.id)
+        s => !orderedIds.includes(s.id)
       );
       setOrderedSubmissions([...ordered, ...remaining]);
       return;
@@ -391,33 +402,32 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
 
   // Stable ref for the callback so we can call it without re-triggering effects
   const onOrderChangeRef = React.useRef(onOrderChange);
-  onOrderChangeRef.current = onOrderChange;
+  useEffect(() => {
+    onOrderChangeRef.current = onOrderChange;
+  }, [onOrderChange]);
 
   function handleDragStart(event: DragStartEvent) {
-    isDraggingRef.current = true;
     setActiveId(event.active.id as string);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    isDraggingRef.current = false;
 
     if (over && active.id !== over.id) {
-      setOrderedSubmissions((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id);
-        const newIndex = items.findIndex(item => item.id === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Notify parent of the new order immediately (via ref to avoid loops)
-        onOrderChangeRef.current(newItems.map(s => s.id));
-        return newItems;
-      });
+      const oldIndex = orderedSubmissions.findIndex(item => item.id === active.id);
+      const newIndex = orderedSubmissions.findIndex(item => item.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const newItems = uniqueSubmissionsById(arrayMove(orderedSubmissions, oldIndex, newIndex));
+      setOrderedSubmissions(newItems);
+      onOrderChangeRef.current(newItems.map(s => s.id));
     }
   }
 
   function handleDragCancel() {
     setActiveId(null);
-    isDraggingRef.current = false;
   }
 
   if (orderedSubmissions.length === 0) {

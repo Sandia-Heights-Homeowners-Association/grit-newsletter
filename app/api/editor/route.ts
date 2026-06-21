@@ -13,7 +13,7 @@ import {
   getDeadlineDay,
   addPlaceholder
 } from '@/lib/store';
-import { getCurrentMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
+import { getEditorMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/lib/constants';
 import { SubmissionCategory } from '@/lib/types';
 import { setDeadlineDay } from '@/lib/store';
 import { db } from '@/lib/db';
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // Check if a specific month is requested
     const { searchParams } = new URL(request.url);
     const requestedMonth = searchParams.get('month');
-    const month = requestedMonth || getCurrentMonthKey(deadlineDay);
+    const month = requestedMonth || getEditorMonthKey();
     
     const submissions = await getSubmissionsByMonth(month);
     const deadlineInfo = getNextPublicationInfo(deadlineDay);
@@ -103,9 +103,6 @@ export async function POST(request: NextRequest) {
     // Reload data from blob to ensure fresh data
     await reloadData();
     
-    // Load deadline from blob
-    const deadlineDay = await getDeadlineDay();
-    
     const body = await request.json();
     const { action, ...data } = body;
 
@@ -128,20 +125,20 @@ export async function POST(request: NextRequest) {
 
       case 'getBacklog':
         const { category: cat } = data;
-        const month2 = getCurrentMonthKey(deadlineDay);
+        const month2 = getEditorMonthKey();
         const backlog = await getBackloggedSubmissions(cat as SubmissionCategory, month2);
         const archived = await getArchivedSubmissions(cat as SubmissionCategory);
         return NextResponse.json({ backlog, archived });
 
       case 'getCategorySubmissions':
         const { category: category3 } = data;
-        const month3 = getCurrentMonthKey(deadlineDay);
+        const month3 = getEditorMonthKey();
         const subs = await getSubmissionsByCategory(category3 as SubmissionCategory, month3);
         return NextResponse.json({ submissions: subs });
 
       case 'getCategoryCounts':
         const { category: countCat } = data;
-        const countMonth = getCurrentMonthKey(deadlineDay);
+        const countMonth = getEditorMonthKey();
         const counts = await getCategorySubmissionCounts(countCat as SubmissionCategory, countMonth);
         return NextResponse.json({ counts });
 
@@ -153,13 +150,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: deleted });
 
       case 'export':
-        const exportMonth = data.month || getCurrentMonthKey(deadlineDay);
+        const exportMonth = data.month || getEditorMonthKey();
         const text = await exportNewsletterText(exportMonth);
         return NextResponse.json({ text });
 
       case 'createPlaceholder': {
         const { category: placeholderCategory, title, notes, month, priority } = data;
-        const targetMonth = month || getCurrentMonthKey(deadlineDay);
+        const targetMonth = month || getEditorMonthKey();
 
         if (!placeholderCategory || typeof title !== 'string' || title.trim().length === 0) {
           return NextResponse.json(

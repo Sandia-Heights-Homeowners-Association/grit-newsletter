@@ -45,6 +45,16 @@ export function getCurrentMonthKey(deadlineDay: number = 20): string {
   return `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// Editor planning defaults to the next issue still being assembled.
+// Public submissions may already be collecting for the following issue after
+// deadline day, but editors usually keep laying out next month's issue until
+// the first day of that issue month.
+export function getEditorMonthKey(): string {
+  const now = new Date();
+  const targetMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export function getPreviousMonthKey(deadlineDay: number = 20): string {
   const now = new Date();
   const dayOfMonth = now.getDate();

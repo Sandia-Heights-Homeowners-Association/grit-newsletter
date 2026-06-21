@@ -180,6 +180,7 @@ interface ContentFlowProps {
   categoryOrder?: string[];
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
+  onDismissPlaceholder?: (submissionId: string) => void;
   onOrderChange: (orderedIds: string[]) => void;
 }
 
@@ -312,18 +313,24 @@ function isAutoMissingPlaceholder(submission: Submission): boolean {
   return submission.id.startsWith('auto-placeholder-') && submission.needsAttention === true;
 }
 
+function isManualPlaceholder(submission: Submission): boolean {
+  return submission.itemType === 'placeholder' && !isAutoMissingPlaceholder(submission);
+}
+
 function SortableSubmissionTile({
   submission,
   isExpanded,
   onToggleExpanded,
   onMoveToBacklog,
   onDismissMissing,
+  onDismissPlaceholder,
 }: {
   submission: Submission;
   isExpanded: boolean;
   onToggleExpanded: () => void;
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
+  onDismissPlaceholder?: (submissionId: string) => void;
 }) {
   const {
     attributes,
@@ -343,7 +350,8 @@ function SortableSubmissionTile({
   const title = extractTitle(submission.content, submission.category);
   const author = extractAuthor(submission.content);
   const missingPlaceholder = isAutoMissingPlaceholder(submission);
-  const wordCount = missingPlaceholder ? 0 : getWordCount(submission.content);
+  const manualPlaceholder = isManualPlaceholder(submission);
+  const wordCount = missingPlaceholder || manualPlaceholder ? 0 : getWordCount(submission.content);
   const colors = getSectionColors(submission.category);
   const tileColors = missingPlaceholder
     ? {
@@ -352,6 +360,13 @@ function SortableSubmissionTile({
         hoverBorder: 'hover:border-red-600',
         text: 'text-red-800',
       }
+    : manualPlaceholder
+    ? {
+        bg: 'bg-orange-100',
+        border: 'border-orange-600',
+        hoverBorder: 'hover:border-orange-700',
+        text: 'text-orange-900',
+      }
     : colors;
 
   return (
@@ -359,7 +374,7 @@ function SortableSubmissionTile({
       ref={setNodeRef}
       style={style}
       className={`
-        ${tileColors.bg} rounded-md border-2 p-2
+        ${tileColors.bg} rounded-md ${manualPlaceholder ? 'border-4' : 'border-2'} p-2
         transition-all duration-200
         ${isDragging ? 'border-orange-400 shadow-lg' : `${tileColors.border} ${tileColors.hoverBorder} hover:shadow-md`}
       `}
@@ -379,10 +394,10 @@ function SortableSubmissionTile({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-sm truncate">
-            {title}
+            {manualPlaceholder ? `PLACEHOLDER: ${title}` : title}
           </h3>
           <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
-            {!missingPlaceholder && (
+            {!missingPlaceholder && !manualPlaceholder && (
               <>
                 <span className="truncate">{author}</span>
                 <span className="text-gray-400">•</span>
@@ -394,6 +409,12 @@ function SortableSubmissionTile({
                 <span className="text-gray-400">•</span>
               </>
             )}
+            {manualPlaceholder && (
+              <>
+                <span className="font-semibold text-orange-900">Quick placeholder</span>
+                <span className="text-gray-400">•</span>
+              </>
+            )}
             <span className={`${tileColors.text} font-medium truncate`}>
               {submission.category}
             </span>
@@ -401,7 +422,7 @@ function SortableSubmissionTile({
             <span className="text-gray-500 flex-shrink-0">{wordCount} words</span>
           </div>
         </div>
-        {!missingPlaceholder && onMoveToBacklog && (
+        {!missingPlaceholder && !manualPlaceholder && onMoveToBacklog && (
           <button
             type="button"
             onClick={() => onMoveToBacklog(submission.id)}
@@ -417,6 +438,17 @@ function SortableSubmissionTile({
             className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded border border-red-400 bg-white text-sm font-bold text-red-800 transition hover:bg-red-50"
             aria-label={`Dismiss missing ${submission.category}`}
             title="Dismiss"
+          >
+            ×
+          </button>
+        )}
+        {manualPlaceholder && onDismissPlaceholder && (
+          <button
+            type="button"
+            onClick={() => onDismissPlaceholder(submission.id)}
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded border border-orange-500 bg-white text-sm font-bold text-orange-900 transition hover:bg-orange-50"
+            aria-label={`Dismiss placeholder ${title}`}
+            title="Dismiss placeholder"
           >
             ×
           </button>
@@ -447,6 +479,7 @@ export default function ContentFlow({
   categoryOrder,
   onMoveToBacklog,
   onDismissMissing,
+  onDismissPlaceholder,
   onOrderChange,
 }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
@@ -580,6 +613,7 @@ export default function ContentFlow({
                 isExpanded={expandedIds.has(submission.id)}
                 onMoveToBacklog={onMoveToBacklog}
                 onDismissMissing={onDismissMissing}
+                onDismissPlaceholder={onDismissPlaceholder}
                 onToggleExpanded={() => {
                   setExpandedIds(prev => {
                     const next = new Set(prev);
@@ -600,6 +634,7 @@ export default function ContentFlow({
           {activeSubmission ? (
             (() => {
               const missingPlaceholder = isAutoMissingPlaceholder(activeSubmission);
+              const manualPlaceholder = isManualPlaceholder(activeSubmission);
               const colors = missingPlaceholder
                 ? {
                     bg: 'bg-red-100',
@@ -607,14 +642,23 @@ export default function ContentFlow({
                     hoverBorder: 'hover:border-red-600',
                     text: 'text-red-800',
                   }
+                : manualPlaceholder
+                ? {
+                    bg: 'bg-orange-100',
+                    border: 'border-orange-600',
+                    hoverBorder: 'hover:border-orange-700',
+                    text: 'text-orange-900',
+                  }
                 : getSectionColors(activeSubmission.category);
               return (
-                <div className={`${colors.bg} rounded-md border-2 border-orange-400 p-2 shadow-2xl opacity-95`}>
+                <div className={`${colors.bg} rounded-md ${manualPlaceholder ? 'border-4' : 'border-2'} border-orange-400 p-2 shadow-2xl opacity-95`}>
                   <div className="flex items-center gap-2">
                     <div className="text-gray-400 text-base flex-shrink-0">⋮⋮</div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 text-sm truncate">
-                        {extractTitle(activeSubmission.content, activeSubmission.category)}
+                        {manualPlaceholder
+                          ? `PLACEHOLDER: ${extractTitle(activeSubmission.content, activeSubmission.category)}`
+                          : extractTitle(activeSubmission.content, activeSubmission.category)}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-0.5">
                         <span className="truncate">{extractAuthor(activeSubmission.content)}</span>
@@ -624,7 +668,7 @@ export default function ContentFlow({
                         </span>
                         <span className="text-gray-400">•</span>
                         <span className="text-gray-500 flex-shrink-0">
-                          {missingPlaceholder ? 0 : getWordCount(activeSubmission.content)} words
+                          {missingPlaceholder || manualPlaceholder ? 0 : getWordCount(activeSubmission.content)} words
                         </span>
                       </div>
                     </div>

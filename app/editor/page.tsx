@@ -211,6 +211,17 @@ export default function EditorPage() {
 
   const plannedSubmissions = submissions.filter(s => s.disposition === selectedMonth);
   const backlogSubmissions = submissions.filter(s => s.disposition === 'backlog');
+  const inboxAndBacklogSubmissions = uniqueSubmissionsById([
+    ...inboxSubmissions,
+    ...backlogSubmissions,
+  ])
+    .filter(s => s.itemType !== 'placeholder')
+    .sort((a, b) => {
+      const aRank = a.disposition === 'backlog' ? 1 : 0;
+      const bRank = b.disposition === 'backlog' ? 1 : 0;
+      if (aRank !== bRank) return aRank - bRank;
+      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+    });
   const missingMonthlyCategories = defaultMonthlyCategories.filter(category =>
     !plannedSubmissions.some(s => s.category === category && s.itemType !== 'placeholder')
   );
@@ -234,7 +245,29 @@ export default function EditorPage() {
 
   const handleOrderChange = useCallback((orderedIds: string[]) => {
     setCustomOrder(orderedIds);
-  }, []);
+
+    if (!selectedMonth) return;
+
+    fetch('/api/editor', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${password}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'updateContentOrder',
+        month: selectedMonth,
+        orderedIds,
+      }),
+    }).then((response) => {
+      if (!response.ok) {
+        showToastNotification('Failed to save content order');
+      }
+    }).catch((err) => {
+      console.error('Failed to save content order:', err);
+      showToastNotification('Failed to save content order');
+    });
+  }, [password, selectedMonth]);
 
   // Helper function to extract just the content that will be published
   const extractContent = (rawContent: string, category: SubmissionCategory, submission?: Submission): string => {
@@ -424,6 +457,7 @@ export default function EditorPage() {
         setCurrentMonth(data.month || '');
         setSelectedMonth(data.month || '');
         setAvailableMonths(data.availableMonths || []);
+        setCustomOrder(Array.isArray(data.contentOrder) ? data.contentOrder : []);
         setCategoryOrder(
           Array.isArray(data.categoryOrder) && data.categoryOrder.length > 0
             ? Array.from(new Set([...data.categoryOrder, ...DEFAULT_CATEGORY_ORDER])) as SubmissionCategory[]
@@ -1179,13 +1213,13 @@ export default function EditorPage() {
         {showReminderForm && (
           <form
             onSubmit={createReminderPlaceholder}
-            className="mb-6 rounded-lg bg-white border-2 border-cyan-300 p-4 shadow-lg"
+            className="mb-6 rounded-lg bg-orange-50 border-4 border-orange-500 p-4 shadow-lg"
           >
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-cyan-950">Add Reminder Placeholder</h2>
+                <h2 className="text-xl font-bold text-orange-950">Add Placeholder</h2>
                 <p className="mt-1 text-sm text-gray-700">
-                  Adds a visible needs-attention item to the selected issue so layout cannot forget it.
+                  Adds an orange placeholder directly to Content Flow for this issue.
                 </p>
               </div>
               <button
@@ -1197,7 +1231,7 @@ export default function EditorPage() {
               </button>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-[1.2fr_0.6fr_2fr]">
+            <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
                   Section
@@ -1205,7 +1239,7 @@ export default function EditorPage() {
                 <select
                   value={reminderCategory}
                   onChange={(e) => setReminderCategory(e.target.value as SubmissionCategory)}
-                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                  className="w-full rounded border border-orange-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                 >
                   {ALL_CATEGORIES.map(category => (
                     <option key={category} value={category}>{category}</option>
@@ -1215,30 +1249,15 @@ export default function EditorPage() {
 
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  Priority
-                </label>
-                <select
-                  value={reminderPriority}
-                  onChange={(e) => setReminderPriority(e.target.value as 'low' | 'normal' | 'high')}
-                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
-                >
-                  <option value="high">High</option>
-                  <option value="normal">Normal</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  Reminder Title *
+                  Placeholder Title *
                 </label>
                 <input
                   type="text"
                   value={reminderTitle}
                   onChange={(e) => setReminderTitle(e.target.value)}
                   required
-                  placeholder="e.g. Add final board election notice"
-                  className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                  placeholder="e.g. Follow up on tramway article"
+                  className="w-full rounded border border-orange-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                 />
               </div>
             </div>
@@ -1251,8 +1270,8 @@ export default function EditorPage() {
                 value={reminderNotes}
                 onChange={(e) => setReminderNotes(e.target.value)}
                 rows={3}
-                placeholder="What still needs to be written, verified, or placed?"
-                className="w-full rounded border border-cyan-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                placeholder="Short reminder from a meeting, event, or email"
+                className="w-full rounded border border-orange-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
               />
             </div>
 
@@ -1262,7 +1281,7 @@ export default function EditorPage() {
               </p>
               <button
                 type="submit"
-                className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
+                className="rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-orange-800"
               >
                 Add Placeholder
               </button>
@@ -1683,138 +1702,107 @@ export default function EditorPage() {
                 <h2 className="text-2xl font-bold text-blue-950">Inbox and Backlog</h2>
                 <p className="text-sm text-gray-700">New items and held items in one review pane.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReminderForm(true);
-                  setEditorView('planning');
-                }}
-                className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
-              >
-                Add Placeholder
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-900">
+                  {inboxSubmissions.filter(s => s.itemType !== 'placeholder').length} new
+                </span>
+                <span className="rounded bg-yellow-100 px-3 py-1.5 text-xs font-semibold text-yellow-900">
+                  {backlogSubmissions.filter(s => s.itemType !== 'placeholder').length} backlog
+                </span>
+              </div>
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-2">
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-blue-950">Inbox</h3>
-                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-900">{inboxSubmissions.length}</span>
-                </div>
-                {inboxSubmissions.length === 0 ? (
-                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">
-                    Inbox is clear for now.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {inboxSubmissions.map(sub => {
-                      const expanded = expandedInboxItems.has(sub.id);
-                      return (
-                        <article key={sub.id} className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <h3 className="truncate text-base font-bold text-gray-950">{getSubmissionTitle(sub)}</h3>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-700">
-                                <span>{getSubmissionAuthor(sub)}</span>
-                                <span className="text-gray-400">|</span>
-                                <span className="font-semibold text-blue-800">{sub.category}</span>
-                                <span className="text-gray-400">|</span>
-                                <span>{getPublishedWordCount(sub)} words</span>
-                                <span className="text-gray-400">|</span>
-                                <span>{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleInboxExpanded(sub.id)}
-                              className="rounded border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-100"
-                            >
-                              {expanded ? 'Collapse' : 'Read'}
-                            </button>
-                          </div>
-
-                          {expanded ? (
-                            <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded border border-white bg-white p-3 font-sans text-sm leading-6 text-gray-800">
-                              {extractContent(sub.content, sub.category, sub)}
-                            </pre>
-                          ) : (
-                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-800">
-                              {extractContent(sub.content, sub.category, sub)}
-                            </p>
-                          )}
-
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => updateDisposition(sub.id, selectedMonth)}
-                              className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
-                            >
-                              Plan for {selectedMonth}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateDisposition(sub.id, 'backlog')}
-                              className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
-                            >
-                              Backlog
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateDisposition(sub.id, 'archived')}
-                              className="rounded bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
-                            >
-                              Archive
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
+            {inboxAndBacklogSubmissions.length === 0 ? (
+              <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">
+                No inbox or backlog submissions.
               </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-yellow-950">Backlog</h3>
-                  <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{backlogSubmissions.length}</span>
-                </div>
-                {backlogSubmissions.length === 0 ? (
-                  <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-5 text-sm text-yellow-950">
-                    No backlogged submissions.
-                  </div>
-                ) : (
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {backlogSubmissions.map(sub => (
-                      <article key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                        <div className="flex items-start gap-2">
-                          <p className="min-w-0 flex-1 text-sm font-bold leading-5 text-gray-950">{getSubmissionTitle(sub)}</p>
-                          <button
-                            type="button"
-                            onClick={() => updateDisposition(sub.id, 'archived')}
-                            className="flex h-6 w-6 items-center justify-center rounded border border-yellow-300 bg-white text-xs font-bold text-yellow-900 transition hover:bg-yellow-100"
-                            aria-label={`Archive ${getSubmissionTitle(sub)}`}
-                            title="Archive"
-                          >
-                            ×
-                          </button>
+            ) : (
+              <div className="space-y-3">
+                {inboxAndBacklogSubmissions.map(sub => {
+                  const expanded = expandedInboxItems.has(sub.id);
+                  const isBacklog = sub.disposition === 'backlog';
+                  return (
+                    <article
+                      key={sub.id}
+                      className={`rounded-lg border p-4 ${
+                        isBacklog
+                          ? 'border-yellow-200 bg-yellow-50'
+                          : 'border-blue-200 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <span className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                              isBacklog ? 'bg-yellow-200 text-yellow-950' : 'bg-blue-200 text-blue-950'
+                            }`}>
+                              {isBacklog ? 'Backlog' : 'New'}
+                            </span>
+                            <h3 className="min-w-0 flex-1 truncate text-base font-bold text-gray-950">{getSubmissionTitle(sub)}</h3>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                            <span>{getSubmissionAuthor(sub)}</span>
+                            <span className="text-gray-400">|</span>
+                            <span className={isBacklog ? 'font-semibold text-yellow-900' : 'font-semibold text-blue-800'}>{sub.category}</span>
+                            <span className="text-gray-400">|</span>
+                            <span>{getPublishedWordCount(sub)} words</span>
+                            <span className="text-gray-400">|</span>
+                            <span>{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          </div>
                         </div>
-                        <p className="mt-1 text-xs text-gray-700">{sub.category} | {getPublishedWordCount(sub)} words</p>
-                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-800">
+                        <button
+                          type="button"
+                          onClick={() => toggleInboxExpanded(sub.id)}
+                          className={`rounded border bg-white px-3 py-1.5 text-xs font-semibold transition ${
+                            isBacklog
+                              ? 'border-yellow-300 text-yellow-950 hover:bg-yellow-100'
+                              : 'border-blue-300 text-blue-900 hover:bg-blue-100'
+                          }`}
+                        >
+                          {expanded ? 'Collapse' : 'Read'}
+                        </button>
+                      </div>
+
+                      {expanded ? (
+                        <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded border border-white bg-white p-3 font-sans text-sm leading-6 text-gray-800">
+                          {extractContent(sub.content, sub.category, sub)}
+                        </pre>
+                      ) : (
+                        <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-800">
                           {extractContent(sub.content, sub.category, sub)}
                         </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => updateDisposition(sub.id, selectedMonth)}
-                          className="mt-3 rounded bg-green-700 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-green-800"
+                          className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
                         >
-                          Pull into {selectedMonth}
+                          {isBacklog ? `Pull into ${selectedMonth}` : `Plan for ${selectedMonth}`}
                         </button>
-                      </article>
-                    ))}
-                  </div>
-                )}
+                        {!isBacklog && (
+                          <button
+                            type="button"
+                            onClick={() => updateDisposition(sub.id, 'backlog')}
+                            className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
+                          >
+                            Backlog
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => updateDisposition(sub.id, 'archived')}
+                          className="rounded bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
+                        >
+                          Archive
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </section>
         )}
 
@@ -2397,6 +2385,7 @@ export default function EditorPage() {
                   onDismissMissing={(category) => {
                     setDismissedMissingCategories(prev => new Set(prev).add(category));
                   }}
+                  onDismissPlaceholder={(submissionId) => updateDisposition(submissionId, 'archived')}
                   onOrderChange={handleOrderChange}
                 />
               )}

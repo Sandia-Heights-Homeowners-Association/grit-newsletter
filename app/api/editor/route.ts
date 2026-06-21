@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
     const availableMonths = getAvailableMonths();
     const categoryOrder = await db.getConfig<string[]>('default_category_order');
     const defaultMonthlyCategories = await db.getConfig<string[]>('default_monthly_categories');
+    const contentOrder = await db.getConfig<string[]>(`content_order_${month}`);
 
     console.log('Editor GET:', { month, submissions: submissions.length });
     console.log('Submissions by category:', submissions.reduce((acc, s) => {
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
       deadlineInfo,
       categoryOrder,
       defaultMonthlyCategories,
+      contentOrder,
     });
   } catch (error) {
     console.error('Editor GET error:', error);
@@ -242,6 +244,25 @@ export async function POST(request: NextRequest) {
         const uniqueCategories = Array.from(new Set(defaultMonthlyCategories.map((category) => category.trim())));
         await db.setConfig('default_monthly_categories', uniqueCategories);
         return NextResponse.json({ success: true, defaultMonthlyCategories: uniqueCategories });
+      }
+
+      case 'updateContentOrder': {
+        const { month, orderedIds } = data;
+        if (
+          typeof month !== 'string' ||
+          !/^\d{4}-\d{2}$/.test(month) ||
+          !Array.isArray(orderedIds) ||
+          !orderedIds.every((id) => typeof id === 'string' && id.trim().length > 0)
+        ) {
+          return NextResponse.json(
+            { error: 'Content order requires a month and list of submission ids.' },
+            { status: 400 }
+          );
+        }
+
+        const uniqueIds = Array.from(new Set(orderedIds.map((id) => id.trim())));
+        await db.setConfig(`content_order_${month}`, uniqueIds);
+        return NextResponse.json({ success: true, month, orderedIds: uniqueIds });
       }
 
       case 'getCaptionContest':

@@ -13,6 +13,59 @@ const ALL_CATEGORIES = Array.from(new Set([
   ...COMMITTEE_CATEGORIES,
 ])) as SubmissionCategory[];
 
+const DEFAULT_CATEGORY_ORDER = Array.from(new Set([
+  'Letter from the Editor',
+  'President\'s Note',
+  'Board Notes',
+  'Office Notes',
+  'Association Events',
+  'The Board',
+  'General Announcements',
+  ...COMMITTEE_CATEGORIES.filter(cat => cat !== 'The Board' && cat !== 'General Announcements'),
+  ...COMMUNITY_CATEGORIES.filter(cat => cat !== 'Classifieds' && cat !== 'Lost & Found'),
+  'Classifieds',
+  'Lost & Found',
+  'ACC Activity Log',
+  'CSC Table',
+  'Security Report',
+  'Errata',
+  'Other',
+])) as SubmissionCategory[];
+
+const MONTHLY_PLACEHOLDER_CATEGORIES: SubmissionCategory[] = [
+  'Letter from the Editor',
+  'President\'s Note',
+  'Board Notes',
+  'Office Notes',
+  'Association Events',
+  'The Board',
+  'General Announcements',
+  'ACC Activity Log',
+  'CSC Table',
+  'Security Report',
+];
+
+type EditorView = 'inbox' | 'planning' | 'preview' | 'review' | 'settings' | 'data';
+
+function getSubmissionTitle(submission: Submission): string {
+  if (submission.title) return submission.title;
+  const firstLine = submission.content.split('\n')[0]?.trim() || '';
+  if (firstLine.startsWith('Title:')) return firstLine.replace(/^Title:\s*/i, '').trim() || submission.category;
+  const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
+  if (titleMatch?.[2]) return titleMatch[2].trim();
+  return firstLine.replace(/^Author:\s*/i, '').trim() || submission.category;
+}
+
+function getSubmissionAuthor(submission: Submission): string {
+  if (submission.publishedName) return submission.publishedName;
+  const lines = submission.content.split('\n');
+  const authorLine = lines.find(line => line.startsWith('Author:'));
+  if (authorLine) return authorLine.replace(/^Author:\s*/i, '').trim();
+  const firstLine = lines[0]?.trim() || '';
+  const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
+  return titleMatch?.[1]?.trim() || firstLine.replace(/^Author:\s*/i, '').trim() || 'Unknown';
+}
+
 /** Resize an image file to at most maxDim px on the longest side, encoded as JPEG. */
 async function resizeImageToDataUrl(file: File, maxDim = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -89,6 +142,8 @@ export default function EditorPage() {
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
   const [previewTab, setPreviewTab] = useState<'flow' | 'preview'>('flow');
+  const [editorView, setEditorView] = useState<EditorView>('inbox');
+  const [expandedInboxItems, setExpandedInboxItems] = useState<Set<string>>(new Set());
   const [showReminderForm, setShowReminderForm] = useState(false);
   const [reminderCategory, setReminderCategory] = useState<SubmissionCategory>('General Announcements');
   const [reminderTitle, setReminderTitle] = useState('');
@@ -131,6 +186,32 @@ export default function EditorPage() {
 
   const getWordCount = (text: string): number => {
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  const getPublishedWordCount = (submission: Submission): number => {
+    return getWordCount(extractContent(submission.content, submission.category, submission));
+  };
+
+  const inboxSubmissions = submissions
+    .filter(s => !s.disposition || s.disposition === '')
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+
+  const plannedSubmissions = submissions.filter(s => s.disposition === selectedMonth);
+  const backlogSubmissions = submissions.filter(s => s.disposition === 'backlog');
+  const missingMonthlyCategories = MONTHLY_PLACEHOLDER_CATEGORIES.filter(category =>
+    !plannedSubmissions.some(s => s.category === category && s.itemType !== 'placeholder')
+  );
+
+  const toggleInboxExpanded = (submissionId: string) => {
+    setExpandedInboxItems(prev => {
+      const next = new Set(prev);
+      if (next.has(submissionId)) {
+        next.delete(submissionId);
+      } else {
+        next.add(submissionId);
+      }
+      return next;
+    });
   };
 
   const handleOrderChange = useCallback((orderedIds: string[]) => {
@@ -213,7 +294,24 @@ export default function EditorPage() {
 
   const generateFullNewsletterPreview = (): string => {
     // Get all submissions for the selected month
-    const monthSubmissions = submissions.filter(s => s.disposition === selectedMonth);
+    let monthSubmissions = submissions.filter(s => s.disposition === selectedMonth);
+    const autoPlaceholders = MONTHLY_PLACEHOLDER_CATEGORIES
+      .filter(category => !monthSubmissions.some(s => s.category === category && s.itemType !== 'placeholder'))
+      .map((category): Submission => ({
+        id: `auto-placeholder-${selectedMonth}-${category}`,
+        category,
+        content: `Monthly placeholder for ${category}`,
+        submittedAt: new Date(),
+        disposition: selectedMonth,
+        month: selectedMonth,
+        title: `${category} Placeholder`,
+        itemType: 'placeholder',
+        editorNotes: `Missing monthly content for ${category}. Replace this placeholder when the real submission arrives.`,
+        priority: 'high',
+        needsAttention: true,
+      }));
+
+    monthSubmissions = [...monthSubmissions, ...autoPlaceholders];
     
     if (monthSubmissions.length === 0) {
       return 'No published content yet. Submissions will appear here once marked as published.';
@@ -224,13 +322,15 @@ export default function EditorPage() {
       const orderedSubs = customOrder
         .map(id => monthSubmissions.find(s => s.id === id))
         .filter((s): s is Submission => s !== undefined);
+      const remainingSubs = monthSubmissions.filter(s => !customOrder.includes(s.id));
       
-      if (orderedSubs.length > 0) {
+      if (orderedSubs.length > 0 || remainingSubs.length > 0) {
+        const previewSubs = [...orderedSubs, ...remainingSubs];
         // Group consecutive submissions from the same category to add headings
         const sections: string[] = [];
         let currentCategory: SubmissionCategory | null = null;
         
-        orderedSubs.forEach(sub => {
+        previewSubs.forEach(sub => {
           // Add category heading when category changes
           if (sub.category !== currentCategory) {
             sections.push(`== ${sub.category}`);
@@ -254,10 +354,13 @@ export default function EditorPage() {
       const categorySubs = submissions.filter(s => 
         s.category === category && s.disposition === selectedMonth
       );
+      const previewCategorySubs = monthSubmissions.filter(s =>
+        s.category === category && s.disposition === selectedMonth
+      );
       
-      if (categorySubs.length > 0) {
+      if (previewCategorySubs.length > 0) {
         sections.push(`== ${sectionName}`);
-        const formattedSubs = categorySubs.map(s => extractContent(s.content, s.category, s));
+        const formattedSubs = previewCategorySubs.map(s => extractContent(s.content, s.category, s));
         sections.push(formattedSubs.join('\n\n'));
       } else {
         emptySections.push(category);
@@ -826,6 +929,7 @@ export default function EditorPage() {
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         alert('Deadline updated successfully! The new deadline will be reflected on the homepage.');
         setShowSettings(false);
+        setEditorView('inbox');
         await loadEditorData(); // Reload to get updated data
       } else {
         alert('Failed to update deadline');
@@ -976,7 +1080,10 @@ export default function EditorPage() {
           </Link>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={() => {
+                setEditorView('settings');
+                setShowSettings(true);
+              }}
               className="rounded-lg bg-gradient-to-r from-gray-600 to-slate-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-gray-700 hover:to-slate-700"
               title="Manage settings including submission deadline"
             >
@@ -984,6 +1091,8 @@ export default function EditorPage() {
             </button>
             <button
               onClick={async () => {
+                setEditorView('settings');
+                setShowSettings(true);
                 if (!showCaptionContest) {
                   // Load current contest data
                   try {
@@ -1014,7 +1123,10 @@ export default function EditorPage() {
               🏆 Caption Contest
             </button>
             <button
-              onClick={() => setShowBacklogPanel(!showBacklogPanel)}
+              onClick={() => {
+                setEditorView('planning');
+                setShowBacklogPanel(!showBacklogPanel);
+              }}
               className="rounded-lg bg-gradient-to-r from-yellow-600 to-amber-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-yellow-700 hover:to-amber-700"
               title="View backlogged submissions"
             >
@@ -1022,6 +1134,7 @@ export default function EditorPage() {
             </button>
             <button
               onClick={() => {
+                setEditorView('planning');
                 if (selectedCategory) setReminderCategory(selectedCategory);
                 setShowReminderForm(!showReminderForm);
               }}
@@ -1031,7 +1144,10 @@ export default function EditorPage() {
               {showReminderForm ? 'Hide Reminder' : 'Add Reminder'}
             </button>
             <button
-              onClick={() => setShowJsonViewer(!showJsonViewer)}
+              onClick={() => {
+                setEditorView('data');
+                setShowJsonViewer(true);
+              }}
               className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-amber-700 hover:to-orange-700"
               title="View raw JSON data"
             >
@@ -1050,6 +1166,37 @@ export default function EditorPage() {
         <h1 className="mb-3 text-3xl font-bold text-orange-900">
           Editor Dashboard
         </h1>
+
+        <div className="mb-5 flex flex-wrap gap-2 rounded-xl border-2 border-orange-200 bg-white p-2 shadow">
+          {[
+            ['inbox', `Inbox (${inboxSubmissions.length})`],
+            ['planning', `Issue Planning (${plannedSubmissions.length})`],
+            ['preview', 'Preview'],
+            ['review', 'Committee Review'],
+            ['settings', 'Settings'],
+            ['data', 'Data'],
+          ].map(([view, label]) => (
+            <button
+              key={view}
+              type="button"
+              onClick={() => {
+                setEditorView(view as EditorView);
+                setSelectedCategory(null);
+                if (view === 'preview') setPreviewTab('preview');
+                if (view === 'planning') setPreviewTab('flow');
+                setShowSettings(view === 'settings');
+                setShowJsonViewer(view === 'data');
+              }}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                editorView === view
+                  ? 'bg-orange-700 text-white shadow'
+                  : 'bg-orange-50 text-orange-900 hover:bg-orange-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {showReminderForm && (
           <form
@@ -1145,7 +1292,7 @@ export default function EditorPage() {
           </form>
         )}
         
-        {showSettings && (
+        {editorView === 'settings' && showSettings && (
           <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
             <h2 className="mb-3 text-xl font-bold text-gray-900">Settings</h2>
             
@@ -1181,6 +1328,20 @@ export default function EditorPage() {
             </div>
 
             <div className="mb-6 border-t border-gray-200 pt-4">
+              <h3 className="mb-2 text-base font-semibold text-gray-800">Default Issue Order</h3>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {DEFAULT_CATEGORY_ORDER.map((category, index) => (
+                  <div key={`${category}-${index}`} className="flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded bg-orange-100 text-xs font-bold text-orange-900">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm font-medium text-gray-900">{category}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 border-t border-gray-200 pt-4">
               <h3 className="mb-2 text-base font-semibold text-gray-800">Database Export</h3>
               <p className="mb-3 text-sm text-gray-700">
                 Download all submissions data from the database as a JSON file for backup purposes.
@@ -1196,7 +1357,10 @@ export default function EditorPage() {
 
             <div className="border-t border-gray-200 pt-4">
               <button
-                onClick={() => setShowSettings(false)}
+                onClick={() => {
+                  setShowSettings(false);
+                  setEditorView('inbox');
+                }}
                 className="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-500"
               >
                 Close Settings
@@ -1206,7 +1370,7 @@ export default function EditorPage() {
         )}
 
         {/* Caption Contest Panel */}
-        {showCaptionContest && (
+        {editorView === 'settings' && showCaptionContest && (
           <div className="mb-6 rounded-lg bg-white border-2 border-yellow-300 p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">🏆 Caption Contest</h2>
@@ -1484,8 +1648,209 @@ export default function EditorPage() {
           </div>
         )}
 
+        {editorView === 'inbox' && (
+          <div className="mb-8 grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+            <section className="rounded-xl border-2 border-blue-200 bg-white p-5 shadow-xl">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-bold text-blue-950">Submissions Inbox</h2>
+                  <p className="text-sm text-gray-700">New submissions waiting for an editorial decision.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReminderForm(true);
+                    setEditorView('planning');
+                  }}
+                  className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
+                >
+                  Add Placeholder
+                </button>
+              </div>
+
+              {inboxSubmissions.length === 0 ? (
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">
+                  Inbox is clear for now.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {inboxSubmissions.map(sub => {
+                    const expanded = expandedInboxItems.has(sub.id);
+                    return (
+                      <article key={sub.id} className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-base font-bold text-gray-950">{getSubmissionTitle(sub)}</h3>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                              <span>{getSubmissionAuthor(sub)}</span>
+                              <span className="text-gray-400">|</span>
+                              <span className="font-semibold text-blue-800">{sub.category}</span>
+                              <span className="text-gray-400">|</span>
+                              <span>{getPublishedWordCount(sub)} words</span>
+                              <span className="text-gray-400">|</span>
+                              <span>{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleInboxExpanded(sub.id)}
+                            className="rounded border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-100"
+                          >
+                            {expanded ? 'Collapse' : 'Read'}
+                          </button>
+                        </div>
+
+                        {expanded ? (
+                          <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded border border-white bg-white p-3 font-sans text-sm leading-6 text-gray-800">
+                            {extractContent(sub.content, sub.category, sub)}
+                          </pre>
+                        ) : (
+                          <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-800">
+                            {extractContent(sub.content, sub.category, sub)}
+                          </p>
+                        )}
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateDisposition(sub.id, selectedMonth)}
+                            className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
+                          >
+                            Plan for {selectedMonth}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateDisposition(sub.id, 'backlog')}
+                            className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
+                          >
+                            Backlog
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateDisposition(sub.id, 'archived')}
+                            className="rounded bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
+                          >
+                            Archive
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <aside className="space-y-5">
+              <section className="rounded-xl border-2 border-yellow-200 bg-white p-5 shadow-xl">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-bold text-yellow-950">Backlog</h2>
+                  <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{backlogSubmissions.length}</span>
+                </div>
+                <div className="max-h-[34rem] space-y-3 overflow-y-auto pr-1">
+                  {backlogSubmissions.length === 0 ? (
+                    <p className="text-sm text-gray-600">No backlogged submissions.</p>
+                  ) : backlogSubmissions.map(sub => (
+                    <div key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+                      <p className="text-sm font-bold text-gray-950">{getSubmissionTitle(sub)}</p>
+                      <p className="mt-1 text-xs text-gray-700">{sub.category} | {getPublishedWordCount(sub)} words</p>
+                      <button
+                        type="button"
+                        onClick={() => updateDisposition(sub.id, selectedMonth)}
+                        className="mt-2 rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
+                      >
+                        Pull into {selectedMonth}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-xl border-2 border-red-200 bg-white p-5 shadow-xl">
+                <h2 className="mb-3 text-xl font-bold text-red-950">Missing Monthly Items</h2>
+                {missingMonthlyCategories.length === 0 ? (
+                  <p className="text-sm text-gray-600">All monthly placeholders have planned content.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {missingMonthlyCategories.map(category => (
+                      <span key={category} className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </aside>
+          </div>
+        )}
+
+        {editorView === 'review' && (
+          <section className="mb-8 rounded-xl border-2 border-orange-200 bg-white p-5 shadow-xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-orange-950">Committee Review</h2>
+                <p className="text-sm text-gray-700">A meeting-friendly snapshot for {selectedMonth}.</p>
+              </div>
+              <div className="flex gap-2 text-center">
+                <div className="rounded bg-blue-50 px-3 py-2">
+                  <p className="text-lg font-bold text-blue-800">{inboxSubmissions.length}</p>
+                  <p className="text-xs text-gray-600">Inbox</p>
+                </div>
+                <div className="rounded bg-green-50 px-3 py-2">
+                  <p className="text-lg font-bold text-green-800">{plannedSubmissions.length}</p>
+                  <p className="text-xs text-gray-600">Planned</p>
+                </div>
+                <div className="rounded bg-yellow-50 px-3 py-2">
+                  <p className="text-lg font-bold text-yellow-800">{backlogSubmissions.length}</p>
+                  <p className="text-xs text-gray-600">Backlog</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-orange-200">
+              <table className="min-w-full divide-y divide-orange-200 text-sm">
+                <thead className="bg-orange-50 text-left text-xs uppercase text-orange-950">
+                  <tr>
+                    <th className="px-3 py-2">Category</th>
+                    <th className="px-3 py-2">Inbox</th>
+                    <th className="px-3 py-2">Planned</th>
+                    <th className="px-3 py-2">Backlog</th>
+                    <th className="px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-orange-100 bg-white">
+                  {DEFAULT_CATEGORY_ORDER.map(category => {
+                    const inboxCount = inboxSubmissions.filter(s => s.category === category).length;
+                    const planned = plannedSubmissions.filter(s => s.category === category);
+                    const backlogCount = backlogSubmissions.filter(s => s.category === category).length;
+                    const missing = MONTHLY_PLACEHOLDER_CATEGORIES.includes(category) && planned.filter(s => s.itemType !== 'placeholder').length === 0;
+                    return (
+                      <tr key={category} className={missing ? 'bg-red-50' : undefined}>
+                        <td className="px-3 py-2 font-semibold text-gray-950">{category}</td>
+                        <td className="px-3 py-2 text-blue-800">{inboxCount}</td>
+                        <td className="px-3 py-2 text-green-800">{planned.length}</td>
+                        <td className="px-3 py-2 text-yellow-800">{backlogCount}</td>
+                        <td className="px-3 py-2">
+                          {missing ? (
+                            <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">Missing</span>
+                          ) : planned.length > 0 ? (
+                            <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Planned</span>
+                          ) : backlogCount > 0 ? (
+                            <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">Backlog available</span>
+                          ) : (
+                            <span className="text-xs text-gray-500">No item</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         {/* Backlog Panel */}
-        {showBacklogPanel && (() => {
+        {editorView === 'planning' && showBacklogPanel && (() => {
           const backlogSubs = submissions.filter(s => s.disposition === 'backlog');
           // Group by category, preserving category display order
           const grouped = backlogSubs.reduce<Record<string, typeof backlogSubs>>((acc, s) => {
@@ -1556,7 +1921,7 @@ export default function EditorPage() {
         })()}
 
         {/* Data Viewer */}
-        {showJsonViewer && (
+        {editorView === 'data' && showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-orange-200">
             <h2 className="mb-4 text-2xl font-bold text-orange-900">Data Viewer</h2>
             <div>
@@ -1870,7 +2235,7 @@ export default function EditorPage() {
         )}
 
         {/* Caption Entries in View Data */}
-        {showJsonViewer && (
+        {editorView === 'data' && showJsonViewer && (
           <div className="mb-8 rounded-xl bg-white p-6 shadow-xl border-2 border-yellow-300">
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <h2 className="mr-auto text-2xl font-bold text-yellow-900">🏆 Caption Contest Entries</h2>
@@ -1969,6 +2334,7 @@ export default function EditorPage() {
           </div>
         )}
 
+        {(editorView === 'planning' || editorView === 'preview') && (
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Sections List */}
           <div className="lg:col-span-1">
@@ -2412,6 +2778,7 @@ export default function EditorPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Database Status Indicator */}
         {authenticated && (

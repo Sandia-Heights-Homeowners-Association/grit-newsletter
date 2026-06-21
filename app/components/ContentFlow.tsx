@@ -291,7 +291,29 @@ function extractAuthor(content: string): string {
   return firstLine || 'Unknown Author';
 }
 
-function SortableSubmissionTile({ submission }: { submission: Submission }) {
+function extractDisplayContent(content: string): string {
+  const lines = content.split('\n');
+
+  const contentStart = lines.findIndex((line, index) => (
+    index > 1 &&
+    line.trim() === '' &&
+    (lines[index - 1]?.includes('Location:') ||
+      lines[index - 1]?.includes('Email:') ||
+      lines[index - 1]?.includes('Sighting Location:'))
+  ));
+
+  return (contentStart >= 0 ? lines.slice(contentStart + 1) : lines).join('\n').trim();
+}
+
+function SortableSubmissionTile({
+  submission,
+  isExpanded,
+  onToggleExpanded,
+}: {
+  submission: Submission;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
+}) {
   const {
     attributes,
     listeners,
@@ -316,17 +338,23 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`
-        ${colors.bg} rounded-md border-2 p-2 cursor-move
+        ${colors.bg} rounded-md border-2 p-2
         transition-all duration-200
         ${isDragging ? 'border-orange-400 shadow-lg' : `${colors.border} ${colors.hoverBorder} hover:shadow-md`}
       `}
     >
       <div className="flex items-center gap-2">
         {/* Drag Handle */}
-        <div className="text-gray-400 text-base flex-shrink-0">⋮⋮</div>
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 cursor-grab rounded px-1.5 py-1 text-base text-gray-400 hover:bg-white/70 active:cursor-grabbing"
+          aria-label={`Drag ${title}`}
+        >
+          ⋮⋮
+        </button>
         
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -343,7 +371,21 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
             <span className="text-gray-500 flex-shrink-0">{wordCount} words</span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onToggleExpanded}
+          className="flex-shrink-0 rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+        >
+          {isExpanded ? 'Collapse' : 'Expand'}
+        </button>
       </div>
+      {isExpanded && (
+        <div className="mt-3 rounded border border-white/80 bg-white/80 p-3">
+          <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap font-sans text-sm leading-6 text-gray-800">
+            {extractDisplayContent(submission.content) || submission.content}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
@@ -351,6 +393,7 @@ function SortableSubmissionTile({ submission }: { submission: Submission }) {
 export default function ContentFlow({ submissions, selectedMonth, customOrder, onOrderChange }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -469,6 +512,18 @@ export default function ContentFlow({ submissions, selectedMonth, customOrder, o
               <SortableSubmissionTile
                 key={submission.id}
                 submission={submission}
+                isExpanded={expandedIds.has(submission.id)}
+                onToggleExpanded={() => {
+                  setExpandedIds(prev => {
+                    const next = new Set(prev);
+                    if (next.has(submission.id)) {
+                      next.delete(submission.id);
+                    } else {
+                      next.add(submission.id);
+                    }
+                    return next;
+                  });
+                }}
               />
             ))}
           </div>

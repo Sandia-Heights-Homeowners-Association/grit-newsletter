@@ -66,6 +66,31 @@ function getSubmissionAuthor(submission: Submission): string {
   return titleMatch?.[1]?.trim() || firstLine.replace(/^Author:\s*/i, '').trim() || 'Unknown';
 }
 
+function uniqueSubmissionsById(submissions: Submission[]): Submission[] {
+  const seen = new Set<string>();
+  return submissions.filter((submission) => {
+    if (seen.has(submission.id)) return false;
+    seen.add(submission.id);
+    return true;
+  });
+}
+
+function createAutoMissingPlaceholder(category: SubmissionCategory, month: string): Submission {
+  return {
+    id: `auto-placeholder-${month}-${category}`,
+    category,
+    content: `Missing monthly item: ${category}`,
+    submittedAt: new Date(),
+    disposition: month,
+    month,
+    title: `${category} Placeholder`,
+    itemType: 'placeholder',
+    editorNotes: `Missing monthly content for ${category}.`,
+    priority: 'high',
+    needsAttention: true,
+  };
+}
+
 /** Resize an image file to at most maxDim px on the longest side, encoded as JPEG. */
 async function resizeImageToDataUrl(file: File, maxDim = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -136,6 +161,9 @@ export default function EditorPage() {
   const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[]>([]);
+  const [categoryOrder, setCategoryOrder] = useState<SubmissionCategory[]>(DEFAULT_CATEGORY_ORDER);
+  const [defaultMonthlyCategories, setDefaultMonthlyCategories] = useState<SubmissionCategory[]>(MONTHLY_PLACEHOLDER_CATEGORIES);
+  const [dismissedMissingCategories, setDismissedMissingCategories] = useState<Set<string>>(new Set());
   const [previewTab, setPreviewTab] = useState<'flow' | 'preview'>('flow');
   const [editorView, setEditorView] = useState<EditorView>('planning');
   const [expandedInboxItems, setExpandedInboxItems] = useState<Set<string>>(new Set());
@@ -183,9 +211,14 @@ export default function EditorPage() {
 
   const plannedSubmissions = submissions.filter(s => s.disposition === selectedMonth);
   const backlogSubmissions = submissions.filter(s => s.disposition === 'backlog');
-  const missingMonthlyCategories = MONTHLY_PLACEHOLDER_CATEGORIES.filter(category =>
+  const missingMonthlyCategories = defaultMonthlyCategories.filter(category =>
     !plannedSubmissions.some(s => s.category === category && s.itemType !== 'placeholder')
   );
+  const visibleMissingMonthlyCategories = missingMonthlyCategories.filter(category => !dismissedMissingCategories.has(category));
+  const missingPlaceholderSubmissions = visibleMissingMonthlyCategories.map(category =>
+    createAutoMissingPlaceholder(category, selectedMonth)
+  );
+  const flowSubmissions = uniqueSubmissionsById([...submissions, ...missingPlaceholderSubmissions]);
 
   const toggleInboxExpanded = (submissionId: string) => {
     setExpandedInboxItems(prev => {
@@ -280,21 +313,9 @@ export default function EditorPage() {
   const generateFullNewsletterPreview = (): string => {
     // Get all submissions for the selected month
     let monthSubmissions = submissions.filter(s => s.disposition === selectedMonth);
-    const autoPlaceholders = MONTHLY_PLACEHOLDER_CATEGORIES
+    const autoPlaceholders = visibleMissingMonthlyCategories
       .filter(category => !monthSubmissions.some(s => s.category === category && s.itemType !== 'placeholder'))
-      .map((category): Submission => ({
-        id: `auto-placeholder-${selectedMonth}-${category}`,
-        category,
-        content: `Monthly placeholder for ${category}`,
-        submittedAt: new Date(),
-        disposition: selectedMonth,
-        month: selectedMonth,
-        title: `${category} Placeholder`,
-        itemType: 'placeholder',
-        editorNotes: `Missing monthly content for ${category}. Replace this placeholder when the real submission arrives.`,
-        priority: 'high',
-        needsAttention: true,
-      }));
+      .map((category) => createAutoMissingPlaceholder(category, selectedMonth));
 
     monthSubmissions = [...monthSubmissions, ...autoPlaceholders];
     
@@ -352,39 +373,7 @@ export default function EditorPage() {
       }
     };
 
-    // 1-5: Main Routine Content
-    addSection('Letter from the Editor', 'Letter from the Editor');
-    addSection('President\'s Note', 'President\'s Note');
-    addSection('Board Notes', 'Board Notes');
-    addSection('Office Notes', 'Office Notes');
-    addSection('Association Events', 'Association Events');
-    
-    // 6-7: Special committee sections first (The Board, General Announcements)
-    addSection('The Board', 'The Board');
-    addSection('General Announcements', 'General Announcements');
-    
-    // 8: All other committee categories
-    const otherCommitteeCategories = COMMITTEE_CATEGORIES.filter(
-      cat => cat !== 'The Board' && cat !== 'General Announcements'
-    );
-    otherCommitteeCategories.forEach(cat => addSection(cat, cat));
-    
-    // 9: Community categories (Classifieds and Lost & Found last)
-    const regularCommunityCategories = COMMUNITY_CATEGORIES.filter(
-      cat => cat !== 'Classifieds' && cat !== 'Lost & Found'
-    );
-    regularCommunityCategories.forEach(cat => addSection(cat, cat));
-    
-    // Classifieds and Lost & Found at the very end of community content
-    addSection('Classifieds', 'Classifieds');
-    addSection('Lost & Found', 'Lost & Found');
-    
-    // 10: End material
-    addSection('ACC Activity Log', 'ACC Activity Log');
-    addSection('CSC Table', 'CSC Table');
-    addSection('Security Report', 'Security Report');
-    addSection('Errata', 'Errata');
-    addSection('Other', 'Other');
+    categoryOrder.forEach(category => addSection(category, category));
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 
@@ -431,10 +420,20 @@ export default function EditorPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setSubmissions(data.submissions || []);
+        setSubmissions(uniqueSubmissionsById(data.submissions || []));
         setCurrentMonth(data.month || '');
         setSelectedMonth(data.month || '');
         setAvailableMonths(data.availableMonths || []);
+        setCategoryOrder(
+          Array.isArray(data.categoryOrder) && data.categoryOrder.length > 0
+            ? Array.from(new Set([...data.categoryOrder, ...DEFAULT_CATEGORY_ORDER])) as SubmissionCategory[]
+            : DEFAULT_CATEGORY_ORDER
+        );
+        setDefaultMonthlyCategories(
+          Array.isArray(data.defaultMonthlyCategories)
+            ? data.defaultMonthlyCategories.filter((category: string) => ALL_CATEGORIES.includes(category as SubmissionCategory)) as SubmissionCategory[]
+            : MONTHLY_PLACEHOLDER_CATEGORIES
+        );
         setDeadlineDay(data.deadlineDay || 20);
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         setDatabaseStatus('connected');
@@ -823,6 +822,7 @@ export default function EditorPage() {
   const handleMonthChange = async (monthKey: string) => {
     setSelectedMonth(monthKey);
     setCustomOrder([]); // Clear custom order when changing months
+    setDismissedMissingCategories(new Set());
     await loadEditorData(monthKey);
   };
 
@@ -858,6 +858,78 @@ export default function EditorPage() {
       console.error('Failed to update deadline:', err);
       alert('An error occurred while updating the deadline');
     }
+  };
+
+  const saveCategoryOrder = async (nextOrder: SubmissionCategory[]) => {
+    setCategoryOrder(nextOrder);
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDefaultCategoryOrder',
+          categoryOrder: nextOrder,
+        }),
+      });
+
+      if (response.ok) {
+        showToastNotification('Default issue order saved');
+      } else {
+        showToastNotification('Failed to save default order');
+      }
+    } catch (err) {
+      console.error('Failed to save category order:', err);
+      showToastNotification('Failed to save default order');
+    }
+  };
+
+  const moveCategoryOrder = (category: SubmissionCategory, direction: -1 | 1) => {
+    const currentIndex = categoryOrder.indexOf(category);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= categoryOrder.length) return;
+
+    const nextOrder = [...categoryOrder];
+    [nextOrder[currentIndex], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[currentIndex]];
+    void saveCategoryOrder(nextOrder);
+  };
+
+  const saveDefaultMonthlyCategories = async (nextCategories: SubmissionCategory[]) => {
+    setDefaultMonthlyCategories(nextCategories);
+    setDismissedMissingCategories(new Set());
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDefaultMonthlyItems',
+          defaultMonthlyCategories: nextCategories,
+        }),
+      });
+
+      if (response.ok) {
+        showToastNotification('Default monthly items saved');
+      } else {
+        showToastNotification('Failed to save monthly items');
+      }
+    } catch (err) {
+      console.error('Failed to save monthly items:', err);
+      showToastNotification('Failed to save monthly items');
+    }
+  };
+
+  const toggleDefaultMonthlyCategory = (category: SubmissionCategory) => {
+    const nextCategories = defaultMonthlyCategories.includes(category)
+      ? defaultMonthlyCategories.filter(item => item !== category)
+      : [...defaultMonthlyCategories, category];
+    void saveDefaultMonthlyCategories(nextCategories);
   };
 
   const createReminderPlaceholder = async (e: React.FormEvent) => {
@@ -1234,15 +1306,66 @@ export default function EditorPage() {
             </div>
 
             <div className="mb-6 border-t border-gray-200 pt-4">
-              <h3 className="mb-2 text-base font-semibold text-gray-800">Default Issue Order</h3>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {DEFAULT_CATEGORY_ORDER.map((category, index) => (
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-gray-800">Default Issue Order</h3>
+                <button
+                  type="button"
+                  onClick={() => void saveCategoryOrder(DEFAULT_CATEGORY_ORDER)}
+                  className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Reset
+                </button>
+              </div>
+              <div className="grid gap-2 lg:grid-cols-2">
+                {categoryOrder.map((category, index) => (
                   <div key={`${category}-${index}`} className="flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded bg-orange-100 text-xs font-bold text-orange-900">
                       {index + 1}
                     </span>
-                    <span className="text-sm font-medium text-gray-900">{category}</span>
+                    <span className="min-w-0 flex-1 text-sm font-medium text-gray-900">{category}</span>
+                    <button
+                      type="button"
+                      onClick={() => moveCategoryOrder(category, -1)}
+                      disabled={index === 0}
+                      className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={`Move ${category} up`}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveCategoryOrder(category, 1)}
+                      disabled={index === categoryOrder.length - 1}
+                      className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={`Move ${category} down`}
+                    >
+                      ↓
+                    </button>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 border-t border-gray-200 pt-4">
+              <h3 className="mb-2 text-base font-semibold text-gray-800">Default Monthly Items</h3>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {categoryOrder.map(category => (
+                  <label
+                    key={category}
+                    className={`flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm font-medium transition ${
+                      defaultMonthlyCategories.includes(category)
+                        ? 'border-red-200 bg-red-50 text-red-950'
+                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={defaultMonthlyCategories.includes(category)}
+                      onChange={() => toggleDefaultMonthlyCategory(category)}
+                      className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-500"
+                    />
+                    <span>{category}</span>
+                  </label>
                 ))}
               </div>
             </div>
@@ -1554,138 +1677,145 @@ export default function EditorPage() {
         )}
 
         {editorView === 'inbox' && (
-          <div className="mb-8 grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-            <section className="rounded-xl border-2 border-blue-200 bg-white p-5 shadow-xl">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-bold text-blue-950">Submissions Inbox</h2>
-                  <p className="text-sm text-gray-700">New submissions waiting for an editorial decision.</p>
+          <section className="mb-8 rounded-xl border-2 border-blue-200 bg-white p-5 shadow-xl">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-blue-950">Inbox and Backlog</h2>
+                <p className="text-sm text-gray-700">New items and held items in one review pane.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReminderForm(true);
+                  setEditorView('planning');
+                }}
+                className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
+              >
+                Add Placeholder
+              </button>
+            </div>
+
+            <div className="grid gap-5 xl:grid-cols-2">
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-blue-950">Inbox</h3>
+                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-900">{inboxSubmissions.length}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowReminderForm(true);
-                    setEditorView('planning');
-                  }}
-                  className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-cyan-800"
-                >
-                  Add Placeholder
-                </button>
+                {inboxSubmissions.length === 0 ? (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">
+                    Inbox is clear for now.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {inboxSubmissions.map(sub => {
+                      const expanded = expandedInboxItems.has(sub.id);
+                      return (
+                        <article key={sub.id} className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="truncate text-base font-bold text-gray-950">{getSubmissionTitle(sub)}</h3>
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-700">
+                                <span>{getSubmissionAuthor(sub)}</span>
+                                <span className="text-gray-400">|</span>
+                                <span className="font-semibold text-blue-800">{sub.category}</span>
+                                <span className="text-gray-400">|</span>
+                                <span>{getPublishedWordCount(sub)} words</span>
+                                <span className="text-gray-400">|</span>
+                                <span>{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleInboxExpanded(sub.id)}
+                              className="rounded border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-100"
+                            >
+                              {expanded ? 'Collapse' : 'Read'}
+                            </button>
+                          </div>
+
+                          {expanded ? (
+                            <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded border border-white bg-white p-3 font-sans text-sm leading-6 text-gray-800">
+                              {extractContent(sub.content, sub.category, sub)}
+                            </pre>
+                          ) : (
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-800">
+                              {extractContent(sub.content, sub.category, sub)}
+                            </p>
+                          )}
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateDisposition(sub.id, selectedMonth)}
+                              className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
+                            >
+                              Plan for {selectedMonth}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateDisposition(sub.id, 'backlog')}
+                              className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
+                            >
+                              Backlog
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateDisposition(sub.id, 'archived')}
+                              className="rounded bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
+                            >
+                              Archive
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {inboxSubmissions.length === 0 ? (
-                <div className="rounded-lg border border-blue-100 bg-blue-50 p-5 text-sm text-blue-950">
-                  Inbox is clear for now.
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-yellow-950">Backlog</h3>
+                  <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{backlogSubmissions.length}</span>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {inboxSubmissions.map(sub => {
-                    const expanded = expandedInboxItems.has(sub.id);
-                    return (
-                      <article key={sub.id} className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="truncate text-base font-bold text-gray-950">{getSubmissionTitle(sub)}</h3>
-                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-700">
-                              <span>{getSubmissionAuthor(sub)}</span>
-                              <span className="text-gray-400">|</span>
-                              <span className="font-semibold text-blue-800">{sub.category}</span>
-                              <span className="text-gray-400">|</span>
-                              <span>{getPublishedWordCount(sub)} words</span>
-                              <span className="text-gray-400">|</span>
-                              <span>{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleInboxExpanded(sub.id)}
-                            className="rounded border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition hover:bg-blue-100"
-                          >
-                            {expanded ? 'Collapse' : 'Read'}
-                          </button>
-                        </div>
-
-                        {expanded ? (
-                          <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded border border-white bg-white p-3 font-sans text-sm leading-6 text-gray-800">
-                            {extractContent(sub.content, sub.category, sub)}
-                          </pre>
-                        ) : (
-                          <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-800">
-                            {extractContent(sub.content, sub.category, sub)}
-                          </p>
-                        )}
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => updateDisposition(sub.id, selectedMonth)}
-                            className="rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
-                          >
-                            Plan for {selectedMonth}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => updateDisposition(sub.id, 'backlog')}
-                            className="rounded bg-yellow-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-yellow-700"
-                          >
-                            Backlog
-                          </button>
+                {backlogSubmissions.length === 0 ? (
+                  <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-5 text-sm text-yellow-950">
+                    No backlogged submissions.
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {backlogSubmissions.map(sub => (
+                      <article key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+                        <div className="flex items-start gap-2">
+                          <p className="min-w-0 flex-1 text-sm font-bold leading-5 text-gray-950">{getSubmissionTitle(sub)}</p>
                           <button
                             type="button"
                             onClick={() => updateDisposition(sub.id, 'archived')}
-                            className="rounded bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-gray-700"
+                            className="flex h-6 w-6 items-center justify-center rounded border border-yellow-300 bg-white text-xs font-bold text-yellow-900 transition hover:bg-yellow-100"
+                            aria-label={`Archive ${getSubmissionTitle(sub)}`}
+                            title="Archive"
                           >
-                            Archive
+                            ×
                           </button>
                         </div>
+                        <p className="mt-1 text-xs text-gray-700">{sub.category} | {getPublishedWordCount(sub)} words</p>
+                        <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-800">
+                          {extractContent(sub.content, sub.category, sub)}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => updateDisposition(sub.id, selectedMonth)}
+                          className="mt-3 rounded bg-green-700 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-green-800"
+                        >
+                          Pull into {selectedMonth}
+                        </button>
                       </article>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            <aside className="space-y-5">
-              <section className="rounded-xl border-2 border-yellow-200 bg-white p-5 shadow-xl">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-bold text-yellow-950">Backlog</h2>
-                  <span className="rounded bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-900">{backlogSubmissions.length}</span>
-                </div>
-                <div className="max-h-[34rem] space-y-3 overflow-y-auto pr-1">
-                  {backlogSubmissions.length === 0 ? (
-                    <p className="text-sm text-gray-600">No backlogged submissions.</p>
-                  ) : backlogSubmissions.map(sub => (
-                    <div key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                      <p className="text-sm font-bold text-gray-950">{getSubmissionTitle(sub)}</p>
-                      <p className="mt-1 text-xs text-gray-700">{sub.category} | {getPublishedWordCount(sub)} words</p>
-                      <button
-                        type="button"
-                        onClick={() => updateDisposition(sub.id, selectedMonth)}
-                        className="mt-2 rounded bg-green-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
-                      >
-                        Pull into {selectedMonth}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-xl border-2 border-red-200 bg-white p-5 shadow-xl">
-                <h2 className="mb-3 text-xl font-bold text-red-950">Missing Monthly Items</h2>
-                {missingMonthlyCategories.length === 0 ? (
-                  <p className="text-sm text-gray-600">All monthly placeholders have planned content.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {missingMonthlyCategories.map(category => (
-                      <span key={category} className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
-                        {category}
-                      </span>
                     ))}
                   </div>
                 )}
-              </section>
-            </aside>
-          </div>
+              </div>
+            </div>
+          </section>
         )}
 
         {/* Data Viewer */}
@@ -2108,9 +2238,18 @@ export default function EditorPage() {
               <section className="rounded-xl border-2 border-blue-200 bg-white p-5 shadow-xl">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-xl font-bold text-blue-950">Unreviewed</h2>
-                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-900">
-                    {inboxSubmissions.length}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowReminderForm(true)}
+                      className="rounded bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-cyan-800"
+                    >
+                      Add Placeholder
+                    </button>
+                    <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-900">
+                      {inboxSubmissions.length}
+                    </span>
+                  </div>
                 </div>
                 <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1">
                   {inboxSubmissions.length === 0 ? (
@@ -2158,21 +2297,32 @@ export default function EditorPage() {
                     {backlogSubmissions.length}
                   </span>
                 </div>
-                <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1">
+                <div className="grid max-h-[30rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                   {backlogSubmissions.length === 0 ? (
-                    <p className="rounded border border-yellow-100 bg-yellow-50 p-3 text-sm text-yellow-950">
+                    <p className="rounded border border-yellow-100 bg-yellow-50 p-3 text-sm text-yellow-950 sm:col-span-2 xl:col-span-1 2xl:col-span-2">
                       No backlogged submissions.
                     </p>
                   ) : backlogSubmissions.map(sub => (
-                    <article key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                      <p className="text-sm font-bold text-gray-950">{getSubmissionTitle(sub)}</p>
+                    <article key={sub.id} className="rounded-lg border border-yellow-200 bg-yellow-50 p-2.5">
+                      <div className="flex items-start gap-2">
+                        <p className="min-w-0 flex-1 text-sm font-bold leading-5 text-gray-950">{getSubmissionTitle(sub)}</p>
+                        <button
+                          type="button"
+                          onClick={() => updateDisposition(sub.id, 'archived')}
+                          className="flex h-6 w-6 items-center justify-center rounded border border-yellow-300 bg-white text-xs font-bold text-yellow-900 transition hover:bg-yellow-100"
+                          aria-label={`Archive ${getSubmissionTitle(sub)}`}
+                          title="Archive"
+                        >
+                          ×
+                        </button>
+                      </div>
                       <p className="mt-1 text-xs text-gray-700">
                         {sub.category} | {getPublishedWordCount(sub)} words
                       </p>
                       <button
                         type="button"
                         onClick={() => updateDisposition(sub.id, selectedMonth)}
-                        className="mt-3 rounded bg-green-700 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-green-800"
+                        className="mt-2 rounded bg-green-700 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-green-800"
                       >
                         Pull into Issue
                       </button>
@@ -2188,9 +2338,25 @@ export default function EditorPage() {
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {missingMonthlyCategories.map(category => (
-                      <span key={category} className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => {
+                          setDismissedMissingCategories(prev => {
+                            const next = new Set(prev);
+                            next.delete(category);
+                            return next;
+                          });
+                        }}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                          dismissedMissingCategories.has(category)
+                            ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-800'
+                            : 'bg-red-50 text-red-800'
+                        }`}
+                        title={dismissedMissingCategories.has(category) ? 'Add back to Content Flow' : 'Shown in Content Flow'}
+                      >
                         {category}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -2223,9 +2389,14 @@ export default function EditorPage() {
 
               {previewTab === 'flow' && (
                 <ContentFlow
-                  submissions={submissions}
+                  submissions={flowSubmissions}
                   selectedMonth={selectedMonth}
                   customOrder={customOrder}
+                  categoryOrder={categoryOrder}
+                  onMoveToBacklog={(submissionId) => updateDisposition(submissionId, 'backlog')}
+                  onDismissMissing={(category) => {
+                    setDismissedMissingCategories(prev => new Set(prev).add(category));
+                  }}
                   onOrderChange={handleOrderChange}
                 />
               )}

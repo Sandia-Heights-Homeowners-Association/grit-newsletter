@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
     const submissions = await getSubmissionsByMonth(month);
     const deadlineInfo = getNextPublicationInfo(deadlineDay);
     const availableMonths = getAvailableMonths();
+    const categoryOrder = await db.getConfig<string[]>('default_category_order');
+    const defaultMonthlyCategories = await db.getConfig<string[]>('default_monthly_categories');
 
     console.log('Editor GET:', { month, submissions: submissions.length });
     console.log('Submissions by category:', submissions.reduce((acc, s) => {
@@ -79,7 +81,9 @@ export async function GET(request: NextRequest) {
       month,
       availableMonths,
       deadlineDay: deadlineDay,
-      deadlineInfo
+      deadlineInfo,
+      categoryOrder,
+      defaultMonthlyCategories,
     });
   } catch (error) {
     console.error('Editor GET error:', error);
@@ -204,6 +208,41 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         }
+
+      case 'updateDefaultCategoryOrder': {
+        const { categoryOrder } = data;
+        if (
+          !Array.isArray(categoryOrder) ||
+          categoryOrder.length === 0 ||
+          !categoryOrder.every((category) => typeof category === 'string' && category.trim().length > 0)
+        ) {
+          return NextResponse.json(
+            { error: 'Category order must be a non-empty list of category names.' },
+            { status: 400 }
+          );
+        }
+
+        const uniqueOrder = Array.from(new Set(categoryOrder.map((category) => category.trim())));
+        await db.setConfig('default_category_order', uniqueOrder);
+        return NextResponse.json({ success: true, categoryOrder: uniqueOrder });
+      }
+
+      case 'updateDefaultMonthlyItems': {
+        const { defaultMonthlyCategories } = data;
+        if (
+          !Array.isArray(defaultMonthlyCategories) ||
+          !defaultMonthlyCategories.every((category) => typeof category === 'string' && category.trim().length > 0)
+        ) {
+          return NextResponse.json(
+            { error: 'Default monthly items must be a list of category names.' },
+            { status: 400 }
+          );
+        }
+
+        const uniqueCategories = Array.from(new Set(defaultMonthlyCategories.map((category) => category.trim())));
+        await db.setConfig('default_monthly_categories', uniqueCategories);
+        return NextResponse.json({ success: true, defaultMonthlyCategories: uniqueCategories });
+      }
 
       case 'getCaptionContest':
         const contest = await db.getCaptionContest();

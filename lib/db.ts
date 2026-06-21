@@ -320,6 +320,26 @@ export const db = {
     `;
   },
 
+  async getConfig<T = unknown>(key: string): Promise<T | null> {
+    const sql = getSQL();
+    const rows = (await sql`
+      SELECT value FROM config WHERE key = ${key}
+    `) as any[];
+
+    return rows.length > 0 ? rows[0].value as T : null;
+  },
+
+  async setConfig(key: string, value: unknown): Promise<void> {
+    const sql = getSQL();
+    const serialized = JSON.stringify(value);
+    await sql`
+      INSERT INTO config (key, value, updated_at)
+      VALUES (${key}, ${serialized}, CURRENT_TIMESTAMP)
+      ON CONFLICT (key)
+      DO UPDATE SET value = ${serialized}, updated_at = CURRENT_TIMESTAMP
+    `;
+  },
+
   // Get category stats for a month
   async getCategoryStats(month: string): Promise<Record<string, number>> {
     const sql = getSQL();
@@ -452,4 +472,3 @@ export const db = {
     await sql`DELETE FROM captions`;
   },
 };
-

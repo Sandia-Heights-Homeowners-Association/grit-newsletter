@@ -163,14 +163,27 @@ export async function getSubmissionsByMonth(month: string): Promise<Submission[]
   
   // Include all submissions for the specified month,
   // PLUS items explicitly accepted for this month (e.g. pulled from backlog),
+  // PLUS all unreviewed items regardless of public collection month,
   // PLUS all backlog items regardless of month,
   // PLUS all routine/committee submissions regardless of month (since they're evergreen content).
-  return allSubmissions.filter(s => 
+  const filtered = allSubmissions.filter(s =>
     s.month === month ||
     s.disposition === month ||
+    !s.disposition ||
     s.disposition === 'backlog' ||
     routineAndCommitteeCategories.includes(s.category)
   );
+
+  return uniqueSubmissionsById(filtered);
+}
+
+function uniqueSubmissionsById(submissions: Submission[]): Submission[] {
+  const seen = new Set<string>();
+  return submissions.filter((submission) => {
+    if (seen.has(submission.id)) return false;
+    seen.add(submission.id);
+    return true;
+  });
 }
 
 // Get submissions by category and month

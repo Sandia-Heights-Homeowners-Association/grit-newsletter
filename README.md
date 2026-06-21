@@ -2,13 +2,13 @@
 
 The GRIT is a Next.js application for collecting, reviewing, organizing, and exporting newsletter content for the Sandia Heights Homeowners Association.
 
-It provides public submission forms for neighbors, routine and committee submission forms for regular contributors, and an editor dashboard for newsletter assembly.
+It provides a public unified submission form for neighbors and committee authors, a routine form for regular operational content, and an editor dashboard for newsletter assembly.
 
 ## Features
 
 - Public dashboard with current and previous issue submission counts
-- Community submission forms for categories such as classifieds, events, history, wildlife, kids' corner, pets, and general contributions
-- Routine and committee submission forms
+- Unified community and committee submission form with topic selection that defaults to general/other
+- Routine submission form for recurring operational content such as ACC, CSC, and Security logs
 - Cloudflare Turnstile CAPTCHA on public submission flows
 - Neon Postgres persistence for submissions, editor settings, and caption contest data
 - Resend email confirmations for submitters when email is configured
@@ -122,10 +122,9 @@ The viewer loads `DATABASE_URL` from `.env.local` or the current shell environme
 
 ## Main Routes
 
-- `/` - public dashboard, contribution category links, stats, guidelines, terms, and caption contest callout when enabled
+- `/` - public dashboard, unified contribution form, stats, guidelines, terms, and caption contest callout when enabled
 - `/submit/[category]` and category-specific `/submit/...` pages - public community contribution forms
 - `/routine` - routine newsletter content submission form
-- `/committee` - committee report submission form
 - `/caption` - public caption contest entry form when the contest is enabled
 - `/editor` - editor dashboard, protected by `EDITOR_PASSWORD`
 
@@ -182,7 +181,6 @@ The editor dashboard can export all database-backed submissions as JSON. Live ap
 app/
   api/                 Route handlers for submissions, stats, editor, backup, captions
   caption/             Public caption contest page
-  committee/           Committee submission form
   components/          Shared UI components
   editor/              Editor dashboard
   routine/             Routine content submission form
@@ -204,7 +202,7 @@ public/
 - Keep category changes centralized in `lib/types.ts`.
 - Keep month/deadline logic centralized in `lib/constants.ts` and `lib/store.ts`.
 - Editor authentication is simple bearer-password checking, not a full session/auth provider.
-- Routine and committee forms are currently public forms protected by CAPTCHA rather than password-gated pages.
+- Public submission flows are protected by CAPTCHA rather than password-gated pages.
 - Historical file-storage migration notes have been removed; current app storage is Postgres-backed.
 
 ## Deployment

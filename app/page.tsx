@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
-import { APP_NAME, APP_SUBTITLE, getMonthName } from '@/lib/constants';
+import HomeSubmissionForm from '@/app/components/HomeSubmissionForm';
+import { COMMUNITY_CATEGORIES } from '@/lib/types';
+import { getMonthName } from '@/lib/constants';
 
 export default function Home() {
   const [currentStats, setCurrentStats] = useState<Record<string, number>>({});
@@ -20,6 +21,11 @@ export default function Home() {
   const [captionContributors, setCaptionContributors] = useState<string[]>([]);
   const [captionContestEnabled, setCaptionContestEnabled] = useState(false);
   const [captionContestTitle, setCaptionContestTitle] = useState('Caption Contest');
+  const currentCommunityTotal = COMMUNITY_CATEGORIES.reduce((total, category) => total + (currentStats[category] || 0), 0);
+  const previousCommunityTotal = COMMUNITY_CATEGORIES.reduce((total, category) => total + (previousStats[category] || 0), 0);
+  const currentAllContributors = captionContestEnabled && captionContributors.length > 0
+    ? [...new Set([...currentContributors, ...captionContributors])].sort()
+    : currentContributors;
 
   useEffect(() => {
     fetch('/api/caption')
@@ -117,127 +123,9 @@ export default function Home() {
               </p>
             </div>
           </div>
-          
-          {/* Community Contributions */}
-          <div>
-            <h3 className="mb-4 text-xl font-semibold text-red-800 text-center">
-              Choose a Category
-            </h3>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {/* Stories & Perspectives Group */}
-              <div>
-                <h4 className="mb-2 text-base font-semibold text-orange-800 border-b border-orange-300 pb-1 text-center">
-                  Stories & Perspectives
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  <Link
-                    href="/submit/on-my-mind"
-                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-orange-900">💭 On My Mind</div>
-                    <div className="mt-0.5 text-xs text-orange-700">Reflections, opinions, ideas</div>
-                  </Link>
-                  <Link
-                    href="/submit/response"
-                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-orange-900">💬 Responses</div>
-                    <div className="mt-0.5 text-xs text-orange-700">Reply to prior content</div>
-                  </Link>
-                  <Link
-                    href="/submit/history-memories"
-                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-orange-900">📸 History & Memories</div>
-                    <div className="mt-0.5 text-xs text-orange-700">Past stories, photos</div>
-                  </Link>
-                  <Link
-                    href="/submit/general-other"
-                    className="rounded-md border border-orange-400 bg-orange-50/50 p-2 transition hover:bg-orange-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-orange-900">📝 General / Other</div>
-                    <div className="mt-0.5 text-xs text-orange-700">Anything else</div>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Family & Lifestyle Group */}
-              <div>
-                <h4 className="mb-2 text-base font-semibold text-red-800 border-b border-red-300 pb-1 text-center">
-                  Family & Lifestyle
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  <Link
-                    href="/submit/diy-crafts"
-                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-red-900">🔨 Home, DIY & Crafts</div>
-                    <div className="mt-0.5 text-xs text-red-700">Projects, repairs, activities</div>
-                  </Link>
-                  <Link
-                    href="/submit/nature-wildlife"
-                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-red-900">🌿 Nature & Wildlife</div>
-                    <div className="mt-0.5 text-xs text-red-700">Animals, plants, outdoors</div>
-                  </Link>
-                  <Link
-                    href="/submit/kids-corner"
-                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-red-900">🎨 Kids' Corner</div>
-                    <div className="mt-0.5 text-xs text-red-700">Content for or by kids</div>
-                  </Link>
-                  <Link
-                    href="/submit/pets-critters"
-                    className="rounded-md border border-red-400 bg-red-50/50 p-2 transition hover:bg-red-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-red-900">🐾 Pets & Critters</div>
-                    <div className="mt-0.5 text-xs text-red-700">Pet stories, animal fun</div>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Community Board Group */}
-              <div>
-                <h4 className="mb-2 text-base font-semibold text-amber-800 border-b border-amber-300 pb-1 text-center">
-                  Community Board
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  <Link
-                    href="/submit/classifieds"
-                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-amber-900">🏷️ Classifieds</div>
-                    <div className="mt-0.5 text-xs text-amber-700">Buy, sell, trade, services</div>
-                  </Link>
-                  <Link
-                    href="/submit/lost-found"
-                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-amber-900">🔍 Lost & Found</div>
-                    <div className="mt-0.5 text-xs text-amber-700">Missing or found items</div>
-                  </Link>
-                  <Link
-                    href="/submit/local-event"
-                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-amber-900">📅 Local Events</div>
-                    <div className="mt-0.5 text-xs text-amber-700">Meetings, gatherings</div>
-                  </Link>
-                  <Link
-                    href="/submit/neighbor-appreciation"
-                    className="rounded-md border border-amber-400 bg-amber-50/50 p-2 transition hover:bg-amber-100 hover:shadow text-center"
-                  >
-                    <div className="text-sm font-semibold text-amber-900">🙏 Neighbor Thanks</div>
-                    <div className="mt-0.5 text-xs text-amber-700">Recognition & appreciation</div>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
+
+        <HomeSubmissionForm />
 
         {/* Caption Contest Banner */}
         {captionContestEnabled && (
@@ -250,7 +138,7 @@ export default function Home() {
                 <span className="text-3xl">🏆</span>
                 <div>
                   <div className="text-lg font-bold text-amber-900">{captionContestTitle}</div>
-                  <div className="text-sm text-amber-700">Enter this month's caption contest!</div>
+                  <div className="text-sm text-amber-700">Enter this month&apos;s caption contest!</div>
                 </div>
               </div>
               <span className="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow">
@@ -260,115 +148,106 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mb-12 rounded-xl bg-white p-8 shadow-xl border-2 border-red-100">
+        <div className="mb-12 rounded-lg bg-white p-6 shadow-lg border border-red-100">
           <h2 className="mb-6 text-2xl font-bold text-red-900 text-center">
-            Community Contributions
+            What We Have Received
           </h2>
-          <div className="grid gap-8 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
             {/* Current Month */}
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-red-800 text-center">
+            <div className="rounded-md border border-orange-200 bg-orange-50/60 p-5">
+              <h3 className="mb-4 text-lg font-semibold text-red-800">
                 {currentMonthKey ? getMonthName(currentMonthKey) : 'This Month'}
               </h3>
-              <ul className="space-y-2 text-sm">
-                {COMMUNITY_CATEGORIES.map(cat => (
-                  <li key={cat} className="flex justify-between text-gray-800">
-                    <span>{cat}:</span>
-                    <span className="font-semibold text-red-700">{currentStats[cat] || 0}</span>
-                  </li>
-                ))}
-                <li className="flex justify-between text-gray-800 border-t border-gray-300 pt-2 mt-2">
-                  <span>Routine & Committee:</span>
+              <ul className="space-y-2 text-sm text-gray-800">
+                <li className="flex justify-between">
+                  <span>Community contributions</span>
+                  <span className="font-semibold text-red-700">{currentCommunityTotal}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Routine and committee items</span>
                   <span className="font-semibold text-red-700">{currentRoutineCommitteeCount}</span>
                 </li>
                 {captionContestEnabled && captionCount > 0 && (
-                  <li className="flex justify-between text-gray-800">
-                    <span>🏆 Caption Contest:</span>
+                  <li className="flex justify-between">
+                    <span>Caption contest entries</span>
                     <span className="font-semibold text-red-700">{captionCount}</span>
                   </li>
                 )}
               </ul>
               
               {/* Current Contributors List */}
-              <div className="mt-6 border-t-2 border-red-200 pt-6">
-                <h4 className="mb-3 text-base font-semibold text-red-900 text-center">
+              <div className="mt-6 border-t border-red-200 pt-5">
+                <h4 className="mb-3 text-base font-semibold text-red-900">
                   Contributors
                 </h4>
-                {(() => {
-                  const allContributors = captionContestEnabled && captionContributors.length > 0
-                    ? [...new Set([...currentContributors, ...captionContributors])].sort()
-                    : currentContributors;
-                  return allContributors.length > 0 ? (
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {allContributors.map((name, idx) => (
-                        <span 
-                          key={idx}
-                          className="rounded-full bg-gradient-to-r from-red-100 to-amber-100 px-3 py-1 text-sm font-medium text-red-900 border border-red-300"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-sm text-gray-600 italic">
-                      No submissions for this month yet
-                    </p>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Previous Month */}
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-gray-700 text-center">
-                {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
-              </h3>
-              <ul className="space-y-2 text-sm">
-                {COMMUNITY_CATEGORIES.map(cat => (
-                  <li key={cat} className="flex justify-between text-gray-600">
-                    <span>{cat}:</span>
-                    <span className="font-semibold text-gray-700">{previousStats[cat] || 0}</span>
-                  </li>
-                ))}
-                <li className="flex justify-between text-gray-600 border-t border-gray-300 pt-2 mt-2">
-                  <span>Routine & Committee:</span>
-                  <span className="font-semibold text-gray-700">{previousRoutineCommitteeCount}</span>
-                </li>
-              </ul>
-              
-              {/* Previous Contributors List */}
-              <div className="mt-6 border-t-2 border-gray-300 pt-6">
-                <h4 className="mb-3 text-base font-semibold text-gray-700 text-center">
-                  Contributors
-                </h4>
-                {previousContributors.length > 0 ? (
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {previousContributors.map((name, idx) => (
-                      <span 
+                {currentAllContributors.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentAllContributors.map((name, idx) => (
+                      <span
                         key={idx}
-                        className="rounded-full bg-gradient-to-r from-gray-100 to-gray-200 px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300"
+                        className="rounded-full bg-white px-3 py-1 text-sm font-medium text-red-900 border border-red-200"
                       >
                         {name}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-sm text-gray-500 italic">
-                    No submissions
+                  <p className="text-sm text-gray-600 italic">
+                    No submissions for this month yet
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* Previous Month */}
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-5">
+              <h3 className="mb-4 text-lg font-semibold text-gray-700">
+                {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
+              </h3>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex justify-between">
+                  <span>Community contributions</span>
+                  <span className="font-semibold text-gray-700">{previousCommunityTotal}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Routine and committee items</span>
+                  <span className="font-semibold text-gray-700">{previousRoutineCommitteeCount}</span>
+                </li>
+              </ul>
+              
+              {/* Previous Contributors List */}
+              <div className="mt-6 border-t border-gray-300 pt-5">
+                <h4 className="mb-3 text-base font-semibold text-gray-700">
+                  Contributors
+                </h4>
+                {previousContributors.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {previousContributors.map((name, idx) => (
+                      <span 
+                        key={idx}
+                        className="rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-700 border border-gray-300"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                    <p className="text-sm text-gray-500 italic">
+                      No submissions
+                    </p>
+                  )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* SHHA Committee & Routine Monthly Submissions */}
-        <div className="mb-8 rounded-xl bg-gradient-to-br from-amber-50 to-red-50 p-8 shadow-xl border-2 border-amber-400">
+        {/* Routine Monthly Submissions */}
+        <div className="mb-8 rounded-lg bg-gradient-to-br from-amber-50 to-red-50 p-6 shadow-lg border border-amber-300">
           <h2 className="mb-4 text-2xl font-bold text-amber-900 text-center">
-            SHHA Committee & Routine Monthly Submissions
+            Routine Monthly Submissions
           </h2>
           <p className="mb-6 text-center text-gray-700">
-            For committee members and regular contributors
+            For highly regular items such as ACC, CSC, and Security logs. Committee articles can use the main form above.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link 
@@ -376,12 +255,6 @@ export default function Home() {
               className="rounded-lg bg-amber-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-800 hover:shadow-xl"
             >
               Routine Content
-            </Link>
-            <Link 
-              href="/committee"
-              className="rounded-lg bg-amber-700 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-amber-800 hover:shadow-xl"
-            >
-              Committee Content
             </Link>
           </div>
         </div>
@@ -470,7 +343,7 @@ export default function Home() {
 
             <h4 className="mt-4 font-semibold text-gray-900">Not Sure Where It Fits?</h4>
             <p>
-              If you're unsure which category to choose, select <strong>On My Mind</strong>.
+              If you&apos;re unsure which topic to choose, leave the form set to <strong>General Submission / Other</strong>.
             </p>
           </div>
         </div>

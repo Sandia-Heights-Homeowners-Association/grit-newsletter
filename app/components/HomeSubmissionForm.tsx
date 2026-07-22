@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Captcha from '@/app/components/Captcha';
+import MarkdownEditor from '@/app/components/MarkdownEditor';
 import { COMMUNITY_CATEGORIES, COMMITTEE_CATEGORIES, type CommunityCategory, type CommitteeCategory, type SubmissionCategory } from '@/lib/types';
 
 const DEFAULT_COMMUNITY_CATEGORY: CommunityCategory = 'General Submission / Other';
@@ -74,7 +75,7 @@ export default function HomeSubmissionForm() {
     ? 300
     : undefined;
   const contentOverLimit = Boolean(contentLimit && content.length > contentLimit);
-  const canUsePhotos = !isCommitteeSubmission && category !== 'Classifieds' && category !== 'Local Event Announcement';
+  const canUsePhotos = isCommitteeSubmission || (category !== 'Classifieds' && category !== 'Local Event Announcement');
 
   const helperText = useMemo(() => {
     if (isCommitteeSubmission) {
@@ -170,6 +171,12 @@ export default function HomeSubmissionForm() {
       return;
     }
 
+    if (!content.trim()) {
+      setError('Please enter the submission text.');
+      setSubmitting(false);
+      return;
+    }
+
     if (!isCommitteeSubmission && category === 'Local Event Announcement' && (!eventDate || !eventLocation.trim())) {
       setError('Please include the event date and event location.');
       setSubmitting(false);
@@ -239,55 +246,21 @@ export default function HomeSubmissionForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="rounded-md border border-teal-200 bg-teal-50/70 p-4">
-          <label className="flex items-start gap-3 text-sm font-semibold text-teal-950">
-            <input
-              type="checkbox"
-              checked={isCommitteeSubmission}
-              onChange={(event) => setIsCommitteeSubmission(event.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-teal-400 text-teal-700 focus:ring-teal-600"
-            />
-            <span>
-              I am writing this on behalf of an SHHA committee
-              <span className="block pt-1 text-xs font-normal leading-5 text-teal-900">
-                The byline will include both your name and the committee.
-              </span>
-            </span>
-          </label>
-        </div>
-
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {isCommitteeSubmission ? (
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-orange-950">
-                Committee *
-              </label>
-              <select
-                value={committeeCategory}
-                onChange={(event) => setCommitteeCategory(event.target.value as CommitteeCategory)}
-                className="w-full rounded-md border border-orange-200 bg-white p-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-              >
-                {COMMITTEE_CATEGORIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-orange-950">
-                Topic
-              </label>
-              <select
-                value={category}
-                onChange={(event) => setCategory(event.target.value as CommunityCategory)}
-                className="w-full rounded-md border border-orange-200 bg-white p-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-              >
-                {COMMUNITY_CATEGORIES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-orange-950">
+              Topic
+            </label>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value as CommunityCategory)}
+              className="w-full rounded-md border border-orange-200 bg-white p-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+            >
+              {COMMUNITY_CATEGORIES.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-orange-950">
@@ -398,6 +371,56 @@ export default function HomeSubmissionForm() {
           </div>
         )}
 
+        <div className="rounded-md border border-orange-200 bg-orange-50/40 p-4">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <label className="text-base font-semibold text-orange-950">
+              Submission *
+            </label>
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {canUsePhotos && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const placeholder = '[PHOTO: describe the photo here. Email this photo to griteditor@sandiahomeowners.org]';
+                    setContent(content + (content ? '\n\n' : '') + placeholder);
+                  }}
+                  className="rounded-md border border-teal-300 bg-white px-3 py-1.5 font-semibold text-teal-800 transition hover:bg-teal-50"
+                >
+                  Add photo note
+                </button>
+              )}
+              <span className={contentOverLimit ? 'font-semibold text-red-700' : 'text-gray-700'}>
+                {contentLimit ? `${content.length} / ${contentLimit} characters` : `${getWordCount(content)} words`}
+              </span>
+            </div>
+          </div>
+
+          {canUsePhotos && (
+            <div className="mb-3 rounded-md border border-teal-300 bg-teal-50 px-3 py-2 text-sm leading-5 text-teal-950">
+              <strong>Photos:</strong> Use the button to mark where each photo should go, then email the actual image files to{' '}
+              <a href="mailto:griteditor@sandiahomeowners.org" className="font-semibold underline">
+                griteditor@sandiahomeowners.org
+              </a>
+              .
+            </div>
+          )}
+
+          {contentOverLimit && (
+            <div className="mb-3 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              This category is {content.length - (contentLimit || 0)} characters over the limit.
+            </div>
+          )}
+
+          <MarkdownEditor
+            value={content}
+            onChange={setContent}
+            placeholder="Paste or type the piece here."
+            minHeight="240px"
+            simpleToolbar={Boolean(contentLimit)}
+            maxLength={contentLimit ? 500 : undefined}
+          />
+        </div>
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-semibold text-orange-950">
@@ -453,42 +476,38 @@ export default function HomeSubmissionForm() {
           </div>
         </div>
 
-        <div>
-          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <label className="text-sm font-semibold text-orange-950">
-              Submission *
-            </label>
-            <div className="flex items-center gap-3 text-sm">
-              {canUsePhotos && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const placeholder = '[PHOTO: describe the photo here]';
-                    setContent(content + (content ? '\n\n' : '') + placeholder);
-                  }}
-                  className="rounded-md border border-teal-300 bg-teal-50 px-3 py-1.5 font-semibold text-teal-800 transition hover:bg-teal-100"
-                >
-                  Add photo note
-                </button>
-              )}
-              <span className={contentOverLimit ? 'font-semibold text-red-700' : 'text-gray-600'}>
-                {contentLimit ? `${content.length} / ${contentLimit} characters` : `${getWordCount(content)} words`}
+        <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+          <label className="flex items-start gap-3 text-sm font-semibold text-gray-950">
+            <input
+              type="checkbox"
+              checked={isCommitteeSubmission}
+              onChange={(event) => setIsCommitteeSubmission(event.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-400 text-teal-700 focus:ring-teal-600"
+            />
+            <span>
+              I am writing this on behalf of an SHHA committee
+              <span className="block pt-1 text-xs font-normal leading-5 text-gray-700">
+                Optional. This routes the item to committee content and includes the committee in the byline.
               </span>
-            </div>
-          </div>
-          {contentOverLimit && (
-            <div className="mb-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
-              This category is {content.length - (contentLimit || 0)} characters over the limit.
+            </span>
+          </label>
+
+          {isCommitteeSubmission && (
+            <div className="mt-4">
+              <label className="mb-2 block text-sm font-semibold text-gray-950">
+                Committee *
+              </label>
+              <select
+                value={committeeCategory}
+                onChange={(event) => setCommitteeCategory(event.target.value as CommitteeCategory)}
+                className="w-full rounded-md border border-gray-300 bg-white p-3 text-gray-900 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-100"
+              >
+                {COMMITTEE_CATEGORIES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
           )}
-          <textarea
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            required
-            rows={10}
-            className="w-full rounded-md border border-orange-200 p-3 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-            placeholder="Paste or type the piece here. Plain text is fine."
-          />
         </div>
 
         <Captcha

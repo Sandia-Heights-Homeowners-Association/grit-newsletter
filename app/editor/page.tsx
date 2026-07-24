@@ -468,6 +468,13 @@ export default function EditorPage() {
             ? data.defaultMonthlyCategories.filter((category: string) => ALL_CATEGORIES.includes(category as SubmissionCategory)) as SubmissionCategory[]
             : MONTHLY_PLACEHOLDER_CATEGORIES
         );
+        setDismissedMissingCategories(
+          new Set(
+            Array.isArray(data.dismissedMissingCategories)
+              ? data.dismissedMissingCategories.filter((category: string) => ALL_CATEGORIES.includes(category as SubmissionCategory))
+              : []
+          )
+        );
         setDeadlineDay(data.deadlineDay || 20);
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         setDatabaseStatus('connected');
@@ -931,6 +938,62 @@ export default function EditorPage() {
     void saveCategoryOrder(nextOrder);
   };
 
+  const saveDismissedMissingCategories = async (
+    nextDismissedCategories: Set<string>,
+    successMessage?: string
+  ) => {
+    const previous = dismissedMissingCategories;
+    const nextList = Array.from(nextDismissedCategories)
+      .filter(category => ALL_CATEGORIES.includes(category as SubmissionCategory));
+
+    setDismissedMissingCategories(new Set(nextList));
+
+    if (!selectedMonth) return;
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateDismissedMissingItems',
+          month: selectedMonth,
+          dismissedMissingCategories: nextList,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const savedCategories = Array.isArray(data.dismissedMissingCategories)
+          ? data.dismissedMissingCategories.filter((category: string) => ALL_CATEGORIES.includes(category as SubmissionCategory))
+          : nextList;
+        setDismissedMissingCategories(new Set(savedCategories));
+        if (successMessage) showToastNotification(successMessage);
+      } else {
+        setDismissedMissingCategories(previous);
+        showToastNotification('Failed to save missing item state');
+      }
+    } catch (err) {
+      console.error('Failed to save missing item state:', err);
+      setDismissedMissingCategories(previous);
+      showToastNotification('Failed to save missing item state');
+    }
+  };
+
+  const dismissMissingMonthlyCategory = (category: string) => {
+    const nextDismissed = new Set(dismissedMissingCategories);
+    nextDismissed.add(category);
+    void saveDismissedMissingCategories(nextDismissed, 'Missing monthly item cleared');
+  };
+
+  const restoreMissingMonthlyCategory = (category: string) => {
+    const nextDismissed = new Set(dismissedMissingCategories);
+    nextDismissed.delete(category);
+    void saveDismissedMissingCategories(nextDismissed, 'Missing monthly item restored');
+  };
+
   const saveDefaultMonthlyCategories = async (nextCategories: SubmissionCategory[]) => {
     setDefaultMonthlyCategories(nextCategories);
     setDismissedMissingCategories(new Set());
@@ -949,6 +1012,9 @@ export default function EditorPage() {
       });
 
       if (response.ok) {
+        if (selectedMonth) {
+          await saveDismissedMissingCategories(new Set());
+        }
         showToastNotification('Default monthly items saved');
       } else {
         showToastNotification('Failed to save monthly items');
@@ -2329,19 +2395,17 @@ export default function EditorPage() {
                       <button
                         key={category}
                         type="button"
-                        onClick={() => {
-                          setDismissedMissingCategories(prev => {
-                            const next = new Set(prev);
-                            next.delete(category);
-                            return next;
-                          });
-                        }}
+                        onClick={() => (
+                          dismissedMissingCategories.has(category)
+                            ? restoreMissingMonthlyCategory(category)
+                            : dismissMissingMonthlyCategory(category)
+                        )}
                         className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                           dismissedMissingCategories.has(category)
                             ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-800'
                             : 'bg-red-50 text-red-800'
                         }`}
-                        title={dismissedMissingCategories.has(category) ? 'Add back to Content Flow' : 'Shown in Content Flow'}
+                        title={dismissedMissingCategories.has(category) ? 'Add back to Content Flow' : 'Clear from Content Flow'}
                       >
                         {category}
                       </button>
@@ -2382,9 +2446,7 @@ export default function EditorPage() {
                   customOrder={customOrder}
                   categoryOrder={categoryOrder}
                   onMoveToBacklog={(submissionId) => updateDisposition(submissionId, 'backlog')}
-                  onDismissMissing={(category) => {
-                    setDismissedMissingCategories(prev => new Set(prev).add(category));
-                  }}
+                  onDismissMissing={dismissMissingMonthlyCategory}
                   onDismissPlaceholder={(submissionId) => updateDisposition(submissionId, 'archived')}
                   onOrderChange={handleOrderChange}
                 />

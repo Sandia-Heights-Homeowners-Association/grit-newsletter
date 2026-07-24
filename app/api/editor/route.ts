@@ -43,6 +43,10 @@ function getAvailableMonths(): Array<{key: string; label: string}> {
   return months;
 }
 
+function dismissedMissingItemsConfigKey(month: string): string {
+  return `dismissed_missing_monthly_categories_${month}`;
+}
+
 // GET - Get all editor data
 export async function GET(request: NextRequest) {
   if (!verifyPassword(request)) {
@@ -70,6 +74,7 @@ export async function GET(request: NextRequest) {
     const categoryOrder = await db.getConfig<string[]>('default_category_order');
     const defaultMonthlyCategories = await db.getConfig<string[]>('default_monthly_categories');
     const contentOrder = await db.getConfig<string[]>(`content_order_${month}`);
+    const dismissedMissingCategories = await db.getConfig<string[]>(dismissedMissingItemsConfigKey(month));
 
     console.log('Editor GET:', { month, submissions: submissions.length });
     console.log('Submissions by category:', submissions.reduce((acc, s) => {
@@ -86,6 +91,7 @@ export async function GET(request: NextRequest) {
       categoryOrder,
       defaultMonthlyCategories,
       contentOrder,
+      dismissedMissingCategories,
     });
   } catch (error) {
     console.error('Editor GET error:', error);
@@ -263,6 +269,25 @@ export async function POST(request: NextRequest) {
         const uniqueIds = Array.from(new Set(orderedIds.map((id) => id.trim())));
         await db.setConfig(`content_order_${month}`, uniqueIds);
         return NextResponse.json({ success: true, month, orderedIds: uniqueIds });
+      }
+
+      case 'updateDismissedMissingItems': {
+        const { month, dismissedMissingCategories } = data;
+        if (
+          typeof month !== 'string' ||
+          !/^\d{4}-\d{2}$/.test(month) ||
+          !Array.isArray(dismissedMissingCategories) ||
+          !dismissedMissingCategories.every((category) => typeof category === 'string' && category.trim().length > 0)
+        ) {
+          return NextResponse.json(
+            { error: 'Dismissed missing items require a month and list of category names.' },
+            { status: 400 }
+          );
+        }
+
+        const uniqueCategories = Array.from(new Set(dismissedMissingCategories.map((category) => category.trim())));
+        await db.setConfig(dismissedMissingItemsConfigKey(month), uniqueCategories);
+        return NextResponse.json({ success: true, month, dismissedMissingCategories: uniqueCategories });
       }
 
       case 'getCaptionContest':

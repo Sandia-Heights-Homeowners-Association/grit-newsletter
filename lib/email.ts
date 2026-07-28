@@ -22,6 +22,110 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+function renderInlineMarkdown(value: string): string {
+  let html = escapeHtml(value);
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  html = html.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" style="color:#0f766e;text-decoration:underline;">$1</a>'
+  );
+  return html;
+}
+
+function renderMarkdownForEmail(markdown: string): string {
+  const lines = markdown.trim().split('\n');
+  const html: string[] = [];
+  let listType: 'ul' | 'ol' | null = null;
+
+  const closeList = () => {
+    if (listType) {
+      html.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    if (!line.trim()) {
+      closeList();
+      continue;
+    }
+
+    if (line === '---') {
+      closeList();
+      html.push('<hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0;">');
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const level = (heading[1] || '#').length as 1 | 2 | 3;
+      const headingText = heading[2] || '';
+      const sizes = { 1: 22, 2: 18, 3: 16 } as const;
+      html.push(`<h${level} style="font-size:${sizes[level]}px;line-height:1.25;margin:18px 0 8px;color:#7c2d12;">${renderInlineMarkdown(headingText)}</h${level}>`);
+      continue;
+    }
+
+    const bullet = line.match(/^\s*[-*]\s+(.+)$/);
+    if (bullet) {
+      if (listType !== 'ul') {
+        closeList();
+        listType = 'ul';
+        html.push('<ul style="margin:10px 0 10px 22px;padding:0;">');
+      }
+      html.push(`<li style="margin:4px 0;">${renderInlineMarkdown(bullet[1] || '')}</li>`);
+      continue;
+    }
+
+    const numbered = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (numbered) {
+      if (listType !== 'ol') {
+        closeList();
+        listType = 'ol';
+        html.push('<ol style="margin:10px 0 10px 22px;padding:0;">');
+      }
+      html.push(`<li style="margin:4px 0;">${renderInlineMarkdown(numbered[1] || '')}</li>`);
+      continue;
+    }
+
+    closeList();
+    html.push(`<p style="margin:10px 0;white-space:pre-wrap;">${renderInlineMarkdown(line)}</p>`);
+  }
+
+  closeList();
+  return html.join('\n');
+}
+
+function extractSubmissionBody(content: string): string {
+  const lines = content.split('\n');
+
+  for (let i = 1; i < lines.length; i++) {
+    const previousLine = lines[i - 1] || '';
+    if (
+      lines[i].trim() === '' &&
+      i > 1 &&
+      (
+        previousLine.includes('Location:') ||
+        previousLine.includes('Email:') ||
+        previousLine.includes('Event Location:') ||
+        previousLine.includes('Sighting Location:')
+      )
+    ) {
+      return lines.slice(i + 1).join('\n').trim();
+    }
+  }
+
+  return content.trim();
+}
+
+function renderSubmissionBodyForEmail(content: string): string {
+  const body = extractSubmissionBody(content);
+  return body ? renderMarkdownForEmail(body) : '<p style="margin:10px 0;color:#6b7280;"><em>No submission text provided.</em></p>';
+}
+
 function editorDelivery() {
   const to = process.env.EDITOR_EMAIL || process.env.EDITOR_EMAIL_BCC;
   const bcc =
@@ -214,7 +318,7 @@ export async function sendSubmitterConfirmation({
                 <p style="font-weight: bold; color: #6b7280; margin: 0 0 10px 0;">Your Submission:</p>
                 <p style="margin: 0 0 5px 0;"><strong>Published Name:</strong> ${escapeHtml(publishedName)}</p>
                 <p style="margin: 0 0 15px 0;"><strong>Category:</strong> ${escapeHtml(category)}</p>
-                <p style="white-space: pre-wrap; margin: 0;">${escapeHtml(content)}</p>
+                ${renderSubmissionBodyForEmail(content)}
               </div>
               
               <p style="margin: 15px 0;">

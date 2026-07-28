@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { type ChangeEvent, useMemo, useState } from 'react';
 import Captcha from '@/app/components/Captcha';
 import MarkdownEditor from '@/app/components/MarkdownEditor';
 import { COMMUNITY_CATEGORIES, COMMITTEE_CATEGORIES, type CommunityCategory, type CommitteeCategory, type SubmissionCategory } from '@/lib/types';
@@ -8,8 +8,102 @@ import { COMMUNITY_CATEGORIES, COMMITTEE_CATEGORIES, type CommunityCategory, typ
 const DEFAULT_COMMUNITY_CATEGORY: CommunityCategory = 'General Submission / Other';
 const DEFAULT_COMMITTEE_CATEGORY: CommitteeCategory = 'General Announcements';
 
+interface MammothBrowserModule {
+  convertToHtml: (input: { arrayBuffer: ArrayBuffer }) => Promise<{
+    value: string;
+    messages: Array<{ type: string; message: string }>;
+  }>;
+  default?: MammothBrowserModule;
+}
+
 function getWordCount(value: string): number {
   return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function htmlToMarkdown(html: string): string {
+  const document = new DOMParser().parseFromString(html, 'text/html');
+
+  const renderInline = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent || '';
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      return Array.from(node.childNodes).map(renderInline).join('');
+    }
+
+    const content = Array.from(node.childNodes).map(renderInline).join('');
+
+    switch (node.tagName.toLowerCase()) {
+      case 'strong':
+      case 'b':
+        return content.trim() ? `**${content}**` : content;
+      case 'em':
+      case 'i':
+        return content.trim() ? `_${content}_` : content;
+      case 'a': {
+        const href = node.getAttribute('href');
+        return href && content.trim() ? `[${content}](${href})` : content;
+      }
+      case 'br':
+        return '\n';
+      default:
+        return content;
+    }
+  };
+
+  const renderBlock = (node: Node, orderedIndex?: number): string => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent?.trim() || '';
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      return Array.from(node.childNodes).map(child => renderBlock(child)).filter(Boolean).join('\n\n');
+    }
+
+    const tag = node.tagName.toLowerCase();
+
+    if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+      const level = Number(tag.slice(1));
+      return `${'#'.repeat(level)} ${renderInline(node).trim()}`;
+    }
+
+    if (tag === 'ul') {
+      return Array.from(node.children)
+        .filter(child => child.tagName.toLowerCase() === 'li')
+        .map(child => renderBlock(child))
+        .join('\n');
+    }
+
+    if (tag === 'ol') {
+      return Array.from(node.children)
+        .filter(child => child.tagName.toLowerCase() === 'li')
+        .map((child, index) => renderBlock(child, index + 1))
+        .join('\n');
+    }
+
+    if (tag === 'li') {
+      const marker = orderedIndex ? `${orderedIndex}.` : '-';
+      return `${marker} ${renderInline(node).trim()}`;
+    }
+
+    if (tag === 'p') {
+      return renderInline(node).trim();
+    }
+
+    if (tag === 'hr') {
+      return '---';
+    }
+
+    return Array.from(node.childNodes).map(child => renderBlock(child)).filter(Boolean).join('\n\n');
+  };
+
+  return Array.from(document.body.childNodes)
+    .map(node => renderBlock(node))
+    .filter(Boolean)
+    .join('\n\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function createConfetti() {
@@ -67,6 +161,8 @@ export default function HomeSubmissionForm() {
   const [childAge, setChildAge] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [importingDocx, setImportingDocx] = useState(false);
+  const [docxMessage, setDocxMessage] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
@@ -110,6 +206,53 @@ export default function HomeSubmissionForm() {
     setEventLocation('');
     setChildAge('');
     setCaptchaToken('');
+    setDocxMessage('');
+  };
+
+  const importDocx = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    setDocxMessage('');
+
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setDocxMessage('Please choose a .docx Word document.');
+      return;
+    }
+
+    setImportingDocx(true);
+    setError('');
+
+    try {
+      const mammothModule = await import('mammoth') as unknown as MammothBrowserModule;
+      const mammoth = mammothModule.convertToHtml ? mammothModule : mammothModule.default;
+      if (!mammoth) {
+        throw new Error('Word document converter did not load.');
+      }
+
+      const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+      const converted = htmlToMarkdown(result.value);
+
+      if (!converted.trim()) {
+        setDocxMessage('That Word document did not contain readable text.');
+        return;
+      }
+
+      setContent(previous => previous.trim() ? `${previous.trim()}\n\n${converted}` : converted);
+
+      const warnings = result.messages.filter(message => message.type === 'warning');
+      setDocxMessage(
+        warnings.length > 0
+          ? `Imported text from ${file.name}. Some Word formatting may need review.`
+          : `Imported text from ${file.name}.`
+      );
+    } catch (err) {
+      console.error('Failed to import Word document:', err);
+      setDocxMessage('Could not read that Word document. Please copy and paste the text instead.');
+    } finally {
+      setImportingDocx(false);
+    }
   };
 
   const buildContent = () => {
@@ -393,6 +536,34 @@ export default function HomeSubmissionForm() {
                 {contentLimit ? `${content.length} / ${contentLimit} characters` : `${getWordCount(content)} words`}
               </span>
             </div>
+          </div>
+
+          <p className="mb-3 text-sm leading-5 text-gray-700">
+            You can paste from Word. Basic formatting like headings, bold, italics, and lists will be preserved.
+          </p>
+
+          <div className="mb-3 rounded-md border border-orange-200 bg-white px-3 py-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-orange-950">Have a Word document?</p>
+                <p className="text-xs leading-5 text-gray-600">
+                  Import the text into this box. The file is not stored.
+                </p>
+              </div>
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-900 transition hover:bg-orange-100">
+                {importingDocx ? 'Importing...' : 'Import .docx'}
+                <input
+                  type="file"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={importDocx}
+                  disabled={importingDocx}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+            {docxMessage && (
+              <p className="mt-2 text-xs font-medium text-gray-700">{docxMessage}</p>
+            )}
           </div>
 
           {canUsePhotos && (

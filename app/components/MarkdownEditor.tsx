@@ -1,9 +1,10 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface MarkdownEditorProps {
   value: string;
@@ -15,12 +16,12 @@ interface MarkdownEditorProps {
 }
 
 // Convert Tiptap JSON to Markdown
-function editorToMarkdown(editor: any): string {
+function editorToMarkdown(editor: Editor): string {
   const json = editor.getJSON();
   return jsonToMarkdown(json);
 }
 
-function jsonToMarkdown(node: any): string {
+function jsonToMarkdown(node: JSONContent | null | undefined): string {
   if (!node) return '';
   
   const { type, content, marks, attrs, text } = node;
@@ -29,7 +30,7 @@ function jsonToMarkdown(node: any): string {
   if (type === 'text') {
     let result = text || '';
     if (marks) {
-      marks.forEach((mark: any) => {
+      marks.forEach((mark) => {
         if (mark.type === 'bold') result = `**${result}**`;
         if (mark.type === 'italic') result = `_${result}_`;
       });
@@ -49,12 +50,12 @@ function jsonToMarkdown(node: any): string {
       const level = attrs?.level || 1;
       return '#'.repeat(level) + ' ' + childContent + '\n\n';
     case 'bulletList':
-      return content.map((item: any) => {
+      return (content || []).map((item) => {
         const itemText = jsonToMarkdown(item).trim();
         return '- ' + itemText.replace(/\n\n$/, '\n');
       }).join('') + '\n';
     case 'orderedList':
-      return content.map((item: any, index: number) => {
+      return (content || []).map((item, index) => {
         const itemText = jsonToMarkdown(item).trim();
         return `${index + 1}. ` + itemText.replace(/\n\n$/, '\n');
       }).join('') + '\n';
@@ -73,7 +74,7 @@ function markdownToHtml(markdown: string): string {
   
   // Headings
   html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$2</h2>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
   
   // Horizontal rule
@@ -109,12 +110,6 @@ function markdownToHtml(markdown: string): string {
 }
 
 export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px', simpleToolbar = false, maxLength }: MarkdownEditorProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -159,7 +154,7 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
     }
   }, [value, editor]);
 
-  if (!isMounted || !editor) {
+  if (!editor) {
     return (
       <div className="rounded-lg border-2 border-orange-200 bg-white p-3" style={{ minHeight }}>
         <div className="text-gray-400 text-sm">Loading editor...</div>
@@ -280,7 +275,7 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
             <button
               type="button"
               onClick={() => {
-                const placeholder = '[PHOTO PLACEHOLDER - Insert emailed photo here]';
+                const placeholder = '[PHOTO: describe the photo here. Email this photo to griteditor@sandiahomeowners.org]';
                 editor.chain().focus().insertContent(placeholder).run();
               }}
               className="rounded px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 transition font-medium"

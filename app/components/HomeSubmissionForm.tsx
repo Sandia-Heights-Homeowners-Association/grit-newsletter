@@ -8,12 +8,16 @@ import { COMMUNITY_CATEGORIES, COMMITTEE_CATEGORIES, type CommunityCategory, typ
 const DEFAULT_COMMUNITY_CATEGORY: CommunityCategory = 'General Submission / Other';
 const DEFAULT_COMMITTEE_CATEGORY: CommitteeCategory = 'General Announcements';
 
-interface MammothBrowserModule {
+interface MammothBrowserConverter {
   convertToHtml: (input: { arrayBuffer: ArrayBuffer }) => Promise<{
     value: string;
     messages: Array<{ type: string; message: string }>;
   }>;
-  default?: MammothBrowserModule;
+}
+
+interface MammothBrowserModule {
+  convertToHtml?: MammothBrowserConverter['convertToHtml'];
+  default?: MammothBrowserConverter;
 }
 
 function getWordCount(value: string): number {
@@ -226,7 +230,9 @@ export default function HomeSubmissionForm() {
 
     try {
       const mammothModule = await import('mammoth') as unknown as MammothBrowserModule;
-      const mammoth = mammothModule.convertToHtml ? mammothModule : mammothModule.default;
+      const mammoth = typeof mammothModule.convertToHtml === 'function'
+        ? { convertToHtml: mammothModule.convertToHtml }
+        : mammothModule.default;
       if (!mammoth) {
         throw new Error('Word document converter did not load.');
       }

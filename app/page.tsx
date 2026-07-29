@@ -1,11 +1,97 @@
 'use client';
 
+import type React from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import HomeSubmissionForm from '@/app/components/HomeSubmissionForm';
 import { COMMUNITY_CATEGORIES } from '@/lib/types';
 import { getMonthName } from '@/lib/constants';
+import { DEFAULT_HOMEPAGE_CONTENT, type HomepageContent } from '@/lib/homepage-content';
+
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const linkPattern = /(\*\*([^*]+)\*\*)|\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkPattern.exec(text))) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      nodes.push(<strong key={`${match.index}-strong`}>{match[2]}</strong>);
+    } else if (match[3] && match[4]) {
+      nodes.push(
+        <a key={`${match.index}-link`} href={match[4]} className="text-teal-700 underline hover:text-teal-900">
+          {match[3]}
+        </a>
+      );
+    }
+
+    lastIndex = linkPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+function MarkdownBlock({ markdown }: { markdown: string }) {
+  const lines = markdown.split('\n');
+  const blocks: React.ReactNode[] = [];
+  let paragraph: string[] = [];
+  let listItems: string[] = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    const text = paragraph.join(' ');
+    blocks.push(<p key={`p-${blocks.length}`}>{renderInlineMarkdown(text)}</p>);
+    paragraph = [];
+  };
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    blocks.push(
+      <ul key={`ul-${blocks.length}`} className="ml-6 list-disc space-y-2">
+        {listItems.map((item, index) => (
+          <li key={index}>{renderInlineMarkdown(item)}</li>
+        ))}
+      </ul>
+    );
+    listItems = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+    if (trimmed.startsWith('### ')) {
+      flushParagraph();
+      flushList();
+      blocks.push(<h4 key={`h-${blocks.length}`} className="mt-4 font-semibold text-gray-900">{renderInlineMarkdown(trimmed.slice(4))}</h4>);
+      return;
+    }
+    if (trimmed.startsWith('- ')) {
+      flushParagraph();
+      listItems.push(trimmed.slice(2));
+      return;
+    }
+    flushList();
+    paragraph.push(trimmed);
+  });
+
+  flushParagraph();
+  flushList();
+
+  return <div className="space-y-3">{blocks}</div>;
+}
 
 export default function Home() {
   const [currentStats, setCurrentStats] = useState<Record<string, number>>({});
@@ -21,8 +107,11 @@ export default function Home() {
   const [captionContributors, setCaptionContributors] = useState<string[]>([]);
   const [captionContestEnabled, setCaptionContestEnabled] = useState(false);
   const [captionContestTitle, setCaptionContestTitle] = useState('Caption Contest');
+  const [homepageContent, setHomepageContent] = useState<HomepageContent>(DEFAULT_HOMEPAGE_CONTENT);
   const currentCommunityTotal = COMMUNITY_CATEGORIES.reduce((total, category) => total + (currentStats[category] || 0), 0);
   const previousCommunityTotal = COMMUNITY_CATEGORIES.reduce((total, category) => total + (previousStats[category] || 0), 0);
+  const currentContributionTotal = currentCommunityTotal + currentRoutineCommitteeCount;
+  const previousContributionTotal = previousCommunityTotal + previousRoutineCommitteeCount;
   const currentAllContributors = captionContestEnabled && captionContributors.length > 0
     ? [...new Set([...currentContributors, ...captionContributors])].sort()
     : currentContributors;
@@ -54,6 +143,15 @@ export default function Home() {
         setCaptionContributors(data.captionContributors || []);
       })
       .catch(err => console.error('Failed to load stats:', err));
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/homepage-content')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setHomepageContent(data);
+      })
+      .catch(err => console.error('Failed to load homepage content:', err));
   }, []);
 
   return (
@@ -106,7 +204,7 @@ export default function Home() {
             We welcome your submissions!
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-gray-800">
-            The GRIT is your community newsletter. Send a quick note, a photo idea, a local event, or a full article.
+            {homepageContent.welcomeText}
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm font-semibold">
             <span className="rounded-full bg-orange-100 px-3 py-1 text-orange-950">
@@ -114,6 +212,9 @@ export default function Home() {
             </span>
             <a href="#guidelines" className="rounded-full bg-white px-3 py-1 text-teal-800 underline decoration-teal-300 underline-offset-4 hover:text-teal-950">
               Guidelines
+            </a>
+            <a href="#terms" className="rounded-full bg-white px-3 py-1 text-teal-800 underline decoration-teal-300 underline-offset-4 hover:text-teal-950">
+              Terms
             </a>
             <a href="mailto:griteditor@sandiahomeowners.org" className="rounded-full bg-white px-3 py-1 text-teal-800 underline decoration-teal-300 underline-offset-4 hover:text-teal-950">
               Contact editor
@@ -153,7 +254,7 @@ export default function Home() {
               </h2>
             </div>
             <p className="text-sm font-medium text-gray-600">
-              Every name here helps the issue feel more like Sandia Heights.
+              A friendly tally of this month&apos;s GRIT contributions.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
@@ -167,17 +268,13 @@ export default function Home() {
                   In play
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="rounded-md bg-white p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-orange-800">{currentCommunityTotal}</div>
-                  <div className="text-xs font-semibold text-gray-600">Community</div>
+                  <div className="text-3xl font-bold text-orange-800">{currentContributionTotal}</div>
+                  <div className="text-xs font-semibold text-gray-600">Contributions</div>
                 </div>
                 <div className="rounded-md bg-white p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-teal-800">{currentRoutineCommitteeCount}</div>
-                  <div className="text-xs font-semibold text-gray-600">Routine</div>
-                </div>
-                <div className="rounded-md bg-white p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-amber-700">{captionContestEnabled ? captionCount : '–'}</div>
+                  <div className="text-3xl font-bold text-amber-700">{captionContestEnabled ? captionCount : '–'}</div>
                   <div className="text-xs font-semibold text-gray-600">Captions</div>
                 </div>
               </div>
@@ -185,7 +282,7 @@ export default function Home() {
               {/* Current Contributors List */}
               <div className="mt-5 border-t border-orange-200 pt-4">
                 <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-orange-900">
-                  Roll call
+                  Contributors
                 </h4>
                 {currentAllContributors.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -216,21 +313,17 @@ export default function Home() {
                   Last round
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="text-center">
                 <div className="rounded-md bg-white p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-gray-800">{previousCommunityTotal}</div>
-                  <div className="text-xs font-semibold text-gray-600">Community</div>
-                </div>
-                <div className="rounded-md bg-white p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-gray-800">{previousRoutineCommitteeCount}</div>
-                  <div className="text-xs font-semibold text-gray-600">Routine</div>
+                  <div className="text-3xl font-bold text-gray-800">{previousContributionTotal}</div>
+                  <div className="text-xs font-semibold text-gray-600">Contributions</div>
                 </div>
               </div>
               
               {/* Previous Contributors List */}
               <div className="mt-5 border-t border-gray-300 pt-4">
                 <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">
-                  Roll call
+                  Contributors
                 </h4>
                 {previousContributors.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -294,98 +387,18 @@ export default function Home() {
           <summary className="cursor-pointer text-lg font-semibold text-gray-900">
             Content Guidelines
           </summary>
-          <div className="space-y-3 text-base text-gray-800">
-            <p>
-              To help us publish a clear, readable, and useful newsletter each month, please keep the following in mind:
-            </p>
-
-            <ul className="ml-6 space-y-2 list-disc">
-              <li>Submissions may be very short or up to ~500 words.</li>
-              <li>You can type, paste from Word, or import a Word document into the form.</li>
-              <li>
-                Content should be relevant to life in Sandia Heights or of clear interest to neighbors.
-              </li>
-              <li>
-                Write for a general neighborhood audience. Keep content respectful, constructive,
-                and appropriate for all ages.
-              </li>
-              <li>
-                Avoid inflammatory language, personal attacks, or speculation presented as fact.
-              </li>
-              <li>
-                Please avoid excessive business promotion. For advertising, contact{" "}
-                <a
-                  href="mailto:office@sandiahomeowners.org"
-                  className="text-blue-700 hover:text-blue-800 underline"
-                >
-                  office@sandiahomeowners.org
-                </a>.
-              </li>
-              <li>If you reference links, include the full URL.</li>
-            </ul>
-
-            <h4 className="mt-4 font-semibold text-gray-900">Photos</h4>
-            <p>If you would like photos included:</p>
-            <ul className="ml-6 space-y-2 list-disc">
-              <li>
-                Place a clear placeholder in your text where the photo should appear, for example:<br />
-                <code className="bg-gray-200 px-1 py-0.5 rounded">
-                  [PHOTO: roadrunner on wall]
-                </code>{" "}
-                or{" "}
-                <code className="bg-gray-200 px-1 py-0.5 rounded">
-                  [PHOTO 1: caption here]
-                </code>
-              </li>
-              <li>
-                Then email the photo(s) to{" "}
-                <a
-                  href="mailto:griteditor@sandiahomeowners.org"
-                  className="text-blue-700 hover:text-blue-800 underline"
-                >
-                  griteditor@sandiahomeowners.org
-                </a>.
-              </li>
-            </ul>
-
-            <h4 className="mt-4 font-semibold text-gray-900">Editing & Placement</h4>
-            <p>
-              Editors may shorten or edit submissions for clarity and fit. Not all content
-              will appear in the same issue it is submitted; some items may be saved for a future
-              month.
-            </p>
-
-            <h4 className="mt-4 font-semibold text-gray-900">Not Sure Where It Fits?</h4>
-            <p>
-              If you&apos;re unsure which topic to choose, leave the form set to <strong>General Submission / Other</strong>.
-            </p>
+          <div className="mt-4 text-base text-gray-800">
+            <MarkdownBlock markdown={homepageContent.guidelinesMarkdown} />
           </div>
         </details>
 
-        {/* Submission Terms - Plain text at bottom */}
+        {/* Submission Terms */}
         <details id="terms" className="mt-4 rounded-lg border border-orange-200 bg-white/80 p-5 shadow">
           <summary className="cursor-pointer text-lg font-semibold text-gray-900">
             Submission Terms & Conditions
           </summary>
-          <div className="space-y-3 text-sm text-gray-800">
-            <p>
-              Thank you for contributing to The GRIT! By sending us your content, you give the Sandia Heights Homeowners Association (SHHA) a non-exclusive, royalty-free right to publish, edit, reproduce, and distribute your submission in the newsletter, on the SHHA website, in email communications, and in other Association materials. This includes permission for us to make any needed editorial changes, format your content for publication, and archive it for future reference.
-            </p>
-            <p>
-              All submissions go through an editorial review process. Our editors may adjust content for length, clarity, tone, or appropriateness, and we reserve the right to decline any submission. While we appreciate every contribution, we cannot guarantee publication or accommodate requests for specific placement, timing, or prominence.
-            </p>
-            <p>
-              Please help us keep the newsletter enjoyable and useful by making sure your submission is concise, respectful, and relevant to the Sandia Heights community. Submissions must be your own original work. By contributing, you confirm that you hold the rights to the text, images, or other materials you provide and that your content does not infringe on the rights of others. If your submission includes photos of people who can be identified, please make sure you have their permission.
-            </p>
-            <p>
-              Be sure to include your name and contact information with each submission. We will not publish your contact details without your permission, but we may reach out if clarification is needed. Anonymous or unverifiable submissions may not be accepted.
-            </p>
-            <p>
-              Please note that SHHA is not responsible for any errors, omissions, or misinterpretations in submitted content, and publication does not imply endorsement of the opinions expressed.
-            </p>
-            <p>
-              SHHA may update or revise these Terms & Conditions at any time.
-            </p>
+          <div className="mt-4 text-sm text-gray-800">
+            <MarkdownBlock markdown={homepageContent.termsMarkdown} />
           </div>
         </details>
       </main>

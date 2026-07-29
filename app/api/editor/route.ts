@@ -18,6 +18,7 @@ import { SubmissionCategory } from '@/lib/types';
 import { setDeadlineDay } from '@/lib/store';
 import { db } from '@/lib/db';
 import { getCaptionEntryWindow, normalizeDateInput } from '@/lib/caption-contest';
+import { normalizeHomepageContent, type HomepageContent } from '@/lib/homepage-content';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
     const defaultMonthlyCategories = await db.getConfig<string[]>('default_monthly_categories');
     const contentOrder = await db.getConfig<string[]>(`content_order_${month}`);
     const dismissedMissingCategories = await db.getConfig<string[]>(dismissedMissingItemsConfigKey(month));
+    const homepageContent = normalizeHomepageContent(await db.getConfig<Partial<HomepageContent>>('homepage_content'));
 
     console.log('Editor GET:', { month, submissions: submissions.length });
     console.log('Submissions by category:', submissions.reduce((acc, s) => {
@@ -93,6 +95,7 @@ export async function GET(request: NextRequest) {
       defaultMonthlyCategories,
       contentOrder,
       dismissedMissingCategories,
+      homepageContent,
     });
   } catch (error) {
     console.error('Editor GET error:', error);
@@ -289,6 +292,28 @@ export async function POST(request: NextRequest) {
         const uniqueCategories = Array.from(new Set(dismissedMissingCategories.map((category) => category.trim())));
         await db.setConfig(dismissedMissingItemsConfigKey(month), uniqueCategories);
         return NextResponse.json({ success: true, month, dismissedMissingCategories: uniqueCategories });
+      }
+
+      case 'updateHomepageContent': {
+        const { welcomeText, guidelinesMarkdown, termsMarkdown } = data;
+        if (
+          typeof welcomeText !== 'string' ||
+          typeof guidelinesMarkdown !== 'string' ||
+          typeof termsMarkdown !== 'string'
+        ) {
+          return NextResponse.json(
+            { error: 'Homepage content requires welcomeText, guidelinesMarkdown, and termsMarkdown.' },
+            { status: 400 }
+          );
+        }
+
+        const homepageContent = normalizeHomepageContent({
+          welcomeText: welcomeText.trim(),
+          guidelinesMarkdown: guidelinesMarkdown.trim(),
+          termsMarkdown: termsMarkdown.trim(),
+        });
+        await db.setConfig('homepage_content', homepageContent);
+        return NextResponse.json({ success: true, homepageContent });
       }
 
       case 'getCaptionContest':

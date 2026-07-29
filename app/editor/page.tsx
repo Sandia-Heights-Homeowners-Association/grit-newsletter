@@ -6,6 +6,7 @@ import Header from '@/app/components/Header';
 import ContentFlow from '@/app/components/ContentFlow';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
+import { DEFAULT_HOMEPAGE_CONTENT, type HomepageContent } from '@/lib/homepage-content';
 
 const ALL_CATEGORIES = Array.from(new Set([
   ...COMMUNITY_CATEGORIES,
@@ -45,7 +46,7 @@ const MONTHLY_PLACEHOLDER_CATEGORIES: SubmissionCategory[] = [
   'Security Report',
 ];
 
-type EditorView = 'inbox' | 'planning' | 'preview' | 'data';
+type EditorView = 'inbox' | 'planning' | 'preview' | 'data' | 'settings';
 type CaptionEntry = {
   id: string;
   publishedName: string;
@@ -142,7 +143,6 @@ export default function EditorPage() {
   const [currentMonth, setCurrentMonth] = useState('');
   const [databaseStatus, setDatabaseStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [databaseError, setDatabaseError] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
   const [showCaptionContest, setShowCaptionContest] = useState(false);
   const [captionContest, setCaptionContest] = useState<{
     enabled: boolean;
@@ -163,6 +163,7 @@ export default function EditorPage() {
   const [captionImagePreview, setCaptionImagePreview] = useState<string | null>(null);
   const [captionImageUploading, setCaptionImageUploading] = useState(false);
   const [captionEntriesLoaded, setCaptionEntriesLoaded] = useState(false);
+  const [homepageContent, setHomepageContent] = useState<HomepageContent>(DEFAULT_HOMEPAGE_CONTENT);
   const [deadlineDay, setDeadlineDay] = useState<number>(10);
   const [currentDeadlineInfo, setCurrentDeadlineInfo] = useState<{month: string; deadline: string}>({month: '', deadline: ''});
   const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -512,6 +513,7 @@ export default function EditorPage() {
         );
         setDeadlineDay(data.deadlineDay || 20);
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
+        setHomepageContent(data.homepageContent || DEFAULT_HOMEPAGE_CONTENT);
         setDatabaseStatus('connected');
         setDatabaseError('');
         setAuthenticated(true);
@@ -925,7 +927,6 @@ export default function EditorPage() {
         const data = await response.json();
         setCurrentDeadlineInfo(data.deadlineInfo || {month: '', deadline: ''});
         alert('Deadline updated successfully! The new deadline will be reflected on the homepage.');
-        setShowSettings(false);
         await loadEditorData(); // Reload to get updated data
       } else {
         alert('Failed to update deadline');
@@ -933,6 +934,34 @@ export default function EditorPage() {
     } catch (err) {
       console.error('Failed to update deadline:', err);
       alert('An error occurred while updating the deadline');
+    }
+  };
+
+  const saveHomepageContent = async () => {
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateHomepageContent',
+          ...homepageContent,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setHomepageContent(data.homepageContent || homepageContent);
+        showToastNotification('Homepage text saved');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showToastNotification(errorData.error || 'Failed to save homepage text');
+      }
+    } catch (err) {
+      console.error('Failed to save homepage content:', err);
+      showToastNotification('Failed to save homepage text');
     }
   };
 
@@ -1208,8 +1237,9 @@ export default function EditorPage() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setShowSettings(true);
+                setEditorView('settings');
                 setShowCaptionContest(false);
+                setShowJsonViewer(false);
               }}
               className="rounded-lg bg-gradient-to-r from-gray-600 to-slate-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-gray-700 hover:to-slate-700"
               title="Manage settings including submission deadline"
@@ -1218,7 +1248,6 @@ export default function EditorPage() {
             </button>
             <button
               onClick={async () => {
-                setShowSettings(false);
                 if (!showCaptionContest) {
                   // Load current contest data
                   try {
@@ -1284,6 +1313,7 @@ export default function EditorPage() {
             ['planning', `Issue Planning (${plannedSubmissions.length})`],
             ['preview', 'Preview'],
             ['data', 'Data'],
+            ['settings', 'Settings'],
           ].map(([view, label]) => (
             <button
               key={view}
@@ -1292,7 +1322,6 @@ export default function EditorPage() {
                 setEditorView(view as EditorView);
                 if (view === 'preview') setPreviewTab('preview');
                 if (view === 'planning') setPreviewTab('flow');
-                setShowSettings(false);
                 setShowCaptionContest(false);
                 setShowJsonViewer(view === 'data');
               }}
@@ -1386,7 +1415,7 @@ export default function EditorPage() {
           </form>
         )}
         
-        {showSettings && (
+        {editorView === 'settings' && (
           <div className="mb-6 rounded-lg bg-white border-2 border-gray-300 p-4 shadow-lg">
             <h2 className="mb-3 text-xl font-bold text-gray-900">Settings</h2>
             
@@ -1487,6 +1516,64 @@ export default function EditorPage() {
             </div>
 
             <div className="mb-6 border-t border-gray-200 pt-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-800">Homepage Text</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Supports Markdown links such as [office email](mailto:office@sandiahomeowners.org).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHomepageContent(DEFAULT_HOMEPAGE_CONTENT)}
+                  className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Reset Draft
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Welcome Text</label>
+                  <textarea
+                    value={homepageContent.welcomeText}
+                    onChange={(e) => setHomepageContent(prev => ({ ...prev, welcomeText: e.target.value }))}
+                    rows={3}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Content Guidelines</label>
+                  <textarea
+                    value={homepageContent.guidelinesMarkdown}
+                    onChange={(e) => setHomepageContent(prev => ({ ...prev, guidelinesMarkdown: e.target.value }))}
+                    rows={10}
+                    className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Submission Terms & Conditions</label>
+                  <textarea
+                    value={homepageContent.termsMarkdown}
+                    onChange={(e) => setHomepageContent(prev => ({ ...prev, termsMarkdown: e.target.value }))}
+                    rows={10}
+                    className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={saveHomepageContent}
+                  className="rounded bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+                >
+                  Save Homepage Text
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6 border-t border-gray-200 pt-4">
               <h3 className="mb-2 text-base font-semibold text-gray-800">Database Export</h3>
               <p className="mb-3 text-sm text-gray-700">
                 Download all submissions data from the database as a JSON file for backup purposes.
@@ -1500,16 +1587,6 @@ export default function EditorPage() {
               </button>
             </div>
 
-            <div className="border-t border-gray-200 pt-4">
-              <button
-                onClick={() => {
-                  setShowSettings(false);
-                }}
-                className="rounded bg-gray-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-500"
-              >
-                Close Settings
-              </button>
-            </div>
           </div>
         )}
 
@@ -1774,7 +1851,7 @@ export default function EditorPage() {
         )}
         
         {/* Combined Newsletter Issue & Stats Bar */}
-        {!showSettings && currentMonth && (
+        {editorView !== 'settings' && currentMonth && (
           <div className="mb-4 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 px-4 py-2.5 shadow">
             <div className="flex items-center justify-between gap-6">
               {/* Newsletter Issue Selector */}

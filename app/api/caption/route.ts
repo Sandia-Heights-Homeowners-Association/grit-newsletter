@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase } from '@/lib/db';
 import { sendCaptionConfirmation } from '@/lib/email';
+import { isCaptionContestOpen } from '@/lib/caption-contest';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,14 +42,17 @@ export async function GET() {
   try {
     await ensureInit();
     const contest = await db.getCaptionContest();
+    const acceptingEntries = isCaptionContestOpen(contest);
     // Never send the raw base64 image back in the enabled-check response;
     // send it only when the contest is enabled so the page can display it.
     return NextResponse.json({
-      enabled: contest.enabled,
-      imageData: contest.enabled ? contest.imageData : null,
-      imageType: contest.enabled ? contest.imageType : null,
+      enabled: acceptingEntries,
+      imageData: acceptingEntries ? contest.imageData : null,
+      imageType: acceptingEntries ? contest.imageType : null,
       title: contest.title,
       description: contest.description,
+      startDate: contest.startDate,
+      endDate: contest.endDate,
     });
   } catch (error) {
     console.error('Caption GET error:', error);
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Verify contest is active
     const contest = await db.getCaptionContest();
-    if (!contest.enabled) {
+    if (!isCaptionContestOpen(contest)) {
       return NextResponse.json({ error: 'The caption contest is not currently active' }, { status: 403 });
     }
 

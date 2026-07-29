@@ -46,6 +46,15 @@ const MONTHLY_PLACEHOLDER_CATEGORIES: SubmissionCategory[] = [
 ];
 
 type EditorView = 'inbox' | 'planning' | 'preview' | 'data';
+type CaptionEntry = {
+  id: string;
+  publishedName: string;
+  fullName: string;
+  email: string;
+  location: string;
+  caption: string;
+  submittedAt: Date | string;
+};
 
 function getSubmissionTitle(submission: Submission): string {
   if (submission.title) return submission.title;
@@ -73,6 +82,10 @@ function uniqueSubmissionsById(submissions: Submission[]): Submission[] {
     seen.add(submission.id);
     return true;
   });
+}
+
+function buildCaptionVotingText(entries: CaptionEntry[]): string {
+  return entries.map((entry, index) => `${index + 1}. ${entry.caption}`).join('\n\n');
 }
 
 function createAutoMissingPlaceholder(category: SubmissionCategory, month: string): Submission {
@@ -137,12 +150,15 @@ export default function EditorPage() {
     imageType: string | null;
     title: string | null;
     description: string | null;
-  }>({ enabled: false, imageData: null, imageType: null, title: null, description: null });
-  const [captionEntries, setCaptionEntries] = useState<Array<{
-    id: string; publishedName: string; fullName: string; email: string; location: string; caption: string; submittedAt: Date;
-  }>>([]);
+    startDate: string | null;
+    endDate: string | null;
+  }>({ enabled: false, imageData: null, imageType: null, title: null, description: null, startDate: null, endDate: null });
+  const [captionEntries, setCaptionEntries] = useState<CaptionEntry[]>([]);
   const [captionContestTitle, setCaptionContestTitle] = useState('');
   const [captionContestDesc, setCaptionContestDesc] = useState('');
+  const [captionContestStartDate, setCaptionContestStartDate] = useState('');
+  const [captionContestEndDate, setCaptionContestEndDate] = useState('');
+  const [captionEntryWindow, setCaptionEntryWindow] = useState<{ startDate: string | null; endDate: string | null }>({ startDate: null, endDate: null });
   const [captionImageFile, setCaptionImageFile] = useState<File | null>(null);
   const [captionImagePreview, setCaptionImagePreview] = useState<string | null>(null);
   const [captionImageUploading, setCaptionImageUploading] = useState(false);
@@ -195,6 +211,25 @@ export default function EditorPage() {
     setToastMessage(message);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const applyCaptionContestData = (data: {
+    contest?: typeof captionContest;
+    captions?: CaptionEntry[];
+    entryWindow?: { startDate: string | null; endDate: string | null };
+  }) => {
+    if (!data.contest) return;
+    setCaptionContest(data.contest);
+    setCaptionEntries(data.captions || []);
+    setCaptionContestTitle(data.contest.title || '');
+    setCaptionContestDesc(data.contest.description || '');
+    setCaptionContestStartDate(data.contest.startDate || data.entryWindow?.startDate || '');
+    setCaptionContestEndDate(data.contest.endDate || '');
+    setCaptionEntryWindow(data.entryWindow || {
+      startDate: data.contest.startDate || null,
+      endDate: data.contest.endDate || null,
+    });
+    setCaptionEntriesLoaded(true);
   };
 
   const getWordCount = (text: string): number => {
@@ -1194,12 +1229,8 @@ export default function EditorPage() {
                     });
                   if (res.ok) {
                       const d = await res.json();
-                      setCaptionContest(d.contest);
-                      setCaptionEntries(d.captions || []);
-                      setCaptionContestTitle(d.contest.title || '');
-                      setCaptionContestDesc(d.contest.description || '');
+                      applyCaptionContestData(d);
                       setCaptionImagePreview(null);
-                      setCaptionEntriesLoaded(true);
                     } else {
                       const err = await res.json().catch(() => ({}));
                       showToastNotification('Failed to load caption data: ' + (err.error || `${res.status} ${res.statusText}`));
@@ -1488,7 +1519,7 @@ export default function EditorPage() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">🏆 Caption Contest</h2>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">Contest Active:</span>
+                <span className="text-sm font-medium text-gray-700">Contest Enabled:</span>
                 <button
                   type="button"
                   onClick={async () => {
@@ -1500,7 +1531,8 @@ export default function EditorPage() {
                         body: JSON.stringify({ action: 'setCaptionContest', enabled: newEnabled }),
                       });
                       if (res.ok) {
-                        setCaptionContest(prev => ({ ...prev, enabled: newEnabled }));
+                        const d = await res.json();
+                        applyCaptionContestData(d);
                         showToastNotification(newEnabled ? 'Caption contest enabled' : 'Caption contest disabled');
                       } else {
                         const err = await res.json().catch(() => ({}));
@@ -1543,6 +1575,30 @@ export default function EditorPage() {
                     placeholder="A brief description shown on the contest page"
                     className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none resize-none"
                   />
+                </div>
+
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-800">Start Date</label>
+                    <input
+                      type="date"
+                      value={captionContestStartDate}
+                      onChange={e => setCaptionContestStartDate(e.target.value)}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-800">End Date</label>
+                    <input
+                      type="date"
+                      value={captionContestEndDate}
+                      onChange={e => setCaptionContestEndDate(e.target.value)}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
+                    />
+                  </div>
+                  <p className="sm:col-span-2 text-xs leading-5 text-gray-500">
+                    Entries below are limited to this contest window. If no start date is saved, the editor shows entries since the first day of this month.
+                  </p>
                 </div>
 
                 <div className="mb-4">
@@ -1618,10 +1674,13 @@ export default function EditorPage() {
                             enabled: captionContest.enabled,
                             title: captionContestTitle || null,
                             description: captionContestDesc || null,
+                            startDate: captionContestStartDate || null,
+                            endDate: captionContestEndDate || null,
                           }),
                         });
                         if (res.ok) {
-                          setCaptionContest(prev => ({ ...prev, title: captionContestTitle || null, description: captionContestDesc || null }));
+                          const d = await res.json();
+                          applyCaptionContestData(d);
                           showToastNotification('Settings saved ✓');
                         } else {
                           const err = await res.json().catch(() => ({}));
@@ -1659,11 +1718,29 @@ export default function EditorPage() {
 
               {/* Right: Entries */}
               <div>
-                <div className="mb-3">
-                  <h3 className="text-sm font-bold text-gray-700 uppercase">
-                    Caption Entries ({captionEntries.length})
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-500">To delete an entry, use View Data above.</p>
+                <div className="mb-3 flex flex-wrap items-start gap-2">
+                  <div className="mr-auto">
+                    <h3 className="text-sm font-bold text-gray-700 uppercase">
+                      Caption Entries ({captionEntries.length})
+                    </h3>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Showing entries from {captionEntryWindow.startDate || 'the current contest'}{captionEntryWindow.endDate ? ` through ${captionEntryWindow.endDate}` : ''}.
+                    </p>
+                  </div>
+                  {captionEntries.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(buildCaptionVotingText(captionEntries)).then(
+                          () => showToastNotification('Voting list copied ✓'),
+                          () => showToastNotification('Copy failed — try selecting and copying manually'),
+                        );
+                      }}
+                      className="rounded bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      Copy for Voting
+                    </button>
+                  )}
                 </div>
                 {captionEntries.length === 0 ? (
                   <p className="text-sm text-gray-500 italic">No entries yet.</p>
@@ -1673,8 +1750,9 @@ export default function EditorPage() {
                       <div key={entry.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                         <p className="text-sm font-semibold text-gray-900">&ldquo;{entry.caption}&rdquo;</p>
                         <p className="mt-1 text-xs text-gray-600">
-                          <span className="font-medium">{entry.publishedName}</span>
-                          {' · '}{entry.fullName}{' · '}{entry.location}
+                          <span className="font-medium">Print name:</span> {entry.publishedName}
+                          {' · '}<span className="font-medium">Full name:</span> {entry.fullName}
+                          {' · '}<span className="font-medium">Location:</span> {entry.location}
                         </p>
                         <p className="text-xs text-gray-400">{entry.email}</p>
                       </div>
@@ -2195,19 +2273,15 @@ export default function EditorPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const lines = captionEntries.map((entry, i) => {
-                      const date = new Date(entry.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                      return `${i + 1}. "${entry.caption}"\n   — ${entry.publishedName} (${entry.fullName}, ${entry.location})\n   — Submitted: ${date}`;
-                    });
-                    const text = `CAPTION CONTEST ENTRIES (${captionEntries.length})\n${'='.repeat(40)}\n\n${lines.join('\n\n')}`;
+                    const text = buildCaptionVotingText(captionEntries);
                     navigator.clipboard.writeText(text).then(
-                      () => showToastNotification('Entries copied to clipboard ✓'),
+                      () => showToastNotification('Voting list copied ✓'),
                       () => showToastNotification('Copy failed — try selecting and copying manually'),
                     );
                   }}
                   className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  Copy All
+                  Copy for Voting
                 </button>
               )}
               <button
@@ -2221,8 +2295,7 @@ export default function EditorPage() {
                     });
                     if (res.ok) {
                       const d = await res.json();
-                      setCaptionEntries(d.captions || []);
-                      setCaptionEntriesLoaded(true);
+                      applyCaptionContestData(d);
                     } else {
                       showToastNotification('Failed to load caption entries');
                     }
@@ -2244,8 +2317,9 @@ export default function EditorPage() {
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-gray-900">&ldquo;{entry.caption}&rdquo;</p>
                           <p className="mt-1 text-xs text-gray-700">
-                            <span className="font-medium">{entry.publishedName}</span>
-                            {' · '}{entry.fullName}{' · '}{entry.location}
+                            <span className="font-medium">Print name:</span> {entry.publishedName}
+                            {' · '}<span className="font-medium">Full name:</span> {entry.fullName}
+                            {' · '}<span className="font-medium">Location:</span> {entry.location}
                           </p>
                           <p className="text-xs text-gray-500">{entry.email}</p>
                           <p className="mt-1 text-xs text-gray-400">

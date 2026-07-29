@@ -1,5 +1,26 @@
 import { neon } from '@neondatabase/serverless';
 import { Submission, SubmissionCategory } from './types';
+import { normalizeDateInput } from './caption-contest';
+
+export interface CaptionContestData {
+  enabled: boolean;
+  imageData: string | null;
+  imageType: string | null;
+  title: string | null;
+  description: string | null;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface CaptionEntry {
+  id: string;
+  publishedName: string;
+  fullName: string;
+  email: string;
+  location: string;
+  caption: string;
+  submittedAt: Date;
+}
 
 // Lazy database client initialization
 let sqlClient: ReturnType<typeof neon> | null = null;
@@ -400,7 +421,7 @@ export const db = {
     await sql`DELETE FROM caption_image WHERE id = 'current'`;
   },
 
-  async getCaptionContest(): Promise<{ enabled: boolean; imageData: string | null; imageType: string | null; title: string | null; description: string | null }> {
+  async getCaptionContest(): Promise<CaptionContestData> {
     const sql = getSQL();
     const [configRows, imageRows] = await Promise.all([
       sql`SELECT value FROM config WHERE key = 'caption_contest'`,
@@ -415,11 +436,13 @@ export const db = {
       imageType: img?.image_type ?? null,
       title: v.title ?? null,
       description: v.description ?? null,
+      startDate: normalizeDateInput(v.startDate),
+      endDate: normalizeDateInput(v.endDate),
     };
   },
 
-  // Only stores enabled/title/description — image is stored separately via setCaptionImage
-  async setCaptionContest(data: { enabled: boolean; title?: string | null; description?: string | null }): Promise<void> {
+  // Stores contest settings; image is stored separately via setCaptionImage.
+  async setCaptionContest(data: { enabled: boolean; title?: string | null; description?: string | null; startDate?: string | null; endDate?: string | null }): Promise<void> {
     const sql = getSQL();
     const existingRows = (await sql`
       SELECT value FROM config WHERE key = 'caption_contest'
@@ -429,6 +452,8 @@ export const db = {
       enabled: data.enabled,
       title: data.title !== undefined ? data.title : (existing.title ?? null),
       description: data.description !== undefined ? data.description : (existing.description ?? null),
+      startDate: data.startDate !== undefined ? normalizeDateInput(data.startDate) : normalizeDateInput(existing.startDate),
+      endDate: data.endDate !== undefined ? normalizeDateInput(data.endDate) : normalizeDateInput(existing.endDate),
     };
     await sql`
       INSERT INTO config (key, value, updated_at)
@@ -451,11 +476,16 @@ export const db = {
     `;
   },
 
-  async getCaptions(): Promise<Array<{ id: string; publishedName: string; fullName: string; email: string; location: string; caption: string; submittedAt: Date }>> {
+  async getCaptions(options: { startDate?: string | null; endDate?: string | null } = {}): Promise<CaptionEntry[]> {
     const sql = getSQL();
     const rows = (await sql`
       SELECT * FROM captions ORDER BY submitted_at DESC
     `) as any[];
+    const start = normalizeDateInput(options.startDate);
+    const end = normalizeDateInput(options.endDate);
+    const startTime = start ? new Date(`${start}T00:00:00`).getTime() : null;
+    const endTime = end ? new Date(`${end}T23:59:59.999`).getTime() : null;
+
     return rows.map((r: any) => ({
       id: r.id,
       publishedName: r.published_name,
@@ -464,7 +494,12 @@ export const db = {
       location: r.location,
       caption: r.caption,
       submittedAt: new Date(r.submitted_at),
-    }));
+    })).filter((entry) => {
+      const submittedTime = entry.submittedAt.getTime();
+      if (startTime !== null && Number.isFinite(startTime) && submittedTime < startTime) return false;
+      if (endTime !== null && Number.isFinite(endTime) && submittedTime > endTime) return false;
+      return true;
+    });
   },
 
   async clearCaptions(): Promise<void> {

@@ -17,6 +17,7 @@ import { getEditorMonthKey, getNextPublicationInfo, EDITOR_PASSWORD } from '@/li
 import { SubmissionCategory } from '@/lib/types';
 import { setDeadlineDay } from '@/lib/store';
 import { db } from '@/lib/db';
+import { getCaptionEntryWindow, normalizeDateInput } from '@/lib/caption-contest';
 
 // Verify editor password
 function verifyPassword(request: NextRequest): boolean {
@@ -292,13 +293,45 @@ export async function POST(request: NextRequest) {
 
       case 'getCaptionContest':
         const contest = await db.getCaptionContest();
-        const captions = await db.getCaptions();
-        return NextResponse.json({ contest, captions });
+        const entryWindow = getCaptionEntryWindow(contest);
+        const captions = await db.getCaptions(entryWindow);
+        return NextResponse.json({ contest, captions, entryWindow });
 
       case 'setCaptionContest': {
-        const { enabled, title: contestTitle, description: contestDesc } = data;
-        await db.setCaptionContest({ enabled, title: contestTitle, description: contestDesc });
-        return NextResponse.json({ success: true });
+        const { enabled, title: contestTitle, description: contestDesc, startDate, endDate } = data;
+        const hasStartDate = Object.prototype.hasOwnProperty.call(data, 'startDate');
+        const hasEndDate = Object.prototype.hasOwnProperty.call(data, 'endDate');
+        const normalizedStartDate = hasStartDate ? normalizeDateInput(startDate) : undefined;
+        const normalizedEndDate = hasEndDate ? normalizeDateInput(endDate) : undefined;
+        if ((hasStartDate && startDate && !normalizedStartDate) || (hasEndDate && endDate && !normalizedEndDate)) {
+          return NextResponse.json({ error: 'Contest dates must use YYYY-MM-DD format.' }, { status: 400 });
+        }
+        if (normalizedStartDate && normalizedEndDate && normalizedStartDate > normalizedEndDate) {
+          return NextResponse.json({ error: 'Contest start date must be before the end date.' }, { status: 400 });
+        }
+        const contestUpdate: {
+          enabled: boolean;
+          title?: string | null;
+          description?: string | null;
+          startDate?: string | null;
+          endDate?: string | null;
+        } = {
+          enabled,
+          title: contestTitle,
+          description: contestDesc,
+        };
+        if (hasStartDate) contestUpdate.startDate = normalizedStartDate;
+        if (hasEndDate) contestUpdate.endDate = normalizedEndDate;
+        await db.setCaptionContest(contestUpdate);
+        const updatedContest = await db.getCaptionContest();
+        const updatedWindow = getCaptionEntryWindow(updatedContest);
+        const updatedCaptions = await db.getCaptions(updatedWindow);
+        return NextResponse.json({
+          success: true,
+          contest: updatedContest,
+          captions: updatedCaptions,
+          entryWindow: updatedWindow,
+        });
       }
 
       case 'setCaptionImage': {

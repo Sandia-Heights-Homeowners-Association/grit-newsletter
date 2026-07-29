@@ -168,13 +168,13 @@ export default function CaptionPage() {
                 {/* Published */}
                 <div className="rounded-lg border-2 border-green-200 bg-green-50/30 p-4">
                   <h3 className="mb-3 text-sm font-bold uppercase text-green-700">Will Be Published</h3>
-                  <label className="mb-1 block text-sm font-semibold text-orange-900">Name for Publication *</label>
+                  <label className="mb-1 block text-sm font-semibold text-orange-900">Print name *</label>
                   <input
                     type="text"
                     value={publishedName}
                     onChange={e => setPublishedName(e.target.value)}
                     required
-                    placeholder="Your name as you want it to appear"
+                    placeholder="Name as it should appear in print"
                     className="w-full rounded-lg border-2 border-orange-200 p-2 text-sm text-amber-700 placeholder:text-amber-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                   />
                 </div>
@@ -183,7 +183,7 @@ export default function CaptionPage() {
                 <div className="rounded-lg border-2 border-gray-200 bg-gray-50/30 p-4">
                   <h3 className="mb-3 text-sm font-bold uppercase text-gray-600">Will Not Be Published</h3>
                   <div className="mb-3">
-                    <label className="mb-1 block text-sm font-semibold text-orange-900">Full Name *</label>
+                    <label className="mb-1 block text-sm font-semibold text-orange-900">Full name *</label>
                     <input
                       type="text"
                       value={fullName}

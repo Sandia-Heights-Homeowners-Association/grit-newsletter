@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCategoryStats, getContributorNames, getRoutineAndCommitteeCount, getDeadlineDay, reloadData } from '@/lib/store';
 import { getCurrentMonthKey, getPreviousMonthKey, getNextPublicationInfo } from '@/lib/constants';
 import { db } from '@/lib/db';
+import { getCaptionEntryWindow, isCaptionContestOpen } from '@/lib/caption-contest';
 
 // Disable caching for this dynamic stats endpoint
 export const dynamic = 'force-dynamic';
@@ -28,8 +29,9 @@ export async function GET(request: NextRequest) {
     const captionContest = await db.getCaptionContest();
     let captionCount = 0;
     let captionContributors: string[] = [];
-    if (captionContest.enabled) {
-      const captions = await db.getCaptions();
+    if (isCaptionContestOpen(captionContest)) {
+      const window = getCaptionEntryWindow(captionContest);
+      const captions = await db.getCaptions(window);
       captionCount = captions.length;
       captionContributors = [...new Set(captions.map(c => c.publishedName))].sort();
     }

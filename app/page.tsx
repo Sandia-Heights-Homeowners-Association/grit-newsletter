@@ -57,12 +57,12 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      <main className="mx-auto max-w-6xl px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-stone-100 via-orange-100 to-amber-100">
+      <main className="mx-auto max-w-6xl px-4 py-8 md:py-12">
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center">
           {/* Logo */}
-          <div className="mb-6 flex justify-center">
+          <div className="mb-5 flex justify-center">
             <Image 
               src="/logo.png" 
               alt="The GRIT Logo" 
@@ -72,11 +72,8 @@ export default function Home() {
             />
           </div>
           
-          <p className="text-lg font-medium text-orange-800">
+          <p className="text-base font-medium text-orange-800">
             Sandia Heights Homeowners Association Newsletter
-          </p>
-          <p className="mt-2 text-base italic text-orange-700">
-            Serving our community since the 1970s
           </p>
           
           {/* Links to GRIT Archives */}
@@ -101,91 +98,101 @@ export default function Home() {
         </div>
 
         {/* Call to Action - Community Contributions */}
-        <div className="mb-12">
-          <div className="mb-8">
-            <h2 className="mb-4 text-center text-3xl font-bold text-orange-900">
-              Now Collecting Contributions for the <span className="text-orange-700">{deadlineInfo.month || 'Upcoming'} Issue</span>
-            </h2>
-            <p className="mb-4 text-center text-xl font-semibold text-red-800">
-              Local Events | Photos | Little Things Worth Sharing
-            </p>
-            <div className="mx-auto max-w-3xl space-y-2 text-center text-gray-900">
-              <p className="text-lg">
-                <strong className="text-orange-900">We welcome your submissions!</strong> The GRIT is your community newsletter, 
-                and we want to hear from you. We welcome any neighborhood-relevant content, 
-                from short thoughts to full articles.
-              </p>
-              <p className="text-sm">
-                <strong className="text-orange-900">Deadline:</strong> {deadlineInfo.deadline || 'TBD'} • 
-                <a href="#guidelines" className="text-teal-700 hover:text-teal-800 underline ml-1">Content Guidelines</a> • 
-                <a href="#terms" className="text-green-700 hover:text-green-800 underline">Terms</a> • 
-                <a href="mailto:griteditor@sandiahomeowners.org" className="text-teal-700 hover:text-teal-800 underline">Contact Editor</a>
-              </p>
-            </div>
+        <div className="mb-6 rounded-lg border border-orange-300 bg-white/80 px-5 py-5 text-center shadow-lg backdrop-blur">
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-800">
+            Now collecting for {deadlineInfo.month || 'the upcoming issue'}
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-orange-950 md:text-4xl">
+            We welcome your submissions!
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-gray-800">
+            The GRIT is your community newsletter. Send a quick note, a photo idea, a local event, or a full article.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm font-semibold">
+            <span className="rounded-full bg-orange-100 px-3 py-1 text-orange-950">
+              Deadline: {deadlineInfo.deadline || 'TBD'}
+            </span>
+            <a href="#guidelines" className="rounded-full bg-white px-3 py-1 text-teal-800 underline decoration-teal-300 underline-offset-4 hover:text-teal-950">
+              Guidelines
+            </a>
+            <a href="mailto:griteditor@sandiahomeowners.org" className="rounded-full bg-white px-3 py-1 text-teal-800 underline decoration-teal-300 underline-offset-4 hover:text-teal-950">
+              Contact editor
+            </a>
           </div>
         </div>
-
-        <HomeSubmissionForm />
 
         {/* Caption Contest Banner */}
         {captionContestEnabled && (
           <div className="mb-8">
             <Link
               href="/caption"
-              className="flex items-center justify-between rounded-xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 px-6 py-4 shadow transition hover:shadow-md hover:border-yellow-500"
+              className="flex flex-col gap-4 rounded-lg border-2 border-yellow-500 bg-gradient-to-r from-yellow-100 via-amber-50 to-white px-5 py-4 shadow-xl shadow-yellow-900/10 transition hover:border-yellow-600 hover:shadow-2xl sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🏆</span>
                 <div>
-                  <div className="text-lg font-bold text-amber-900">{captionContestTitle}</div>
-                  <div className="text-sm text-amber-700">Enter this month&apos;s caption contest!</div>
+                  <div className="text-sm font-semibold uppercase tracking-wide text-amber-800">Active caption contest</div>
+                  <div className="text-lg font-bold text-amber-950">{captionContestTitle}</div>
                 </div>
               </div>
-              <span className="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow">
+              <span className="self-start rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow sm:self-auto">
                 Enter Now →
               </span>
             </Link>
           </div>
         )}
 
-        <div className="mb-12 rounded-lg bg-white p-6 shadow-lg border border-red-100">
-          <h2 className="mb-6 text-2xl font-bold text-red-900 text-center">
-            What We Have Received
-          </h2>
+        <HomeSubmissionForm />
+
+        <div className="mb-12 rounded-lg border-2 border-teal-200 bg-white p-5 shadow-xl md:p-6">
+          <div className="mb-5 flex flex-col gap-2 text-center md:flex-row md:items-end md:justify-between md:text-left">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Neighborhood scoreboard</p>
+              <h2 className="text-2xl font-bold text-orange-950">
+                What&apos;s rolling in
+              </h2>
+            </div>
+            <p className="text-sm font-medium text-gray-600">
+              Every name here helps the issue feel more like Sandia Heights.
+            </p>
+          </div>
           <div className="grid gap-5 md:grid-cols-2">
             {/* Current Month */}
-            <div className="rounded-md border border-orange-200 bg-orange-50/60 p-5">
-              <h3 className="mb-4 text-lg font-semibold text-red-800">
-                {currentMonthKey ? getMonthName(currentMonthKey) : 'This Month'}
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-800">
-                <li className="flex justify-between">
-                  <span>Community contributions</span>
-                  <span className="font-semibold text-red-700">{currentCommunityTotal}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Routine and committee items</span>
-                  <span className="font-semibold text-red-700">{currentRoutineCommitteeCount}</span>
-                </li>
-                {captionContestEnabled && captionCount > 0 && (
-                  <li className="flex justify-between">
-                    <span>Caption contest entries</span>
-                    <span className="font-semibold text-red-700">{captionCount}</span>
-                  </li>
-                )}
-              </ul>
+            <div className="rounded-lg border border-orange-300 bg-gradient-to-br from-orange-50 to-white p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-orange-950">
+                  {currentMonthKey ? getMonthName(currentMonthKey) : 'This Month'}
+                </h3>
+                <span className="rounded-full bg-orange-700 px-3 py-1 text-xs font-bold text-white">
+                  In play
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md bg-white p-3 shadow-sm">
+                  <div className="text-2xl font-bold text-orange-800">{currentCommunityTotal}</div>
+                  <div className="text-xs font-semibold text-gray-600">Community</div>
+                </div>
+                <div className="rounded-md bg-white p-3 shadow-sm">
+                  <div className="text-2xl font-bold text-teal-800">{currentRoutineCommitteeCount}</div>
+                  <div className="text-xs font-semibold text-gray-600">Routine</div>
+                </div>
+                <div className="rounded-md bg-white p-3 shadow-sm">
+                  <div className="text-2xl font-bold text-amber-700">{captionContestEnabled ? captionCount : '–'}</div>
+                  <div className="text-xs font-semibold text-gray-600">Captions</div>
+                </div>
+              </div>
               
               {/* Current Contributors List */}
-              <div className="mt-6 border-t border-red-200 pt-5">
-                <h4 className="mb-3 text-base font-semibold text-red-900">
-                  Contributors
+              <div className="mt-5 border-t border-orange-200 pt-4">
+                <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-orange-900">
+                  Roll call
                 </h4>
                 {currentAllContributors.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {currentAllContributors.map((name, idx) => (
                       <span
                         key={idx}
-                        className="rounded-full bg-white px-3 py-1 text-sm font-medium text-red-900 border border-red-200"
+                        className="rounded-full border border-orange-200 bg-white px-3 py-1 text-sm font-semibold text-orange-950"
                       >
                         {name}
                       </span>
@@ -200,25 +207,30 @@ export default function Home() {
             </div>
 
             {/* Previous Month */}
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-5">
-              <h3 className="mb-4 text-lg font-semibold text-gray-700">
-                {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
-              </h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex justify-between">
-                  <span>Community contributions</span>
-                  <span className="font-semibold text-gray-700">{previousCommunityTotal}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Routine and committee items</span>
-                  <span className="font-semibold text-gray-700">{previousRoutineCommitteeCount}</span>
-                </li>
-              </ul>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-800">
+                  {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
+                </h3>
+                <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-bold text-white">
+                  Last round
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-md bg-white p-3 shadow-sm">
+                  <div className="text-2xl font-bold text-gray-800">{previousCommunityTotal}</div>
+                  <div className="text-xs font-semibold text-gray-600">Community</div>
+                </div>
+                <div className="rounded-md bg-white p-3 shadow-sm">
+                  <div className="text-2xl font-bold text-gray-800">{previousRoutineCommitteeCount}</div>
+                  <div className="text-xs font-semibold text-gray-600">Routine</div>
+                </div>
+              </div>
               
               {/* Previous Contributors List */}
-              <div className="mt-6 border-t border-gray-300 pt-5">
-                <h4 className="mb-3 text-base font-semibold text-gray-700">
-                  Contributors
+              <div className="mt-5 border-t border-gray-300 pt-4">
+                <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">
+                  Roll call
                 </h4>
                 {previousContributors.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -278,8 +290,10 @@ export default function Home() {
         </div>
 
        {/* Content Guidelines */}
-        <div id="guidelines" className="mt-12 bg-orange-50 p-6 border-2 border-red-600 rounded-xl">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Content Guidelines</h3>
+        <details id="guidelines" className="mt-12 rounded-lg border-2 border-orange-300 bg-white/85 p-5 shadow">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-900">
+            Content Guidelines
+          </summary>
           <div className="space-y-3 text-base text-gray-800">
             <p>
               To help us publish a clear, readable, and useful newsletter each month, please keep the following in mind:
@@ -287,7 +301,7 @@ export default function Home() {
 
             <ul className="ml-6 space-y-2 list-disc">
               <li>Submissions may be very short or up to ~500 words.</li>
-              <li>Only plain text submissions are accepted in this portal.</li>
+              <li>You can type, paste from Word, or import a Word document into the form.</li>
               <li>
                 Content should be relevant to life in Sandia Heights or of clear interest to neighbors.
               </li>
@@ -346,11 +360,13 @@ export default function Home() {
               If you&apos;re unsure which topic to choose, leave the form set to <strong>General Submission / Other</strong>.
             </p>
           </div>
-        </div>
+        </details>
 
         {/* Submission Terms - Plain text at bottom */}
-        <div id="terms" className="mt-8 bg-orange-50 p-6 border-2 border-red-300 rounded-xl">
-          <h3 className="mb-3 text-lg font-semibold text-gray-900">Submission Terms & Conditions</h3>
+        <details id="terms" className="mt-4 rounded-lg border border-orange-200 bg-white/80 p-5 shadow">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-900">
+            Submission Terms & Conditions
+          </summary>
           <div className="space-y-3 text-sm text-gray-800">
             <p>
               Thank you for contributing to The GRIT! By sending us your content, you give the Sandia Heights Homeowners Association (SHHA) a non-exclusive, royalty-free right to publish, edit, reproduce, and distribute your submission in the newsletter, on the SHHA website, in email communications, and in other Association materials. This includes permission for us to make any needed editorial changes, format your content for publication, and archive it for future reference.
@@ -371,7 +387,7 @@ export default function Home() {
               SHHA may update or revise these Terms & Conditions at any time.
             </p>
           </div>
-        </div>
+        </details>
       </main>
     </div>
   );

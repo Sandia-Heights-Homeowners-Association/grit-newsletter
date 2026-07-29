@@ -190,7 +190,7 @@ export default function HomeSubmissionForm() {
     if (category === 'Kids\' Corner') {
       return 'For youth submissions, use the child or correspondent name as the published name. Age is optional.';
     }
-    return 'If you are unsure where something belongs, leave this as General Submission / Other.';
+    return '';
   }, [category, isCommitteeSubmission]);
 
   const resetForm = () => {
@@ -372,12 +372,12 @@ export default function HomeSubmissionForm() {
   };
 
   return (
-    <section id="submit" className="mb-12 rounded-lg border border-orange-200 bg-white p-5 shadow-lg md:p-7">
+    <section id="submit" className="mb-12 rounded-lg border-2 border-orange-300 bg-white p-5 shadow-2xl shadow-orange-900/10 ring-4 ring-white/70 md:p-7">
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-orange-950">Send something to The GRIT</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-700">
-            Start with the form. Pick a topic only if it is obvious; otherwise leave it on Other and the editor will place it.
+            Type, paste, or import a Word document. Pick a topic only if it is obvious.
           </p>
         </div>
         <a
@@ -426,9 +426,11 @@ export default function HomeSubmissionForm() {
           </div>
         </div>
 
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-          {helperText}
-        </p>
+        {helperText && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            {helperText}
+          </p>
+        )}
 
         {!isCommitteeSubmission && category === 'Lost & Found' && (
           <div>
@@ -544,16 +546,12 @@ export default function HomeSubmissionForm() {
             </div>
           </div>
 
-          <p className="mb-3 text-sm leading-5 text-gray-700">
-            You can paste from Word. Basic formatting like headings, bold, italics, and lists will be preserved.
-          </p>
-
           <div className="mb-3 rounded-md border border-orange-200 bg-white px-3 py-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-orange-950">Have a Word document?</p>
+                <p className="text-sm font-semibold text-orange-950">Paste from Word, or import a .docx.</p>
                 <p className="text-xs leading-5 text-gray-600">
-                  Import the text into this box. The file is not stored.
+                  Basic formatting is preserved. The file is not stored.
                 </p>
               </div>
               <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-900 transition hover:bg-orange-100">
@@ -601,7 +599,7 @@ export default function HomeSubmissionForm() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-semibold text-orange-950">
-              Name for publication *
+              Print name *
             </label>
             <input
               type="text"
@@ -609,12 +607,12 @@ export default function HomeSubmissionForm() {
               onChange={(event) => setPublishedName(event.target.value)}
               required
               className="w-full rounded-md border border-orange-200 p-3 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-              placeholder={isCommitteeSubmission ? 'Author name' : 'How your name should appear'}
+              placeholder={isCommitteeSubmission ? 'Author name' : 'Name as it should appear in print'}
             />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold text-orange-950">
-              Full name, for editor records *
+              Full name *
             </label>
             <input
               type="text"

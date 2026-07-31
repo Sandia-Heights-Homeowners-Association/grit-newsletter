@@ -24,12 +24,22 @@ function escapeHtml(value: string): string {
 
 function renderInlineMarkdown(value: string): string {
   let html = escapeHtml(value);
+  const markdownLinks: string[] = [];
+
+  html = html.replace(
+    /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^)]+)\)/g,
+    (_match, label: string, href: string) => {
+      markdownLinks.push(`<a href="${href}" style="color:#0f766e;text-decoration:underline;">${label}</a>`);
+      return `@@GRITLINK${markdownLinks.length - 1}@@`;
+    }
+  );
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/_(.+?)_/g, '<em>$1</em>');
   html = html.replace(
     /(https?:\/\/[^\s<]+)/g,
     '<a href="$1" style="color:#0f766e;text-decoration:underline;">$1</a>'
   );
+  html = html.replace(/@@GRITLINK(\d+)@@/g, (_match, index: string) => markdownLinks[Number(index)] || '');
   return html;
 }
 

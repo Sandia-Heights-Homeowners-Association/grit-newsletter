@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
 import Captcha from '@/app/components/Captcha';
+import MarkdownEditor from '@/app/components/MarkdownEditor';
 import { ROUTINE_CATEGORIES } from '@/lib/types';
 
 export default function RoutinePage() {
-  const router = useRouter();
   const [category, setCategory] = useState<typeof ROUTINE_CATEGORIES[number]>(ROUTINE_CATEGORIES[0]);
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
@@ -36,9 +35,14 @@ export default function RoutinePage() {
       zIndex: 9999,
     };
 
-    function fire(particleRatio: number, opts: any) {
-      const confetti = (window as any).confetti;
-      confetti({
+    const confetti = (window as Window & {
+      confetti?: (options: Record<string, unknown>) => void;
+    }).confetti;
+    if (!confetti) return;
+    const fireConfetti = confetti;
+
+    function fire(particleRatio: number, opts: Record<string, unknown>) {
+      fireConfetti({
         ...defaults,
         ...opts,
         particleCount: Math.floor(count * particleRatio),
@@ -91,7 +95,7 @@ export default function RoutinePage() {
       } else {
         setError(data.details || data.error || 'Failed to submit. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Submit error:', err);
       setError('An error occurred. Please try again.');
     } finally {
@@ -118,7 +122,7 @@ export default function RoutinePage() {
           
           <div className="mb-6 rounded-lg bg-gradient-to-br from-amber-50 to-orange-50 p-4 border-2 border-orange-200">
             <p className="text-gray-900 font-medium">
-              This form is for routine newsletter content such as President's Message, committee reports, 
+              This form is for routine newsletter content such as President&apos;s Message, committee reports,
               ACC Activity Logs, Security Reports, and other regular newsletter sections.
             </p>
           </div>
@@ -150,7 +154,7 @@ export default function RoutinePage() {
                 className="w-full rounded-lg border-2 border-orange-200 p-3 text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
                 placeholder="your.email@example.com"
               />
-              <p className="mt-1 text-sm text-gray-800">You'll receive an email confirmation of your submission.</p>
+              <p className="mt-1 text-sm text-gray-800">You&apos;ll receive an email confirmation of your submission.</p>
             </div>
 
             <div className="mb-6">
@@ -177,13 +181,11 @@ export default function RoutinePage() {
                   {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
                 </span>
               </div>
-              <textarea
+              <MarkdownEditor
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                rows={15}
-                className="w-full rounded-lg border-2 border-orange-200 p-3 font-mono text-sm text-amber-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none placeholder:text-amber-600"
+                onChange={setContent}
                 placeholder="Enter your content here. For CSV data, paste directly from Excel..."
+                minHeight="360px"
               />
               <p className="mt-2 text-sm text-gray-800">
                 {category === 'ACC Activity Log' || category === 'Security Report' 
@@ -197,7 +199,7 @@ export default function RoutinePage() {
             <div className="mb-4 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
               <p className="text-sm text-blue-800">
                 <strong>📧 Email Confirmation:</strong> You will receive a confirmation of your submission.
-                If you don't receive it, please check your spam folder.
+                If you don&apos;t receive it, please check your spam folder.
               </p>
             </div>
 

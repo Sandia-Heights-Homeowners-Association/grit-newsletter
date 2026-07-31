@@ -33,6 +33,7 @@ function jsonToMarkdown(node: JSONContent | null | undefined): string {
       marks.forEach((mark) => {
         if (mark.type === 'bold') result = `**${result}**`;
         if (mark.type === 'italic') result = `_${result}_`;
+        if (mark.type === 'link' && typeof mark.attrs?.href === 'string') result = `[${result}](${mark.attrs.href})`;
       });
     }
     return result;
@@ -83,6 +84,7 @@ function markdownToHtml(markdown: string): string {
   // Bold and italic
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  html = html.replace(/\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^)]+)\)/g, '<a href="$2">$1</a>');
   
   // Bullet lists
   html = html.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
@@ -114,6 +116,11 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
     extensions: [
       StarterKit.configure({
         heading: simpleToolbar ? false : { levels: [1, 2, 3] },
+        link: {
+          autolink: true,
+          defaultProtocol: 'https',
+          openOnClick: false,
+        },
         bulletList: simpleToolbar ? false : undefined,
         orderedList: simpleToolbar ? false : undefined,
         horizontalRule: simpleToolbar ? false : undefined,
@@ -190,35 +197,48 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
         >
           I
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            const { from, empty } = editor.state.selection;
+            const existingUrl = editor.getAttributes('link').href as string | undefined;
+            const url = window.prompt('Paste a web address or email address', existingUrl || 'https://');
+            if (url === null) return;
+
+            const href = url.trim();
+            if (!href) {
+              editor.chain().focus().unsetLink().run();
+              return;
+            }
+
+            if (empty) {
+              const label = window.prompt('Text to display for this link', href);
+              if (!label?.trim()) return;
+              editor.chain()
+                .focus()
+                .insertContent(label.trim())
+                .setTextSelection({ from, to: from + label.trim().length })
+                .setLink({ href })
+                .run();
+              return;
+            }
+
+            editor.chain().focus().setLink({ href }).run();
+          }}
+          className={`rounded px-3 py-1 text-sm font-semibold transition ${
+            editor.isActive('link')
+              ? 'bg-orange-200 text-orange-900'
+              : 'bg-white text-gray-700 hover:bg-orange-100'
+          }`}
+          title="Add or edit link"
+        >
+          Link
+        </button>
         
         {!simpleToolbar && (
           <>
             <div className="w-px bg-gray-300 mx-1"></div>
             
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-              className={`rounded px-3 py-1 text-sm font-semibold transition ${
-                editor.isActive('heading', { level: 1 })
-                  ? 'bg-orange-200 text-orange-900'
-                  : 'bg-white text-gray-700 hover:bg-orange-100'
-              }`}
-              title="Heading 1"
-            >
-              H1
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-              className={`rounded px-3 py-1 text-sm font-semibold transition ${
-                editor.isActive('heading', { level: 2 })
-                  ? 'bg-orange-200 text-orange-900'
-                  : 'bg-white text-gray-700 hover:bg-orange-100'
-              }`}
-              title="Heading 2"
-            >
-              H2
-            </button>
             <button
               type="button"
               onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -227,9 +247,9 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
                   ? 'bg-orange-200 text-orange-900'
                   : 'bg-white text-gray-700 hover:bg-orange-100'
               }`}
-              title="Heading 3"
+              title="Section heading"
             >
-              H3
+              Section
             </button>
             
             <div className="w-px bg-gray-300 mx-1"></div>

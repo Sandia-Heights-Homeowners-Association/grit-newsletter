@@ -551,7 +551,7 @@ export default function HomeSubmissionForm() {
               <div>
                 <p className="text-sm font-semibold text-orange-950">Paste from Word, or import a .docx.</p>
                 <p className="text-xs leading-5 text-gray-600">
-                  Basic formatting is preserved. The file is not stored.
+                  Basic formatting and links are preserved. The file is not stored.
                 </p>
               </div>
               <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-900 transition hover:bg-orange-100">
@@ -594,6 +594,9 @@ export default function HomeSubmissionForm() {
             simpleToolbar={Boolean(contentLimit)}
             maxLength={contentLimit ? 500 : undefined}
           />
+          <p className="mt-2 text-xs leading-5 text-gray-600">
+            Use the Link button, or paste a full web address in parentheses. Section headings become article subheads in the newsletter.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

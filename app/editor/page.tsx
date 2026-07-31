@@ -7,6 +7,7 @@ import ContentFlow from '@/app/components/ContentFlow';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from '@/lib/types';
 import type { Submission, SubmissionCategory } from '@/lib/types';
 import { DEFAULT_HOMEPAGE_CONTENT, type HomepageContent } from '@/lib/homepage-content';
+import { formatSubmissionForNewsletter, getNewsletterCategoryLabel } from '@/lib/newsletter-markdown';
 
 const ALL_CATEGORIES = Array.from(new Set([
   ...COMMUNITY_CATEGORIES,
@@ -305,78 +306,9 @@ export default function EditorPage() {
     });
   }, [password, selectedMonth]);
 
-  // Helper function to extract just the content that will be published
-  const extractContent = (rawContent: string, category: SubmissionCategory, submission?: Submission): string => {
-    if (submission?.itemType === 'placeholder') {
-      return [
-        `*** PLACEHOLDER: ${submission.title || category} ***`,
-        submission.editorNotes || rawContent,
-        '*** NEEDS ATTENTION BEFORE FINAL LAYOUT ***',
-      ].join('\n');
-    }
-
-    const lines = rawContent.split('\n');
-    const firstLine = lines[0] || '';
-
-    let publishedName = '';
-    let title = '';
-
-    // Committee new format: first line is "Title: ...", second is "Author: ..."
-    if (firstLine.startsWith('Title:')) {
-      title = firstLine.replace(/^Title:\s*/i, '').trim();
-      const authorLine = lines.find(l => l.startsWith('Author:'));
-      publishedName = authorLine ? authorLine.replace(/^Author:\s*/i, '').trim() : '';
-    } else {
-      // Community / routine format: "PublishedName - Title" or just "PublishedName"
-      const titleMatch = firstLine.match(/^(.+?)\s+-\s+(.+)$/);
-      if (titleMatch) {
-        publishedName = titleMatch[1].trim();
-        title = titleMatch[2].trim();
-      } else {
-        publishedName = firstLine.replace(/^Author:\s*/i, '').trim();
-      }
-    }
-    
-    // Skip blank line, then skip metadata block (Full Name, Email, Location)
-    let contentStart = 1;
-    for (let i = 1; i < lines.length; i++) {
-      // Look for the blank line after metadata
-      if (lines[i].trim() === '' && i > 1 && 
-          (lines[i-1].includes('Location:') || lines[i-1].includes('Email:'))) {
-        contentStart = i + 1;
-        break;
-      }
-    }
-    
-    // Extract the actual content
-    const actualContent = lines.slice(contentStart).join('\n').trim();
-    
-    // Small entries get compact formatting
-    const smallEntryCategories: SubmissionCategory[] = [
-      'Classifieds',
-      'Lost & Found',
-      'Local Event Announcement'
-    ];
-    
-    if (smallEntryCategories.includes(category)) {
-      // For small entries: just show title/name and content
-      if (title) {
-        return `**${title}**\n\n${actualContent}`;
-      } else {
-        return actualContent;
-      }
-    }
-    
-    // Full articles: H1 Title (mandatory), H2 Author, then content
-    let result = '';
-    if (title) {
-      result = `# ${title}\n\n## ${publishedName}\n\n${actualContent}`;
-    } else {
-      // If no title, use publishedName as title
-      result = `# ${publishedName}\n\n${actualContent}`;
-    }
-    
-    return result;
+  const extractContent = (_rawContent: string, _category: SubmissionCategory, submission?: Submission): string => {
+    if (!submission) return '';
+    return formatSubmissionForNewsletter(submission);
   };
 
   const generateFullNewsletterPreview = (): string => {
@@ -401,18 +333,15 @@ export default function EditorPage() {
       
       if (orderedSubs.length > 0 || remainingSubs.length > 0) {
         const previewSubs = [...orderedSubs, ...remainingSubs];
-        // Group consecutive submissions from the same category to add headings
         const sections: string[] = [];
         let currentCategory: SubmissionCategory | null = null;
         
         previewSubs.forEach(sub => {
-          // Add category heading when category changes
-          if (sub.category !== currentCategory) {
-            sections.push(`== ${sub.category}`);
-            currentCategory = sub.category;
+          if (sub.category !== currentCategory && getNewsletterCategoryLabel(sub.category)) {
+            sections.push(`**${getNewsletterCategoryLabel(sub.category)}**`);
           }
+          currentCategory = sub.category;
           
-          // Add submission content
           sections.push(extractContent(sub.content, sub.category, sub));
         });
         
@@ -425,16 +354,14 @@ export default function EditorPage() {
     const emptySections: string[] = [];
     
     // Helper to add section content
-    const addSection = (category: SubmissionCategory, sectionName: string) => {
-      const categorySubs = submissions.filter(s => 
-        s.category === category && s.disposition === selectedMonth
-      );
+    const addSection = (category: SubmissionCategory) => {
       const previewCategorySubs = monthSubmissions.filter(s =>
         s.category === category && s.disposition === selectedMonth
       );
       
       if (previewCategorySubs.length > 0) {
-        sections.push(`== ${sectionName}`);
+        const categoryLabel = getNewsletterCategoryLabel(category);
+        if (categoryLabel) sections.push(`**${categoryLabel}**`);
         const formattedSubs = previewCategorySubs.map(s => extractContent(s.content, s.category, s));
         sections.push(formattedSubs.join('\n\n'));
       } else {
@@ -442,7 +369,7 @@ export default function EditorPage() {
       }
     };
 
-    categoryOrder.forEach(category => addSection(category, category));
+    categoryOrder.forEach(addSection);
 
     let result = sections.length > 0 
       ? sections.join('\n\n') 

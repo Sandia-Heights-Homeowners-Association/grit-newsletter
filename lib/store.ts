@@ -2,6 +2,7 @@ import { Submission, SubmissionCategory } from './types';
 import { COMMUNITY_CATEGORIES, ROUTINE_CATEGORIES, COMMITTEE_CATEGORIES } from './types';
 import { getCurrentMonthKey } from './constants';
 import { db, initializeDatabase } from './db';
+import { formatSubmissionForNewsletter, getNewsletterCategoryLabel } from './newsletter-markdown';
 
 // Deadline caching to reduce database reads
 let cachedDeadlineDay: number | null = null;
@@ -375,7 +376,7 @@ export async function exportNewsletterText(month: string): Promise<string> {
   // 9. Community Contributions (Classifieds, Lost & Found last)
   // 10. End material: ACC Activity Log, CSC Table, Security Report, Errata
   
-  const orderedCategories: SubmissionCategory[] = [
+  const orderedCategories = Array.from(new Set([
     // 1-5: Main routine content
     'Letter from the Editor',
     'President\'s Note',
@@ -399,7 +400,7 @@ export async function exportNewsletterText(month: string): Promise<string> {
     'Security Report',
     'Errata',
     'Other', // Routine Other at the very end
-  ];
+  ])) as SubmissionCategory[];
   
   let output = '';
   
@@ -407,27 +408,14 @@ export async function exportNewsletterText(month: string): Promise<string> {
     const subs = await getSubmissionsByCategory(category, month);
     const accepted = subs.filter(s => s.disposition === month);
     
-    if (accepted.length > 0) {
-      output += `\n${'='.repeat(60)}\n`;
-      output += `${category.toUpperCase()}\n`;
-      output += `${'='.repeat(60)}\n\n`;
-      
-      accepted.forEach((sub, idx) => {
-        if (idx > 0) output += '\n\n---\n\n';
-        if (sub.itemType === 'placeholder') {
-          output += `*** PLACEHOLDER: ${sub.title || sub.category} ***\n`;
-          output += `${sub.editorNotes || sub.content}`;
-          output += '\n*** NEEDS ATTENTION BEFORE FINAL LAYOUT ***';
-        } else {
-          output += sub.content;
-        }
-      });
-      
-      output += '\n\n';
-    }
+    if (accepted.length === 0) continue;
+
+    const categoryLabel = getNewsletterCategoryLabel(category);
+    const formatted = accepted.map(formatSubmissionForNewsletter).join('\n\n---\n\n');
+    output += `${output ? '\n\n---\n\n' : ''}${categoryLabel ? `**${categoryLabel}**\n\n` : ''}${formatted}`;
   }
-  
-  return output;
+
+  return output.trim();
 }
 
 // Get all data (for API endpoints)

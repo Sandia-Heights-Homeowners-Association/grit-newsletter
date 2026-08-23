@@ -245,7 +245,7 @@ export default function Home() {
 
         <HomeSubmissionForm />
 
-        <section className="mb-12 border-y border-teal-300/80 py-6 md:py-8">
+        <section className="mb-12 border-y-2 border-teal-700/70 bg-teal-50/80 px-5 py-7 md:px-8 md:py-8">
           <div className="mb-6 flex flex-col gap-2 text-center md:flex-row md:items-end md:justify-between md:text-left">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Neighborhood scoreboard</p>
@@ -257,18 +257,18 @@ export default function Home() {
               A friendly tally of this month&apos;s GRIT contributions.
             </p>
           </div>
-          <div className="grid gap-8 md:grid-cols-2 md:gap-0 md:divide-x md:divide-teal-300/70">
+          <div className="grid gap-8 md:grid-cols-2">
             {/* Current Month */}
-            <div className="md:pr-8">
+            <div className="border-l-4 border-orange-600 pl-5">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-orange-950">
                   {currentMonthKey ? getMonthName(currentMonthKey) : 'This Month'}
                 </h3>
-                <span className="rounded-full bg-orange-700 px-3 py-1 text-xs font-bold text-white">
+                <span className="text-xs font-bold uppercase tracking-wide text-orange-800">
                   In play
                 </span>
               </div>
-              <div className="grid grid-cols-2 divide-x divide-orange-200 text-center">
+              <div className="grid grid-cols-2 divide-x divide-orange-200 border-y border-orange-200 py-2 text-center">
                 <div className="p-3">
                   <div className="text-3xl font-bold text-orange-800">{currentContributionTotal}</div>
                   <div className="text-xs font-semibold text-gray-600">Contributions</div>
@@ -304,16 +304,16 @@ export default function Home() {
             </div>
 
             {/* Previous Month */}
-            <div className="md:pl-8">
+            <div className="border-l-4 border-slate-500 pl-5">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-800">
                   {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
                 </h3>
-                <span className="rounded-full bg-gray-700 px-3 py-1 text-xs font-bold text-white">
+                <span className="text-xs font-bold uppercase tracking-wide text-gray-600">
                   Last round
                 </span>
               </div>
-              <div className="text-center">
+              <div className="border-y border-gray-300 py-2 text-center">
                 <div className="p-3">
                   <div className="text-3xl font-bold text-gray-800">{previousContributionTotal}</div>
                   <div className="text-xs font-semibold text-gray-600">Contributions</div>

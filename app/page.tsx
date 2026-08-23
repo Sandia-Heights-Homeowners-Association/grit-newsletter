@@ -196,7 +196,7 @@ export default function Home() {
         </div>
 
         {/* Call to Action - Community Contributions */}
-        <div className="mb-6 rounded-lg border border-orange-300 bg-white/80 px-5 py-5 text-center shadow-lg backdrop-blur">
+        <section className="mb-8 border-y border-orange-300/80 py-6 text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-800">
             Now collecting for {deadlineInfo.month || 'the upcoming issue'}
           </p>
@@ -220,7 +220,7 @@ export default function Home() {
               Contact editor
             </a>
           </div>
-        </div>
+        </section>
 
         {/* Caption Contest Banner */}
         {captionContestEnabled && (
@@ -245,8 +245,8 @@ export default function Home() {
 
         <HomeSubmissionForm />
 
-        <div className="mb-12 rounded-lg border-2 border-teal-200 bg-white p-5 shadow-xl md:p-6">
-          <div className="mb-5 flex flex-col gap-2 text-center md:flex-row md:items-end md:justify-between md:text-left">
+        <section className="mb-12 border-y border-teal-300/80 py-6 md:py-8">
+          <div className="mb-6 flex flex-col gap-2 text-center md:flex-row md:items-end md:justify-between md:text-left">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Neighborhood scoreboard</p>
               <h2 className="text-2xl font-bold text-orange-950">
@@ -257,9 +257,9 @@ export default function Home() {
               A friendly tally of this month&apos;s GRIT contributions.
             </p>
           </div>
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-8 md:grid-cols-2 md:gap-0 md:divide-x md:divide-teal-300/70">
             {/* Current Month */}
-            <div className="rounded-lg border border-orange-300 bg-gradient-to-br from-orange-50 to-white p-5">
+            <div className="md:pr-8">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-orange-950">
                   {currentMonthKey ? getMonthName(currentMonthKey) : 'This Month'}
@@ -268,12 +268,12 @@ export default function Home() {
                   In play
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-md bg-white p-3 shadow-sm">
+              <div className="grid grid-cols-2 divide-x divide-orange-200 text-center">
+                <div className="p-3">
                   <div className="text-3xl font-bold text-orange-800">{currentContributionTotal}</div>
                   <div className="text-xs font-semibold text-gray-600">Contributions</div>
                 </div>
-                <div className="rounded-md bg-white p-3 shadow-sm">
+                <div className="p-3">
                   <div className="text-3xl font-bold text-amber-700">{captionContestEnabled ? captionCount : '–'}</div>
                   <div className="text-xs font-semibold text-gray-600">Captions</div>
                 </div>
@@ -304,7 +304,7 @@ export default function Home() {
             </div>
 
             {/* Previous Month */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+            <div className="md:pl-8">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-800">
                   {previousMonthKey ? getMonthName(previousMonthKey) : 'Last Month'}
@@ -314,7 +314,7 @@ export default function Home() {
                 </span>
               </div>
               <div className="text-center">
-                <div className="rounded-md bg-white p-3 shadow-sm">
+                <div className="p-3">
                   <div className="text-3xl font-bold text-gray-800">{previousContributionTotal}</div>
                   <div className="text-xs font-semibold text-gray-600">Contributions</div>
                 </div>
@@ -344,7 +344,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Routine Monthly Submissions */}
         <div className="mb-8 rounded-lg bg-gradient-to-br from-amber-50 to-red-50 p-6 shadow-lg border border-amber-300">

@@ -9,6 +9,8 @@ import type { Submission, SubmissionCategory } from '@/lib/types';
 import { DEFAULT_HOMEPAGE_CONTENT, type HomepageContent } from '@/lib/homepage-content';
 import { formatSubmissionForNewsletter, getNewsletterCategoryLabel } from '@/lib/newsletter-markdown';
 
+type EditorialFlag = 'isOptionalContent' | 'hasFlexibleLocation';
+
 const ALL_CATEGORIES = Array.from(new Set([
   ...COMMUNITY_CATEGORIES,
   ...ROUTINE_CATEGORIES,
@@ -305,6 +307,83 @@ export default function EditorPage() {
       showToastNotification('Failed to save content order');
     });
   }, [password, selectedMonth]);
+
+  const handleCommunityContributionChange = useCallback(async (
+    submissionId: string,
+    isCommunityContribution: boolean
+  ) => {
+    const previousSubmission = submissions.find(submission => submission.id === submissionId);
+    if (!previousSubmission) return;
+
+    setSubmissions(current => current.map(submission =>
+      submission.id === submissionId
+        ? { ...submission, isCommunityContribution }
+        : submission
+    ));
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateCommunityContribution',
+          submissionId,
+          isCommunityContribution,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save community contribution status');
+      }
+    } catch (error) {
+      console.error('Failed to update community contribution status:', error);
+      setSubmissions(current => current.map(submission =>
+        submission.id === submissionId
+          ? { ...submission, isCommunityContribution: previousSubmission.isCommunityContribution }
+          : submission
+      ));
+      showToastNotification('Failed to save community contribution status');
+    }
+  }, [password, submissions]);
+
+  const handleEditorialFlagChange = useCallback(async (
+    submissionId: string,
+    field: EditorialFlag,
+    value: boolean
+  ) => {
+    const previousSubmission = submissions.find(submission => submission.id === submissionId);
+    if (!previousSubmission) return;
+
+    setSubmissions(current => current.map(submission =>
+      submission.id === submissionId ? { ...submission, [field]: value } : submission
+    ));
+
+    try {
+      const response = await fetch('/api/editor', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'updateEditorialFlag', submissionId, field, value }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save editorial flag');
+      }
+    } catch (error) {
+      console.error('Failed to update editorial flag:', error);
+      setSubmissions(current => current.map(submission =>
+        submission.id === submissionId
+          ? { ...submission, [field]: previousSubmission[field] }
+          : submission
+      ));
+      showToastNotification('Failed to save editorial flag');
+    }
+  }, [password, submissions]);
 
   const extractContent = (_rawContent: string, _category: SubmissionCategory, submission?: Submission): string => {
     if (!submission) return '';
@@ -2526,6 +2605,8 @@ export default function EditorPage() {
                   onMoveToBacklog={(submissionId) => updateDisposition(submissionId, 'backlog')}
                   onDismissMissing={dismissMissingMonthlyCategory}
                   onDismissPlaceholder={(submissionId) => updateDisposition(submissionId, 'archived')}
+                  onCommunityContributionChange={handleCommunityContributionChange}
+                  onEditorialFlagChange={handleEditorialFlagChange}
                   onOrderChange={handleOrderChange}
                 />
               )}

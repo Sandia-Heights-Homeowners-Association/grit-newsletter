@@ -181,6 +181,8 @@ interface ContentFlowProps {
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
+  onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
+  onEditorialFlagChange?: (submissionId: string, field: 'isOptionalContent' | 'hasFlexibleLocation', value: boolean) => void;
   onOrderChange: (orderedIds: string[]) => void;
 }
 
@@ -324,6 +326,8 @@ function SortableSubmissionTile({
   onMoveToBacklog,
   onDismissMissing,
   onDismissPlaceholder,
+  onCommunityContributionChange,
+  onEditorialFlagChange,
 }: {
   submission: Submission;
   isExpanded: boolean;
@@ -331,6 +335,8 @@ function SortableSubmissionTile({
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
+  onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
+  onEditorialFlagChange?: (submissionId: string, field: 'isOptionalContent' | 'hasFlexibleLocation', value: boolean) => void;
 }) {
   const {
     attributes,
@@ -422,7 +428,8 @@ function SortableSubmissionTile({
             <span className="text-gray-500 flex-shrink-0">{wordCount} words</span>
           </div>
         </div>
-        {!missingPlaceholder && !manualPlaceholder && onMoveToBacklog && (
+        <div className="flex flex-shrink-0 flex-nowrap items-center gap-1.5">
+          {!missingPlaceholder && !manualPlaceholder && onMoveToBacklog && (
           <button
             type="button"
             onClick={() => onMoveToBacklog(submission.id)}
@@ -430,6 +437,48 @@ function SortableSubmissionTile({
           >
             Backlog
           </button>
+        )}
+        {!missingPlaceholder && !manualPlaceholder && onCommunityContributionChange && (
+          <label
+            title="Community contribution"
+            className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-950 transition hover:bg-orange-100"
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(submission.isCommunityContribution)}
+              onChange={(event) => onCommunityContributionChange(submission.id, event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-orange-400 text-orange-600 focus:ring-orange-500"
+            />
+            Community
+          </label>
+        )}
+        {!missingPlaceholder && !manualPlaceholder && onEditorialFlagChange && (
+          <label
+            title="Optional content"
+            className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-950 transition hover:bg-sky-100"
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(submission.isOptionalContent)}
+              onChange={(event) => onEditorialFlagChange(submission.id, 'isOptionalContent', event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-500"
+            />
+            Optional
+          </label>
+        )}
+        {!missingPlaceholder && !manualPlaceholder && onEditorialFlagChange && (
+          <label
+            title="Flexible location"
+            className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-950 transition hover:bg-violet-100"
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(submission.hasFlexibleLocation)}
+              onChange={(event) => onEditorialFlagChange(submission.id, 'hasFlexibleLocation', event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-violet-400 text-violet-600 focus:ring-violet-500"
+            />
+            Flex
+          </label>
         )}
         {missingPlaceholder && onDismissMissing && (
           <button
@@ -460,6 +509,7 @@ function SortableSubmissionTile({
         >
           {isExpanded ? 'Collapse' : 'Expand'}
         </button>
+        </div>
       </div>
       {isExpanded && (
         <div className="mt-3 rounded border border-white/80 bg-white/80 p-3">
@@ -480,6 +530,8 @@ export default function ContentFlow({
   onMoveToBacklog,
   onDismissMissing,
   onDismissPlaceholder,
+  onCommunityContributionChange,
+  onEditorialFlagChange,
   onOrderChange,
 }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
@@ -614,6 +666,8 @@ export default function ContentFlow({
                 onMoveToBacklog={onMoveToBacklog}
                 onDismissMissing={onDismissMissing}
                 onDismissPlaceholder={onDismissPlaceholder}
+                onCommunityContributionChange={onCommunityContributionChange}
+                onEditorialFlagChange={onEditorialFlagChange}
                 onToggleExpanded={() => {
                   setExpandedIds(prev => {
                     const next = new Set(prev);

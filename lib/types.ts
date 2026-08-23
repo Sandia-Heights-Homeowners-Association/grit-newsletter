@@ -70,6 +70,9 @@ export interface Submission {
   editorNotes?: string;
   priority?: 'low' | 'normal' | 'high';
   needsAttention?: boolean;
+  isCommunityContribution?: boolean;
+  isOptionalContent?: boolean;
+  hasFlexibleLocation?: boolean;
 }
 
 export interface CategoryStats {

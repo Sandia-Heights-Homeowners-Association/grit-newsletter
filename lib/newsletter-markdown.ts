@@ -1,4 +1,4 @@
-import type { Submission, SubmissionCategory } from './types';
+import { COMMITTEE_CATEGORIES, type Submission, type SubmissionCategory } from './types';
 
 const CATEGORY_LABELS: Partial<Record<SubmissionCategory, string>> = {
   'Neighbor Appreciation': 'Neighbor Appreciation',
@@ -18,6 +18,16 @@ const ROUTINE_TITLE_CATEGORIES = new Set<SubmissionCategory>([
   'Association Events',
   'Errata',
 ]);
+
+const BYLINELESS_ROUTINE_CATEGORIES = new Set<SubmissionCategory>([
+  'ACC Activity Log',
+  'CSC Table',
+  'Security Report',
+  'Errata',
+  'Office Notes',
+]);
+
+const COMMITTEE_CATEGORY_SET = new Set<SubmissionCategory>(COMMITTEE_CATEGORIES);
 
 const METADATA_LABELS = new Set([
   'author',
@@ -47,15 +57,6 @@ function readLabelledValue(line: string): { label: string; value: string } | nul
   const label = match[1].trim().toLowerCase();
   if (!METADATA_LABELS.has(label)) return null;
   return { label, value: match[2].trim() };
-}
-
-function normalizeSectionHeadings(body: string): string {
-  return body
-    .split('\n')
-    .map((line) => line.replace(/^\s*#{1,6}\s+(.+)$/, '### $1'))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
 }
 
 function parseSubmission(submission: Submission): ParsedNewsletterSubmission {
@@ -106,7 +107,7 @@ function parseSubmission(submission: Submission): ParsedNewsletterSubmission {
   return {
     title: submission.title?.trim() || parsedTitle || fallbackTitle,
     byline: submission.publishedName?.trim() || parsedByline || 'Uncredited',
-    body: normalizeSectionHeadings(lines.slice(bodyStart).join('\n')),
+    body: lines.slice(bodyStart).join('\n'),
     metadata,
   };
 }
@@ -129,6 +130,34 @@ function specialDetails(category: SubmissionCategory, metadata: Record<string, s
   return [];
 }
 
+function formatByline(submission: Submission, byline: string): string {
+  if (BYLINELESS_ROUTINE_CATEGORIES.has(submission.category)) {
+    return '';
+  }
+
+  if (!COMMITTEE_CATEGORY_SET.has(submission.category)) {
+    return byline;
+  }
+
+  const committeeName = submission.category;
+  const alreadyIncludesCommittee = byline
+    .trim()
+    .toLocaleLowerCase()
+    .endsWith(`, ${committeeName}`.toLocaleLowerCase());
+
+  return alreadyIncludesCommittee ? byline : `${byline}, ${committeeName}`;
+}
+
+function editorialTitleTags(submission: Submission): string {
+  const tags = [
+    submission.isCommunityContribution && '[community]',
+    submission.isOptionalContent && '[optional]',
+    submission.hasFlexibleLocation && '[flex]',
+  ].filter((tag): tag is string => Boolean(tag)).join('');
+
+  return tags ? ` ${tags}` : '';
+}
+
 export function getNewsletterCategoryLabel(category: SubmissionCategory): string | undefined {
   return CATEGORY_LABELS[category];
 }
@@ -143,12 +172,14 @@ export function formatSubmissionForNewsletter(submission: Submission): string {
   }
 
   const parsed = parseSubmission(submission);
-  const sections = [
-    `# ${parsed.title}`,
-    `## ${parsed.byline}`,
+  const byline = formatByline(submission, parsed.byline);
+  const headerLines = [
+    `# ${parsed.title}${editorialTitleTags(submission)}`,
+    byline ? `## ${byline}` : '',
     ...specialDetails(submission.category, parsed.metadata),
-    parsed.body,
   ].filter((section): section is string => Boolean(section));
 
-  return sections.join('\n\n');
+  return [...headerLines, parsed.body]
+    .filter((section): section is string => Boolean(section))
+    .join('\n');
 }

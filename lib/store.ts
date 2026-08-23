@@ -225,6 +225,23 @@ export async function updateSubmissionDisposition(
   }
 }
 
+export async function updateSubmissionCommunityContribution(
+  id: string,
+  isCommunityContribution: boolean
+): Promise<Submission | null> {
+  await ensureDbInitialized();
+  return db.updateSubmissionCommunityContribution(id, isCommunityContribution);
+}
+
+export async function updateSubmissionEditorialFlag(
+  id: string,
+  field: 'isOptionalContent' | 'hasFlexibleLocation',
+  value: boolean
+): Promise<Submission | null> {
+  await ensureDbInitialized();
+  return db.updateSubmissionEditorialFlag(id, field, value);
+}
+
 // Save all submissions (batch update) - useful for bulk operations
 export async function saveAllSubmissions(updatedSubmissions: Submission[]): Promise<boolean> {
   await ensureDbInitialized();

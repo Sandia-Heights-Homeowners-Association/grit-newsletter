@@ -58,6 +58,8 @@ export async function initializeDatabase() {
         priority TEXT DEFAULT 'normal',
         needs_attention BOOLEAN DEFAULT FALSE,
         is_community_contribution BOOLEAN DEFAULT FALSE,
+        is_optional_content BOOLEAN DEFAULT FALSE,
+        has_flexible_location BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -72,6 +74,8 @@ export async function initializeDatabase() {
     await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'normal'`;
     await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS needs_attention BOOLEAN DEFAULT FALSE`;
     await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS is_community_contribution BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS is_optional_content BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS has_flexible_location BOOLEAN DEFAULT FALSE`;
 
     // Create indexes for common queries
     await sql`
@@ -164,6 +168,8 @@ function rowToSubmission(row: any): Submission {
     priority: row.priority || 'normal',
     needsAttention: Boolean(row.needs_attention),
     isCommunityContribution: Boolean(row.is_community_contribution),
+    isOptionalContent: Boolean(row.is_optional_content),
+    hasFlexibleLocation: Boolean(row.has_flexible_location),
   };
 }
 
@@ -186,6 +192,8 @@ function submissionToRow(submission: Submission) {
     priority: submission.priority || 'normal',
     needs_attention: submission.needsAttention || false,
     is_community_contribution: submission.isCommunityContribution || false,
+    is_optional_content: submission.isOptionalContent || false,
+    has_flexible_location: submission.hasFlexibleLocation || false,
   };
 }
 
@@ -213,7 +221,9 @@ export const db = {
         editor_notes,
         priority,
         needs_attention,
-        is_community_contribution
+        is_community_contribution,
+        is_optional_content,
+        has_flexible_location
       )
       VALUES (
         ${row.id},
@@ -231,7 +241,9 @@ export const db = {
         ${row.editor_notes},
         ${row.priority},
         ${row.needs_attention},
-        ${row.is_community_contribution}
+        ${row.is_community_contribution},
+        ${row.is_optional_content},
+        ${row.has_flexible_location}
       )
     `;
     
@@ -299,6 +311,26 @@ export const db = {
     const rows = (await sql`
       UPDATE submissions
       SET is_community_contribution = ${isCommunityContribution},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `) as any[];
+
+    return rows.length > 0 ? rowToSubmission(rows[0]) : null;
+  },
+
+  async updateSubmissionEditorialFlag(
+    id: string,
+    field: 'isOptionalContent' | 'hasFlexibleLocation',
+    value: boolean
+  ): Promise<Submission | null> {
+    const column = field === 'isOptionalContent'
+      ? 'is_optional_content'
+      : 'has_flexible_location';
+    const sql = getSQL();
+    const rows = (await sql`
+      UPDATE submissions
+      SET ${sql.unsafe(column)} = ${value},
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *

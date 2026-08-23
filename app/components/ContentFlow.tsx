@@ -182,6 +182,7 @@ interface ContentFlowProps {
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
   onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
+  onEditorialFlagChange?: (submissionId: string, field: 'isOptionalContent' | 'hasFlexibleLocation', value: boolean) => void;
   onOrderChange: (orderedIds: string[]) => void;
 }
 
@@ -326,6 +327,7 @@ function SortableSubmissionTile({
   onDismissMissing,
   onDismissPlaceholder,
   onCommunityContributionChange,
+  onEditorialFlagChange,
 }: {
   submission: Submission;
   isExpanded: boolean;
@@ -334,6 +336,7 @@ function SortableSubmissionTile({
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
   onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
+  onEditorialFlagChange?: (submissionId: string, field: 'isOptionalContent' | 'hasFlexibleLocation', value: boolean) => void;
 }) {
   const {
     attributes,
@@ -445,6 +448,28 @@ function SortableSubmissionTile({
             Community contribution
           </label>
         )}
+        {!missingPlaceholder && !manualPlaceholder && onEditorialFlagChange && (
+          <>
+            <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-950 transition hover:bg-sky-100">
+              <input
+                type="checkbox"
+                checked={Boolean(submission.isOptionalContent)}
+                onChange={(event) => onEditorialFlagChange(submission.id, 'isOptionalContent', event.target.checked)}
+                className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-500"
+              />
+              Optional content
+            </label>
+            <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-950 transition hover:bg-violet-100">
+              <input
+                type="checkbox"
+                checked={Boolean(submission.hasFlexibleLocation)}
+                onChange={(event) => onEditorialFlagChange(submission.id, 'hasFlexibleLocation', event.target.checked)}
+                className="h-3.5 w-3.5 rounded border-violet-400 text-violet-600 focus:ring-violet-500"
+              />
+              Flexible location
+            </label>
+          </>
+        )}
         {missingPlaceholder && onDismissMissing && (
           <button
             type="button"
@@ -495,6 +520,7 @@ export default function ContentFlow({
   onDismissMissing,
   onDismissPlaceholder,
   onCommunityContributionChange,
+  onEditorialFlagChange,
   onOrderChange,
 }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
@@ -630,6 +656,7 @@ export default function ContentFlow({
                 onDismissMissing={onDismissMissing}
                 onDismissPlaceholder={onDismissPlaceholder}
                 onCommunityContributionChange={onCommunityContributionChange}
+                onEditorialFlagChange={onEditorialFlagChange}
                 onToggleExpanded={() => {
                   setExpandedIds(prev => {
                     const next = new Set(prev);

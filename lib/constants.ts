@@ -1,6 +1,14 @@
 // Application constants
+import type { RoutineCategory } from './types';
+
 export const APP_NAME = 'The GRIT';
 export const APP_SUBTITLE = 'Guiding Residents, Inspiring Togetherness';
+
+// Advisory limits for routine newsletter sections. These are intentionally not
+// enforced so authors can still submit copy that needs editorial review.
+export const ROUTINE_WORD_LIMITS: Partial<Record<RoutineCategory, number>> = {
+  'President\'s Note': 300,
+};
 
 // Passwords from environment variables (server-side only)
 export const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';

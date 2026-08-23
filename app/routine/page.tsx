@@ -6,6 +6,7 @@ import Header from '@/app/components/Header';
 import Captcha from '@/app/components/Captcha';
 import MarkdownEditor from '@/app/components/MarkdownEditor';
 import { ROUTINE_CATEGORIES } from '@/lib/types';
+import { ROUTINE_WORD_LIMITS } from '@/lib/constants';
 
 export default function RoutinePage() {
   const [category, setCategory] = useState<typeof ROUTINE_CATEGORIES[number]>(ROUTINE_CATEGORIES[0]);
@@ -16,6 +17,9 @@ export default function RoutinePage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
+  const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+  const wordLimit = ROUTINE_WORD_LIMITS[category];
+  const exceedsWordLimit = Boolean(wordLimit && wordCount > wordLimit);
 
   useEffect(() => {
     // Load confetti script
@@ -177,15 +181,21 @@ export default function RoutinePage() {
                 <label className="font-semibold text-orange-900">
                   Content *
                 </label>
-                <span className="text-sm text-gray-600">
-                  {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
+                <span className={`text-sm font-semibold ${exceedsWordLimit ? 'text-red-700' : 'text-gray-600'}`}>
+                  {wordLimit ? `${wordCount} / ${wordLimit}` : wordCount} words
                 </span>
               </div>
+              {exceedsWordLimit && wordLimit && (
+                <div className="mb-3 rounded-lg border-2 border-red-500 bg-red-100 px-4 py-3 text-sm font-semibold text-red-900" role="alert">
+                  ⚠ Over the {wordLimit}-word limit for {category} by {wordCount - wordLimit} words. You may still submit this, but please shorten it if possible.
+                </div>
+              )}
               <MarkdownEditor
                 value={content}
                 onChange={setContent}
                 placeholder="Enter your content here. For CSV data, paste directly from Excel..."
                 minHeight="360px"
+                hasError={exceedsWordLimit}
               />
               <p className="mt-2 text-sm text-gray-800">
                 {category === 'ACC Activity Log' || category === 'Security Report' 

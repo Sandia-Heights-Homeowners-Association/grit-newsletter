@@ -13,6 +13,7 @@ interface MarkdownEditorProps {
   minHeight?: string;
   simpleToolbar?: boolean;
   maxLength?: number;
+  hasError?: boolean;
 }
 
 // Convert Tiptap JSON to Markdown
@@ -111,7 +112,7 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
-export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px', simpleToolbar = false, maxLength }: MarkdownEditorProps) {
+export default function MarkdownEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px', simpleToolbar = false, maxLength, hasError = false }: MarkdownEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -170,7 +171,11 @@ export default function MarkdownEditor({ value, onChange, placeholder = 'Start t
   }
 
   return (
-    <div className="rounded-lg border-2 border-orange-200 bg-white focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200">
+    <div className={`rounded-lg border-2 bg-white ${
+      hasError
+        ? 'border-red-500 bg-red-50/40 ring-4 ring-red-200/80 focus-within:border-red-600 focus-within:ring-red-300'
+        : 'border-orange-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200'
+    }`}>
       {/* Toolbar */}
       <div className="flex flex-wrap gap-1 border-b border-orange-100 p-2 bg-orange-50/30">
         <button

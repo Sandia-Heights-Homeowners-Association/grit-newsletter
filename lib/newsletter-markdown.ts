@@ -148,6 +148,16 @@ function formatByline(submission: Submission, byline: string): string {
   return alreadyIncludesCommittee ? byline : `${byline}, ${committeeName}`;
 }
 
+function editorialTitleTags(submission: Submission): string {
+  const tags = [
+    submission.isCommunityContribution && '[community]',
+    submission.isOptionalContent && '[optional]',
+    submission.hasFlexibleLocation && '[flex]',
+  ].filter((tag): tag is string => Boolean(tag)).join('');
+
+  return tags ? ` ${tags}` : '';
+}
+
 export function getNewsletterCategoryLabel(category: SubmissionCategory): string | undefined {
   return CATEGORY_LABELS[category];
 }
@@ -164,8 +174,7 @@ export function formatSubmissionForNewsletter(submission: Submission): string {
   const parsed = parseSubmission(submission);
   const byline = formatByline(submission, parsed.byline);
   const headerLines = [
-    `# ${parsed.title}`,
-    submission.isCommunityContribution ? 'Note: Community contribution' : '',
+    `# ${parsed.title}${editorialTitleTags(submission)}`,
     byline ? `## ${byline}` : '',
     ...specialDetails(submission.category, parsed.metadata),
   ].filter((section): section is string => Boolean(section));

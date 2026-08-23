@@ -1,4 +1,4 @@
-import type { Submission, SubmissionCategory } from './types';
+import { COMMITTEE_CATEGORIES, type Submission, type SubmissionCategory } from './types';
 
 const CATEGORY_LABELS: Partial<Record<SubmissionCategory, string>> = {
   'Neighbor Appreciation': 'Neighbor Appreciation',
@@ -18,6 +18,16 @@ const ROUTINE_TITLE_CATEGORIES = new Set<SubmissionCategory>([
   'Association Events',
   'Errata',
 ]);
+
+const BYLINELESS_ROUTINE_CATEGORIES = new Set<SubmissionCategory>([
+  'ACC Activity Log',
+  'CSC Table',
+  'Security Report',
+  'Errata',
+  'Office Notes',
+]);
+
+const COMMITTEE_CATEGORY_SET = new Set<SubmissionCategory>(COMMITTEE_CATEGORIES);
 
 const METADATA_LABELS = new Set([
   'author',
@@ -129,6 +139,24 @@ function specialDetails(category: SubmissionCategory, metadata: Record<string, s
   return [];
 }
 
+function formatByline(submission: Submission, byline: string): string {
+  if (BYLINELESS_ROUTINE_CATEGORIES.has(submission.category)) {
+    return '';
+  }
+
+  if (!COMMITTEE_CATEGORY_SET.has(submission.category)) {
+    return byline;
+  }
+
+  const committeeName = submission.category;
+  const alreadyIncludesCommittee = byline
+    .trim()
+    .toLocaleLowerCase()
+    .endsWith(`, ${committeeName}`.toLocaleLowerCase());
+
+  return alreadyIncludesCommittee ? byline : `${byline}, ${committeeName}`;
+}
+
 export function getNewsletterCategoryLabel(category: SubmissionCategory): string | undefined {
   return CATEGORY_LABELS[category];
 }
@@ -143,9 +171,11 @@ export function formatSubmissionForNewsletter(submission: Submission): string {
   }
 
   const parsed = parseSubmission(submission);
+  const byline = formatByline(submission, parsed.byline);
   const sections = [
     `# ${parsed.title}`,
-    `## ${parsed.byline}`,
+    submission.isCommunityContribution ? 'Note: Community contribution' : '',
+    byline ? `## ${byline}` : '',
     ...specialDetails(submission.category, parsed.metadata),
     parsed.body,
   ].filter((section): section is string => Boolean(section));

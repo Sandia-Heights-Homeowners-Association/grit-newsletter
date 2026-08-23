@@ -181,6 +181,7 @@ interface ContentFlowProps {
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
+  onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
   onOrderChange: (orderedIds: string[]) => void;
 }
 
@@ -324,6 +325,7 @@ function SortableSubmissionTile({
   onMoveToBacklog,
   onDismissMissing,
   onDismissPlaceholder,
+  onCommunityContributionChange,
 }: {
   submission: Submission;
   isExpanded: boolean;
@@ -331,6 +333,7 @@ function SortableSubmissionTile({
   onMoveToBacklog?: (submissionId: string) => void;
   onDismissMissing?: (category: string) => void;
   onDismissPlaceholder?: (submissionId: string) => void;
+  onCommunityContributionChange?: (submissionId: string, isCommunityContribution: boolean) => void;
 }) {
   const {
     attributes,
@@ -431,6 +434,17 @@ function SortableSubmissionTile({
             Backlog
           </button>
         )}
+        {!missingPlaceholder && !manualPlaceholder && onCommunityContributionChange && (
+          <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-950 transition hover:bg-orange-100">
+            <input
+              type="checkbox"
+              checked={Boolean(submission.isCommunityContribution)}
+              onChange={(event) => onCommunityContributionChange(submission.id, event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-orange-400 text-orange-600 focus:ring-orange-500"
+            />
+            Community contribution
+          </label>
+        )}
         {missingPlaceholder && onDismissMissing && (
           <button
             type="button"
@@ -480,6 +494,7 @@ export default function ContentFlow({
   onMoveToBacklog,
   onDismissMissing,
   onDismissPlaceholder,
+  onCommunityContributionChange,
   onOrderChange,
 }: ContentFlowProps) {
   const [orderedSubmissions, setOrderedSubmissions] = useState<Submission[]>([]);
@@ -614,6 +629,7 @@ export default function ContentFlow({
                 onMoveToBacklog={onMoveToBacklog}
                 onDismissMissing={onDismissMissing}
                 onDismissPlaceholder={onDismissPlaceholder}
+                onCommunityContributionChange={onCommunityContributionChange}
                 onToggleExpanded={() => {
                   setExpandedIds(prev => {
                     const next = new Set(prev);

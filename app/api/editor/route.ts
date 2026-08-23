@@ -4,6 +4,7 @@ import {
   getBackloggedSubmissions,
   getArchivedSubmissions,
   updateSubmissionDisposition,
+  updateSubmissionCommunityContribution,
   saveAllSubmissions,
   exportNewsletterText,
   getSubmissionsByCategory,
@@ -138,6 +139,25 @@ export async function POST(request: NextRequest) {
           );
         }
         return NextResponse.json({ success: true, submission: updated });
+
+      case 'updateCommunityContribution': {
+        const { submissionId, isCommunityContribution } = data;
+        if (typeof submissionId !== 'string' || typeof isCommunityContribution !== 'boolean') {
+          return NextResponse.json(
+            { error: 'A submission id and community contribution status are required.' },
+            { status: 400 }
+          );
+        }
+
+        const updated = await updateSubmissionCommunityContribution(submissionId, isCommunityContribution);
+        if (!updated) {
+          return NextResponse.json(
+            { error: 'Submission not found' },
+            { status: 404 }
+          );
+        }
+        return NextResponse.json({ success: true, submission: updated });
+      }
 
       case 'getBacklog':
         const { category: cat } = data;

@@ -59,15 +59,6 @@ function readLabelledValue(line: string): { label: string; value: string } | nul
   return { label, value: match[2].trim() };
 }
 
-function normalizeSectionHeadings(body: string): string {
-  return body
-    .split('\n')
-    .map((line) => line.replace(/^\s*#{1,6}\s+(.+)$/, '### $1'))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
 function parseSubmission(submission: Submission): ParsedNewsletterSubmission {
   const lines = submission.content.split('\n');
   const firstLine = lines[0]?.trim() || '';
@@ -116,7 +107,7 @@ function parseSubmission(submission: Submission): ParsedNewsletterSubmission {
   return {
     title: submission.title?.trim() || parsedTitle || fallbackTitle,
     byline: submission.publishedName?.trim() || parsedByline || 'Uncredited',
-    body: normalizeSectionHeadings(lines.slice(bodyStart).join('\n')),
+    body: lines.slice(bodyStart).join('\n'),
     metadata,
   };
 }
@@ -172,13 +163,14 @@ export function formatSubmissionForNewsletter(submission: Submission): string {
 
   const parsed = parseSubmission(submission);
   const byline = formatByline(submission, parsed.byline);
-  const sections = [
+  const headerLines = [
     `# ${parsed.title}`,
     submission.isCommunityContribution ? 'Note: Community contribution' : '',
     byline ? `## ${byline}` : '',
     ...specialDetails(submission.category, parsed.metadata),
-    parsed.body,
   ].filter((section): section is string => Boolean(section));
 
-  return sections.join('\n\n');
+  return [...headerLines, parsed.body]
+    .filter((section): section is string => Boolean(section))
+    .join('\n');
 }

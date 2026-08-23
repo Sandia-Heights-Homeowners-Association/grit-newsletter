@@ -385,7 +385,7 @@ function SortableSubmissionTile({
         ${isDragging ? 'border-orange-400 shadow-lg' : `${tileColors.border} ${tileColors.hoverBorder} hover:shadow-md`}
       `}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         {/* Drag Handle */}
         <button
           type="button"
@@ -427,8 +427,55 @@ function SortableSubmissionTile({
             <span className="text-gray-400">•</span>
             <span className="text-gray-500 flex-shrink-0">{wordCount} words</span>
           </div>
+          {!missingPlaceholder && !manualPlaceholder && (onCommunityContributionChange || onEditorialFlagChange) && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {onCommunityContributionChange && (
+                <label
+                  title="Community contribution"
+                  className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-950 transition hover:bg-orange-100"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(submission.isCommunityContribution)}
+                    onChange={(event) => onCommunityContributionChange(submission.id, event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-orange-400 text-orange-600 focus:ring-orange-500"
+                  />
+                  Community
+                </label>
+              )}
+              {onEditorialFlagChange && (
+                <label
+                  title="Optional content"
+                  className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-950 transition hover:bg-sky-100"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(submission.isOptionalContent)}
+                    onChange={(event) => onEditorialFlagChange(submission.id, 'isOptionalContent', event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-500"
+                  />
+                  Optional
+                </label>
+              )}
+              {onEditorialFlagChange && (
+                <label
+                  title="Flexible location"
+                  className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-950 transition hover:bg-violet-100"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(submission.hasFlexibleLocation)}
+                    onChange={(event) => onEditorialFlagChange(submission.id, 'hasFlexibleLocation', event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-violet-400 text-violet-600 focus:ring-violet-500"
+                  />
+                  Flex
+                </label>
+              )}
+            </div>
+          )}
         </div>
-        {!missingPlaceholder && !manualPlaceholder && onMoveToBacklog && (
+        <div className="flex flex-shrink-0 items-center gap-1.5">
+          {!missingPlaceholder && !manualPlaceholder && onMoveToBacklog && (
           <button
             type="button"
             onClick={() => onMoveToBacklog(submission.id)}
@@ -436,39 +483,6 @@ function SortableSubmissionTile({
           >
             Backlog
           </button>
-        )}
-        {!missingPlaceholder && !manualPlaceholder && onCommunityContributionChange && (
-          <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-orange-300 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-950 transition hover:bg-orange-100">
-            <input
-              type="checkbox"
-              checked={Boolean(submission.isCommunityContribution)}
-              onChange={(event) => onCommunityContributionChange(submission.id, event.target.checked)}
-              className="h-3.5 w-3.5 rounded border-orange-400 text-orange-600 focus:ring-orange-500"
-            />
-            Community contribution
-          </label>
-        )}
-        {!missingPlaceholder && !manualPlaceholder && onEditorialFlagChange && (
-          <>
-            <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-sky-300 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-950 transition hover:bg-sky-100">
-              <input
-                type="checkbox"
-                checked={Boolean(submission.isOptionalContent)}
-                onChange={(event) => onEditorialFlagChange(submission.id, 'isOptionalContent', event.target.checked)}
-                className="h-3.5 w-3.5 rounded border-sky-400 text-sky-600 focus:ring-sky-500"
-              />
-              Optional content
-            </label>
-            <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded border border-violet-300 bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-950 transition hover:bg-violet-100">
-              <input
-                type="checkbox"
-                checked={Boolean(submission.hasFlexibleLocation)}
-                onChange={(event) => onEditorialFlagChange(submission.id, 'hasFlexibleLocation', event.target.checked)}
-                className="h-3.5 w-3.5 rounded border-violet-400 text-violet-600 focus:ring-violet-500"
-              />
-              Flexible location
-            </label>
-          </>
         )}
         {missingPlaceholder && onDismissMissing && (
           <button
@@ -499,6 +513,7 @@ function SortableSubmissionTile({
         >
           {isExpanded ? 'Collapse' : 'Expand'}
         </button>
+        </div>
       </div>
       {isExpanded && (
         <div className="mt-3 rounded border border-white/80 bg-white/80 p-3">
